@@ -12,20 +12,23 @@ public:
     ~GLFW_Impl() {}
 
     //
-    virtual int initialize() {};
-    virtual int shutdown() {};
-    virtual void getRenderSize(ivec2_t *_v) {};
+    virtual int initialize() override {};
+    virtual int shutdown() override {};
+    virtual void getRenderSize(ivec2_t *_v) override {};
+    virtual API_WINDOW_PTR newWindow(irect_t *_frame) override {};
 
     //
-    virtual void clearScreen() {};
-    virtual void refreshScreen() {};
+    virtual void clearScreen() override {}
+    virtual void refreshScreen() override {}
+    virtual void clearWindow(API_WINDOW_PTR _w) override {};
+    virtual void refreshWindow(API_WINDOW_PTR _w) override {};
 
     // interaction
-    virtual int getKey() {};
-    virtual void moveCursor(int _x, int _y) {};
+    virtual int getKey() override {};
+    virtual void moveCursor(API_WINDOW_PTR _w, int _x, int _y) override {};
 
     // output
-    virtual void printBufferLine(int _cx, int _cy, char* _line) {};
+    virtual void printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) override {};
 
 };
 

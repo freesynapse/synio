@@ -39,7 +39,7 @@ void EventHandler::shutdown()
         }
     }
 
-    LOG_INFO("%s: %d event(s) deleted.\n", __func__, numCleared);
+    // LOG_INFO("%s: %d event(s) deleted.\n", __func__, numCleared);
 
 }
 
@@ -84,6 +84,9 @@ Event *EventHandler::next_event()
     {
         ptr = m_eventQueue[m_queueHead];
         m_queueHead = (m_queueHead + 1) % MAX_EVENTS;
+
+        if (ptr->isHandled())
+            return nullptr;
     }
     else
         ptr = nullptr;
@@ -111,6 +114,10 @@ void EventHandler::process_events()
             // call the function with the current event
             it->second(e);
         }
+
+        // mark as handled
+        e->m_handled = true;
+
     }
 
 }

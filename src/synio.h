@@ -33,21 +33,12 @@ public:
 private:
     bool m_shouldClose = false;
     
-    Window *m_mainWindow = NULL;    // to become an undordered map of windows
+    BufferWindow *m_bufferWindow = NULL;    // to become an undordered map of windows?
     Window *m_currentWindow = NULL;
 
-    LineBuffer m_lineBuffer;    // put into separate class and window -- for now only here
-                                // also, could make it platform independent, i.e. provide 
-                                // functions for windows, rendering etc for eg curses, GLFW
-                                // SDL2 etc.
-    BufferFormatter m_formatter;
+    ivec2_t m_screenSize;
     
     Cursor m_cursor;
-    line_t *m_currentLine   = NULL;
-    line_t *m_pageFirstLine = NULL;
-    line_t *m_pageLastLine  = NULL;
-    
-    ivec2_t m_screenSize;
 
 };
 
