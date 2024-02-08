@@ -16,6 +16,7 @@ public:
     virtual int shutdown() override {};
     virtual void getRenderSize(ivec2_t *_v) override {};
     virtual API_WINDOW_PTR newWindow(irect_t *_frame) override {};
+    virtual void deleteWindow(API_WINDOW_PTR _w) override {}
 
     //
     virtual void clearScreen() override {}

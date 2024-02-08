@@ -19,6 +19,7 @@ public:
     virtual int shutdown() = 0;
     virtual void getRenderSize(ivec2_t *) = 0;
     virtual API_WINDOW_PTR newWindow(irect_t *_frame) = 0;
+    virtual void deleteWindow(API_WINDOW_PTR _w) = 0;
 
     //
     virtual void clearScreen() = 0;

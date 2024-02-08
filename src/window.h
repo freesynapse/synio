@@ -22,7 +22,8 @@ public:
 
 public:
     Window() {}
-    ~Window() = default;
+    ~Window() { if (m_apiWindowPtr != NULL) api->deleteWindow(m_apiWindowPtr); }
+    
 
     //
     virtual void draw() = 0;
@@ -65,8 +66,8 @@ public:
         m_frame = *_frame;
         m_ID = _id;
 
-        m_apiWindowPtr = api->newWindow(_frame);
-        m_formatter = BufferFormatter(_frame);
+        m_apiWindowPtr = api->newWindow(&m_frame);
+        m_formatter = BufferFormatter(m_frame);
 
         #ifdef DEBUG
         LOG_INFO("%s: %s [%p] frame = (%d, %d) -- (%d, %d)\n",
@@ -129,15 +130,15 @@ public:
         // line pointers
         m_currentLine = m_lineBuffer.m_head;
         m_pageFirstLine = m_lineBuffer.m_head;
-        m_pageLastLine = m_lineBuffer.ptrFromIdx(DEBUG_N_LINES+1);
+        m_pageLastLine = m_lineBuffer.ptrFromIdx(m_frame.nrows());
 
-        line_t *p = m_currentLine;
-        int y = 0;
-        while (p != NULL)
-        {
-            LOG_INFO("%3d : %s\n", y++, p->content);
-            p = p->next;
-        }
+        // line_t *p = m_currentLine;
+        // int y = 0;
+        // while (p != NULL)
+        // {
+            // LOG_INFO("%3d : %s\n", y++, p->content);
+            // p = p->next;
+        // }
 
     }
 
@@ -145,8 +146,12 @@ public:
     // border (if any)
     virtual void draw() override
     {
-        m_formatter.render(m_apiWindowPtr, &m_lineBuffer, m_pageFirstLine, m_pageLastLine);
-
+        // char b[128];
+        // memset(b, 0, 128);
+        // snprintf(b, 128, "jfkdjfkdfjkdjfkdjfkdfjkdjkd");
+        // api->printBufferLine(m_apiWindowPtr, 10, 10, b);
+        m_formatter.render(m_apiWindowPtr, m_pageFirstLine, m_pageLastLine);
+        this->refresh();
     }
 
     virtual void clear() override { api->clearWindow(m_apiWindowPtr); }

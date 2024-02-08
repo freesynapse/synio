@@ -40,7 +40,7 @@ Synio::~Synio()
 void Synio::resize()
 {
     api->getRenderSize(&m_screenSize);
-    irect_t buffer_window_rect(ivec2_t(0, 1), ivec2_t(200, DEBUG_N_LINES - 1));
+    irect_t buffer_window_rect(ivec2_t(0, 0), ivec2_t(200, DEBUG_N_LINES));
 
     m_bufferWindow = new BufferWindow(&buffer_window_rect, "buffer_window");
     m_bufferWindow->readFromFile("synio.make");
@@ -70,15 +70,11 @@ void Synio::mainLoop()
     while (!m_shouldClose)
     {
         // api->clearScreen();
-        m_currentWindow->clear();
-
         // m_formatter.render(&m_lineBuffer, m_pageFirstLine, m_pageLastLine);
-        m_currentWindow->draw();
 
-        // memset(b, '-', 128);
-        // b[127] = 0;
-        // api->printBufferLine(api->screenPtr(), 0, 0, b);
-        // api->printBufferLine(api->screenPtr(), 0, DEBUG_N_LINES, b);
+        // m_currentWindow->clear();    // very good, clear() clears the borders...
+        m_currentWindow->draw();
+        m_currentWindow->refresh();
 
         // #ifdef DEBUG
         #if 0
@@ -113,6 +109,7 @@ void Synio::mainLoop()
         m_currentWindow->refresh();
 
         EventHandler::process_events();
+
     }
 
 }

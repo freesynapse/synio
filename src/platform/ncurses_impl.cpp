@@ -14,6 +14,7 @@ int Ncurses_Impl::initialize()
 	keypad(stdscr, TRUE);
 	noecho();
 	clear();
+    refresh();
 
     return RETURN_SUCCESS;
 
@@ -42,10 +43,19 @@ void Ncurses_Impl::getRenderSize(ivec2_t *_v)
 API_WINDOW_PTR Ncurses_Impl::newWindow(irect_t *_frame)
 {
     WINDOW *win = newwin(_frame->nrows(), _frame->ncols(), _frame->v0.y, _frame->v0.x);
-    // wborder(win, '|', '|', '-', '-', '+', '+', '+', '+');
-    box(win, 0, 0);
+    wborder(win, '|', '|', '-', '-', '+', '+', '+', '+');
     wrefresh(win);
     return (API_WINDOW_PTR)win;
+
+}
+
+//---------------------------------------------------------------------------------------
+void Ncurses_Impl::deleteWindow(API_WINDOW_PTR _w)
+{
+    WINDOW *w = (WINDOW *)_w;
+    wborder(w, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+    wrefresh(w);
+    delwin(w);
 
 }
 
