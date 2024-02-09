@@ -67,9 +67,9 @@ int Ncurses_Impl::getKey()
 }
 
 //---------------------------------------------------------------------------------------
-void Ncurses_Impl::moveCursor(API_WINDOW_PTR _w, int _x, int _y)
+int Ncurses_Impl::moveCursor(API_WINDOW_PTR _w, int _x, int _y)
 {
-    wmove((WINDOW *)_w, _y, _x);
+    return wmove((WINDOW *)_w, _y, _x);
     
 }
 

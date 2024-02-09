@@ -13,6 +13,7 @@ line_t *create_line(char *_content, size_t _len)
     new_line->next = NULL;
     new_line->prev = NULL;
     new_line->content = (char *)malloc(_len+1);
+    new_line->len = _len;
     memset(new_line->content, 0, _len+1);
     memcpy(new_line->content, _content, _len);
 

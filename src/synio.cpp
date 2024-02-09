@@ -53,12 +53,12 @@ void Synio::onBufferScroll(Event *_e)
 {
     BufferScrollEvent *e = dynamic_cast<BufferScrollEvent*>(_e);
     
-    LOG_INFO("%s: scroll recieved from window %s: axis=%s, dir=%d, steps=%d\n", 
-            __func__, 
-            e->windowPtr()->ID().c_str(),
-            e->axis() == X_AXIS ? "X" : "Y",
-            e->dir(),
-            e->steps());
+    //LOG_INFO("%s: scroll recieved from window %s: axis=%s, dir=%d, steps=%d\n", 
+    //        __func__, 
+    //        e->windowPtr()->ID().c_str(),
+    //        e->axis() == X_AXIS ? "X" : "Y",
+    //        e->dir(),
+    //        e->steps());
 
     dynamic_cast<BufferWindow*>(m_currentWindow)->onScroll(e);
 
@@ -72,8 +72,15 @@ void Synio::mainLoop()
         // api->clearScreen();
         // m_formatter.render(&m_lineBuffer, m_pageFirstLine, m_pageLastLine);
 
-        // m_currentWindow->clear();    // very good, clear() clears the borders...
+        m_currentWindow->clear();    // very good, clear() clears the borders...
+        // ---> https://stackoverflow.com/questions/33986047/ncurses-is-it-possible-to-refresh-a-window-without-removing-its-borders
+        
+        // --- BEGIN DRAWING
         m_currentWindow->draw();
+        m_cursor.update(m_currentWindow);
+
+        // --- END DRAWING
+
         m_currentWindow->refresh();
 
         // #ifdef DEBUG
@@ -84,8 +91,6 @@ void Synio::mainLoop()
                                            m_cursor.pos().y);
         api->printBufferLine(api->screenPtr(), 0, 50, b);
         #endif
-
-        m_cursor.update(m_currentWindow);
 
         int key = api->getKey();
         switch(key)

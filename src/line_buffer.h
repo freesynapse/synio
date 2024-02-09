@@ -15,6 +15,7 @@ struct line_t
     line_t *next  = NULL;
     line_t *prev  = NULL;
     char *content = NULL;
+    size_t len    = 0;
 
     ~line_t() { free(content); }
     void __debug_print(bool _show_ptrs=true, const char *_str="");

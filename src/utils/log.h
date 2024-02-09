@@ -2,6 +2,7 @@
 #define __LOG_H
 
 #include <stdio.h>
+#include <string.h>
 
 //
 #ifdef DEBUG
@@ -37,6 +38,28 @@ public:
     static FILE *file_handle;
 
 };
+
+// TODO : finish this! 
+// GOAL : append a '\n' to the string automatically. Nearly there, but no time...
+static char LOG_BUFFER[1024];
+inline void LOG_(const char *_prefix, const char *_fmt, ...)
+{
+    int n = 0;
+    memset(LOG_BUFFER, 0, 1024);
+    char *p = LOG_BUFFER;
+    n = sprintf(p, "%s", _prefix);
+    p += n;
+
+    va_list arg_list;
+    
+    va_start(arg_list, _fmt);
+    n = vsprintf(LOG_BUFFER, _fmt, arg_list);
+    va_end(arg_list);
+
+    sprintf(LOG_BUFFER+n, "\n");
+
+}
+
 
 
 #endif // __LOG_H

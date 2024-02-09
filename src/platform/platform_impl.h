@@ -30,7 +30,7 @@ public:
 
     // interaction
     virtual int getKey() = 0;
-    virtual void moveCursor(API_WINDOW_PTR _w, int _x, int _y) = 0;
+    virtual int moveCursor(API_WINDOW_PTR _w, int _x, int _y) = 0;
 
     // output
     virtual void printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) = 0;

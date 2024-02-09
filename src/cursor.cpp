@@ -18,7 +18,10 @@ void Cursor::setPosition(Window *_window, int _x, int _y)
 void Cursor::update(Window *_window)
 {
     clamp_to_frame_(_window);
-    api->moveCursor(_window->m_apiWindowPtr, m_pos.x, m_pos.y);
+    if (api->moveCursor(_window->m_apiWindowPtr, m_pos.x, m_pos.y) == ERR)
+    {
+        LOG_WARNING("%s : m_pos (%d, %d), window lim (%d, %d)\n", __func__, m_pos.x, m_pos.y, _window->frame().v1.x, _window->frame().v1.y);
+    }
 
 }
 
@@ -30,22 +33,24 @@ void Cursor::move(Window *_window, int _dx, int _dy)
 
     // scrolling?
     if (m_pos.y < _window->m_frame.v0.y)
+    {
         EventHandler::push_event(new BufferScrollEvent(
                                         Y_AXIS,
                                         _dy,
                                         abs(m_pos.y - _window->m_frame.v0.y),
                                         _window));
-
-    else if (m_pos.y >= _window->m_frame.v1.y)
+        // keep cursor inside window
+        clamp_to_frame_(_window);
+    }
+    else if (m_pos.y >= _window->m_frame.v1.y - 1)
+    {
         EventHandler::push_event(new BufferScrollEvent(
                                         Y_AXIS,
                                         _dy,
-                                        abs(m_pos.y - _window->m_frame.v1.y),
+                                        abs(m_pos.y - _window->m_frame.v1.y - 1),
                                         _window));
-
-    #ifdef DEBUG // to track cursor position in mainloop
-    clamp_to_frame_(_window);
-    #endif
+        clamp_to_frame_(_window);
+    }
 
 }
 
@@ -58,7 +63,7 @@ void Cursor::clamp_to_frame_(Window *_window)
 
     m_pos.y = CLAMP(m_pos.y, 
                     _window->m_frame.v0.y,
-                    _window->m_frame.v1.y);
+                    _window->m_frame.v1.y - 1);
 
 }
 

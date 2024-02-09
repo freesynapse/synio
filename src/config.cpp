@@ -2,4 +2,4 @@
 #include "config.h"
 
 // static decls
-int Config::PAGE_SIZE = 20;
+int Config::PAGE_SIZE = 25;

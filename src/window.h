@@ -55,6 +55,8 @@ protected:
 
     BufferFormatter m_formatter;
 
+    bool m_isVisible = true;
+
 };
 
 //
@@ -132,26 +134,20 @@ public:
         m_pageFirstLine = m_lineBuffer.m_head;
         m_pageLastLine = m_lineBuffer.ptrFromIdx(m_frame.nrows());
 
-        // line_t *p = m_currentLine;
-        // int y = 0;
-        // while (p != NULL)
-        // {
-            // LOG_INFO("%3d : %s\n", y++, p->content);
-            // p = p->next;
-        // }
-
     }
 
     // draw the buffer within window bounds using the BufferFormatter. Also draw Window
     // border (if any)
     virtual void draw() override
     {
-        // char b[128];
-        // memset(b, 0, 128);
-        // snprintf(b, 128, "jfkdjfkdfjkdjfkdjfkdfjkdjkd");
-        // api->printBufferLine(m_apiWindowPtr, 10, 10, b);
-        m_formatter.render(m_apiWindowPtr, m_pageFirstLine, m_pageLastLine);
-        this->refresh();
+        //char b[128];
+        //memset(b, '-', 128);
+        //b[127] = '\0';
+        //mvwprintw((WINDOW *)m_apiWindowPtr, m_frame.v0.y, m_frame.v0.x, "%s", b);
+        //mvwprintw((WINDOW *)m_apiWindowPtr, m_frame.v1.y-1, m_frame.v0.x, "%s", b);
+        if (m_isVisible)
+            m_formatter.render(m_apiWindowPtr, m_pageFirstLine, m_pageLastLine);
+
     }
 
     virtual void clear() override { api->clearWindow(m_apiWindowPtr); }
