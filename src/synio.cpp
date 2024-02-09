@@ -123,7 +123,14 @@ void Synio::mainLoop()
 int main(int argc, char *argv[])
 {
     const char *filename = "synio.make";
-    Synio synio(filename);
+    // Synio synio(filename);
+
+    Log::open();
+    // Log::log_info(__func__, "int five %d", 5);
+    LOG_INFO("int five %d", 5);
+    LOG_WARNING("int five %d", 5);
+    LOG_ERROR("int five %d", 5);
+    Log::close();
 
     return 0;
 
