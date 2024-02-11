@@ -8,20 +8,14 @@ Window::Window(irect_t *_frame, const std::string &_id, bool _border)
     m_ID = _id;
 
     m_apiWindowPtr = api->newWindow(&m_frame);
-
     if (_border)
         m_apiBorderWindowPtr = api->newBorderWindow(&m_frame);
 
     m_formatter = BufferFormatter(m_frame);
-
-    #ifdef DEBUG
-    LOG_INFO("'%s' [%p] frame = (%d, %d) -- (%d, %d)",
-                m_ID.c_str(), this,
-                m_frame.v0.x, m_frame.v0.y,
-                m_frame.v1.x, m_frame.v1.y);
-    #endif
-
     m_cursor = WCursor(this);
+
+    LOG_INFO("'%s' [%p] created.", m_ID.c_str(), this);
+
 
 }
 
@@ -136,7 +130,7 @@ void BufferWindow::moveCursor(int _dx, int _dy)
     // snap to line if x > len(line)
     if (new_pos.x > m_currentLine->len)
         m_cursor.setPosition((int)m_currentLine->len, new_pos.y);
-        
+
 }
 
 //---------------------------------------------------------------------------------------

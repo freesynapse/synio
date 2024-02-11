@@ -6,6 +6,8 @@
 
 
 //
+#define __func__ __PRETTY_FUNCTION__
+
 #ifdef DEBUG
     #define LOG_INFO(...) { Log::log_("[INFO] ", __func__, __VA_ARGS__); }
     #define LOG_WARNING(...) { Log::log_("[WARN] ", __func__, __VA_ARGS__); }

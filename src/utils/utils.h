@@ -7,9 +7,6 @@
 #define CLAMP(x, lo, hi) MIN((hi), MAX((lo), (x)))
 
 //
-#define __func__ __PRETTY_FUNCTION__
-
-//
 #define RETURN_SUCCESS  0
 #define RETURN_FAILURE  1
 
