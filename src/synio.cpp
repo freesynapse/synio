@@ -10,11 +10,8 @@
 //
 Synio::Synio(const char *_filename)
 {
-    Log::open();
     EventHandler::init();
 
-    //
-    set_backend();
     resize();
 
     // register callbacks
@@ -30,8 +27,7 @@ Synio::Synio(const char *_filename)
 Synio::~Synio()
 {
     EventHandler::shutdown();
-    Log::close();
-    
+
     delete m_bufferWindow;
 
 }
@@ -107,11 +103,13 @@ void Synio::mainLoop()
             case KEY_HOME:  m_currentWindow->moveCursorToLineBegin(); break;
             case KEY_END:   m_currentWindow->moveCursorToLineEnd(); break;
 
-
             // command control
             case CTRL('x'):
                 m_shouldClose = true;
                 break;
+
+            default:
+                
 
         }
 
@@ -129,9 +127,17 @@ int main(int argc, char *argv[])
 {
     const char *filename = "synio.make";
 
+    //
+    Log::open();
+    set_backend();
+    api->initialize();
+
     {
         Synio synio(filename);
     }
+
+    api->shutdown();
+    Log::close();
 
     return 0;
 

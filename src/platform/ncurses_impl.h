@@ -10,8 +10,8 @@
 class Ncurses_Impl : public Platform_Impl
 {
 public:
-    Ncurses_Impl()  { initialize(); }
-    ~Ncurses_Impl() { shutdown();   }
+    Ncurses_Impl() {}
+    ~Ncurses_Impl() {}
     //
     virtual int initialize() override;
     virtual int shutdown() override;
@@ -25,6 +25,7 @@ public:
     virtual void refreshScreen() override   { wrefresh((WINDOW *)m_screenPtr); }
     virtual void clearWindow(API_WINDOW_PTR _w) override     { wclear((WINDOW *)_w);   }
     virtual void refreshWindow(API_WINDOW_PTR _w) override   { wrefresh((WINDOW *)_w); }
+    virtual void refreshBorder(API_WINDOW_PTR _w) override;
 
     //
     virtual int getKey() override;

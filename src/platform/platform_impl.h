@@ -28,6 +28,7 @@ public:
 
     virtual void clearWindow(API_WINDOW_PTR _w) = 0;
     virtual void refreshWindow(API_WINDOW_PTR _w) = 0;
+    virtual void refreshBorder(API_WINDOW_PTR _w) {}
 
     // interaction
     virtual int getKey() = 0;

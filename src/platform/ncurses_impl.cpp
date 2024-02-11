@@ -72,7 +72,9 @@ API_WINDOW_PTR Ncurses_Impl::newBorderWindow(irect_t *_frame)
     WINDOW *win = newwin(new_frame.nrows, new_frame.ncols, 
                          new_frame.v0.y, new_frame.v0.x);
 
-    wborder(win, '|', '|', '-', '-', '+', '+', '+', '+');
+    // wborder(win, '|', '|', '-', '-', '+', '+', '+', '+');
+    wborder(win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
+                 ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
     wrefresh(win);
 
     return win;
@@ -85,6 +87,15 @@ void Ncurses_Impl::deleteWindow(API_WINDOW_PTR _w)
     wborder((WINDOW *)_w, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
     wrefresh((WINDOW *)_w);
     delwin((WINDOW *)_w);
+
+}
+
+//---------------------------------------------------------------------------------------
+void Ncurses_Impl::refreshBorder(API_WINDOW_PTR _w)
+{
+    wborder((WINDOW *)_w, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
+                          ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+    wrefresh((WINDOW *)_w);
 
 }
 

@@ -45,6 +45,7 @@ public:
     const irect_t &frame() { return m_frame; }
     const std::string &ID() const { return m_ID; }
     WCursor &cursor() { return m_cursor; }
+    line_t *currentLine() { return m_currentLine; }
 
 protected:
     std::string m_ID = "";
@@ -106,7 +107,12 @@ public:
 
     // Platform interactions
     virtual void clear() override { api->clearWindow(m_apiWindowPtr); }
-    virtual void refresh() override { api->refreshWindow(m_apiWindowPtr); }
+    virtual void refresh() override
+    {
+        if (m_apiBorderWindowPtr)
+            api->refreshBorder(m_apiBorderWindowPtr);
+        api->refreshWindow(m_apiWindowPtr);
+    }
 
     // accessors
     const char *loaded_filename() { return m_filename.c_str(); }
