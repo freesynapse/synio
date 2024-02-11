@@ -19,9 +19,7 @@ void Cursor::update(Window *_window)
 {
     clamp_to_frame_(_window);
     if (api->moveCursor(_window->m_apiWindowPtr, m_pos.x, m_pos.y) == ERR)
-    {
-        LOG_WARNING("%s : m_pos (%d, %d), window lim (%d, %d)\n", __func__, m_pos.x, m_pos.y, _window->frame().v1.x, _window->frame().v1.y);
-    }
+        LOG_WARNING("%s : m_pos (%d, %d), window lim (%d, %d)", __func__, m_pos.x, m_pos.y, _window->frame().v1.x, _window->frame().v1.y);
 
 }
 
@@ -47,7 +45,7 @@ void Cursor::move(Window *_window, int _dx, int _dy)
         EventHandler::push_event(new BufferScrollEvent(
                                         Y_AXIS,
                                         _dy,
-                                        abs(m_pos.y - _window->m_frame.v1.y - 1),
+                                        abs(m_pos.y - (_window->m_frame.v1.y - 1)),
                                         _window));
         clamp_to_frame_(_window);
     }

@@ -19,6 +19,7 @@ public:
     virtual int shutdown() = 0;
     virtual void getRenderSize(ivec2_t *) = 0;
     virtual API_WINDOW_PTR newWindow(irect_t *_frame) = 0;
+    virtual API_WINDOW_PTR newBorderWindow(irect_t *_frame) = 0;
     virtual void deleteWindow(API_WINDOW_PTR _w) = 0;
 
     //
@@ -33,7 +34,7 @@ public:
     virtual int moveCursor(API_WINDOW_PTR _w, int _x, int _y) = 0;
 
     // output
-    virtual void printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) = 0;
+    virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) = 0;
 
     // accessor
     API_WINDOW_PTR screenPtr() { return m_screenPtr; }

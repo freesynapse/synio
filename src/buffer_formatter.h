@@ -14,7 +14,7 @@ public:
         m_windowRect(_render_rect) {}
     ~BufferFormatter() {}
 
-    void render(API_WINDOW_PTR _api_window, /*LineBuffer *_buffer,*/ line_t *_first, line_t *_last);
+    void render(API_WINDOW_PTR _api_window, line_t *_first, line_t *_last);
     
 
 private:

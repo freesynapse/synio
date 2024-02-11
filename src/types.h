@@ -29,13 +29,22 @@ struct irect_t
     ivec2_t v0; // top-left
     ivec2_t v1; // bottom-right
 
+    int ncols = 0;
+    int nrows = 0;
+
     //
     irect_t() {}
-    irect_t(int _i) : v0(ivec2_t(_i)), v1(ivec2_t(_i)) {}
-    irect_t(const ivec2_t &_v0, const ivec2_t &_v1) : v0(_v0), v1(_v1) {}
+    irect_t(int _i) : v0(ivec2_t(_i)), v1(ivec2_t(_i)) { update_dims(); }
+    irect_t(const ivec2_t &_v0, const ivec2_t &_v1) : v0(_v0), v1(_v1) { update_dims(); }
 
-    int ncols() { return v1.x - v0.x; }
-    int nrows() { return v1.y - v0.y; }
+    void update_dims()
+    {
+        ncols = (v1.x - 1) - v0.x;
+        nrows = (v1.y - 1) - v0.y;
+    }
+    
+    //int ncols() { return (v1.x - 1) - v0.x; }
+    //int nrows() { return (v1.y - 1) - v0.y; }
 
 };
 

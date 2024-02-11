@@ -16,6 +16,7 @@ public:
     virtual int shutdown() override {};
     virtual void getRenderSize(ivec2_t *_v) override {};
     virtual API_WINDOW_PTR newWindow(irect_t *_frame) override {};
+    virtual API_WINDOW_PTR newBorderWindow(irect_t *_frame) override {};
     virtual void deleteWindow(API_WINDOW_PTR _w) override {}
 
     //
@@ -29,7 +30,7 @@ public:
     virtual int moveCursor(API_WINDOW_PTR _w, int _x, int _y) override {};
 
     // output
-    virtual void printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) override {};
+    virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) override {};
 
 };
 

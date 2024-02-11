@@ -40,7 +40,7 @@ Synio::~Synio()
 void Synio::resize()
 {
     api->getRenderSize(&m_screenSize);
-    irect_t buffer_window_rect(ivec2_t(0, 0), ivec2_t(200, DEBUG_N_LINES));
+    irect_t buffer_window_rect(ivec2_t(10, 5), ivec2_t(150, 40));
 
     m_bufferWindow = new BufferWindow(&buffer_window_rect, "buffer_window");
     m_bufferWindow->readFromFile("synio.make");
@@ -74,10 +74,12 @@ void Synio::mainLoop()
 
         m_currentWindow->clear();    // very good, clear() clears the borders...
         // ---> https://stackoverflow.com/questions/33986047/ncurses-is-it-possible-to-refresh-a-window-without-removing-its-borders
+        // -- Changed in the Window class so that all extra 'border' windows can be drawn.
         
         // --- BEGIN DRAWING
         m_currentWindow->draw();
-        m_cursor.update(m_currentWindow);
+        // m_cursor.update(m_currentWindow);
+        m_currentWindow->updateCursor();
 
         // --- END DRAWING
 
@@ -95,14 +97,17 @@ void Synio::mainLoop()
         int key = api->getKey();
         switch(key)
         {
-            // movement
-            case KEY_DOWN:  m_cursor.move(m_currentWindow, 0, 1);   break;
-            case KEY_UP:    m_cursor.move(m_currentWindow, 0, -1);  break;
-            case KEY_LEFT:  m_cursor.move(m_currentWindow, -1, 0);  break;
-            case KEY_RIGHT: m_cursor.move(m_currentWindow, 1, 0);   break;
-            case KEY_PPAGE: m_cursor.move(m_currentWindow, 0, -Config::PAGE_SIZE);  break;
-            case KEY_NPAGE: m_cursor.move(m_currentWindow, 0, Config::PAGE_SIZE);   break;
-            
+            // cursor movement
+            case KEY_DOWN:  m_currentWindow->moveCursor(0, 1);   break;
+            case KEY_UP:    m_currentWindow->moveCursor(0, -1);  break;
+            case KEY_LEFT:  m_currentWindow->moveCursor(-1, 0);  break;
+            case KEY_RIGHT: m_currentWindow->moveCursor(1, 0);   break;
+            case KEY_PPAGE: m_currentWindow->moveCursor(0, -Config::PAGE_SIZE);  break;
+            case KEY_NPAGE: m_currentWindow->moveCursor(0, Config::PAGE_SIZE);   break;
+            case KEY_HOME:  m_currentWindow->moveCursorToLineBegin(); break;
+            case KEY_END:   m_currentWindow->moveCursorToLineEnd(); break;
+
+
             // command control
             case CTRL('x'):
                 m_shouldClose = true;
@@ -110,7 +115,7 @@ void Synio::mainLoop()
 
         }
 
-        // api->refreshScreen();
+        m_currentWindow->updateCursor();
         m_currentWindow->refresh();
 
         EventHandler::process_events();
@@ -123,14 +128,10 @@ void Synio::mainLoop()
 int main(int argc, char *argv[])
 {
     const char *filename = "synio.make";
-    // Synio synio(filename);
 
-    Log::open();
-    // Log::log_info(__func__, "int five %d", 5);
-    LOG_INFO("int five %d", 5);
-    LOG_WARNING("int five %d", 5);
-    LOG_ERROR("int five %d", 5);
-    Log::close();
+    {
+        Synio synio(filename);
+    }
 
     return 0;
 

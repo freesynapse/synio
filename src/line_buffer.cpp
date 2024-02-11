@@ -25,12 +25,12 @@ line_t *create_line(char *_content, size_t _len)
 void line_t::__debug_print(bool _show_ptrs, const char *_str)
 {
     if (strcmp(_str, "") != 0)
-        LOG_INFO("%s\n", _str);
-    LOG_INFO("%p: [%s]\n", this, content);
+        LOG_INFO("%s", _str);
+    LOG_INFO("%p: [%s]", this, content);
     if (_show_ptrs)
     {
-        LOG_INFO("    next: %s\n", next == NULL ? "NULL" : next->content);
-        LOG_INFO("    prev: %s\n", prev == NULL ? "NULL" : prev->content);
+        LOG_INFO("    next: %s", next == NULL ? "NULL" : next->content);
+        LOG_INFO("    prev: %s", prev == NULL ? "NULL" : prev->content);
     }
 
 }
@@ -281,7 +281,7 @@ void LineBuffer::clear()
 void LineBuffer::__debug_inspect()
 {
     printf("== __DEBUG_DUMP() =========================\n");
-    LOG_INFO("%d line(s)\n", m_lineCount);
+    LOG_INFO("%d line(s)", m_lineCount);
 
     //
     line_t *p = m_head;
@@ -291,9 +291,9 @@ void LineBuffer::__debug_inspect()
         char ht[7] = { 0 };
         if      (p == m_head)   sprintf(ht, "(HEAD)");
         else if (p == m_tail)   sprintf(ht, "(TAIL)");
-        LOG_INFO("[%2zu] %p: %s %s\n", n, p, p->content, ht);
-        LOG_INFO("        next: %s\n", p->next == NULL ? "NULL" : p->next->content);
-        LOG_INFO("        prev: %s\n", p->prev == NULL ? "NULL" : p->prev->content);
+        LOG_INFO("[%2zu] %p: %s %s", n, p, p->content, ht);
+        LOG_INFO("        next: %s", p->next == NULL ? "NULL" : p->next->content);
+        LOG_INFO("        prev: %s", p->prev == NULL ? "NULL" : p->prev->content);
         
         p = p->next;
         n++;

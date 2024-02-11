@@ -7,12 +7,9 @@
 
 //
 #ifdef DEBUG
-    //#define LOG_INFO(...) fprintf(Log::file_handle, "[INFO] " __VA_ARGS__)
-    #define LOG_INFO(...) Log::log_("[INFO] ", __func__, __VA_ARGS__)
-    // #define LOG_WARNING(...) fprintf(Log::file_handle, "[WARNING] " __VA_ARGS__)
-    #define LOG_WARNING(...) Log::log_("[WARN] ", __func__, __VA_ARGS__)
-    // #define LOG_ERROR(...) { fprintf(Log::file_handle, "[ERROR] " __VA_ARGS__); exit(-1); }
-    #define LOG_ERROR(...) Log::log_("[ERR]  ", __func__, __VA_ARGS__)
+    #define LOG_INFO(...) { Log::log_("[INFO] ", __func__, __VA_ARGS__); }
+    #define LOG_WARNING(...) { Log::log_("[WARN] ", __func__, __VA_ARGS__); }
+    #define LOG_ERROR(...) { Log::log_("[ERR]  ", __func__, __VA_ARGS__); }
     #define LOG_CRITICAL_ERROR(...) { Log::log_("[CERR] ", __func__, __VA_ARGS__); exit(-1); }
 #else
     #define LOG_INFO(...)

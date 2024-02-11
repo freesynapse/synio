@@ -5,16 +5,17 @@
 
 //
 void BufferFormatter::render(API_WINDOW_PTR _api_window, 
-                            //  LineBuffer *_buffer,
                              line_t *_first,
                              line_t *_last)
 {
-    int x = m_windowRect.v0.x;   // account for borders
-    int y = m_windowRect.v0.y;
-    
+    // coordinates is relative to window, so we need to start at (0, 0)
+    int x = 0;
+    int y = 0;
+
     line_t *line = _first;
 
-    while (line != NULL && y < m_windowRect.v1.y && line != _last)
+    int len;
+    while (line != NULL && y < m_windowRect.nrows && line != _last)
     {
         api->printBufferLine(_api_window, x, y++, line->content);
         line = line->next;

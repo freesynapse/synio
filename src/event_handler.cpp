@@ -16,7 +16,7 @@ std::multimap<EventType, std::function<void(Event *)>> g_mapHandlerFnc;
 //---------------------------------------------------------------------------------------
 void EventHandler::init()
 {
-    LOG_INFO("%s: listening.\n", __func__);
+    LOG_INFO("listening.");
 
     m_queueHead = 0;
     m_queueTail = 0;
@@ -26,7 +26,7 @@ void EventHandler::init()
 //---------------------------------------------------------------------------------------
 void EventHandler::shutdown()
 {
-    LOG_INFO("%s: clearing event queue.\n", __func__);
+    LOG_INFO("clearing event queue.");
 
     int numCleared = 0;
     for (size_t i = 0; i < EventHandler::MAX_EVENTS; i++)
@@ -39,7 +39,7 @@ void EventHandler::shutdown()
         }
     }
 
-    // LOG_INFO("%s: %d event(s) deleted.\n", __func__, numCleared);
+    // LOG_INFO("%d event(s) deleted.", numCleared);
 
 }
 
