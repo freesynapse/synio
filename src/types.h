@@ -1,6 +1,40 @@
 #ifndef __TYPES_H
 #define __TYPES_H
 
+#include <string.h>
+#include <stdlib.h>
+
+#include "utils/log.h"
+
+//
+struct line_t
+{
+    line_t *next  = NULL;
+    line_t *prev  = NULL;
+    char *content = NULL;
+    size_t len    = 0;
+
+    ~line_t() { free(content); }
+    
+    void insert_char(char _c, int _pos);
+    void insert_str(char *_str, size_t _len, int _pos);
+    void delete_at(int _pos);
+
+    #ifdef DEBUG
+    void __debug_print(bool _show_ptrs, const char *_str="");
+    #endif
+
+};
+
+// helper function for line_t realloc assertions
+static void RAM_panic(line_t *_line)
+{
+    free(_line->content);
+    _line->content = NULL;
+    _line->len = 0;
+    LOG_CRITICAL_ERROR("couldn't reallocate char buffer, considering buying more RAM.");
+}
+
 
 //
 struct ivec2_t

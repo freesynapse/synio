@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "line_buffer.h"
+#include "types.h"
 #include "utils/log.h"
 
 //
@@ -18,20 +19,6 @@ line_t *create_line(char *_content, size_t _len)
     memcpy(new_line->content, _content, _len);
 
     return new_line;
-
-}
-
-//---------------------------------------------------------------------------------------
-void line_t::__debug_print(bool _show_ptrs, const char *_str)
-{
-    if (strcmp(_str, "") != 0)
-        LOG_INFO("%s", _str);
-    LOG_INFO("%p: [%s]", this, content);
-    if (_show_ptrs)
-    {
-        LOG_INFO("    next: %s", next == NULL ? "NULL" : next->content);
-        LOG_INFO("    prev: %s", prev == NULL ? "NULL" : prev->content);
-    }
 
 }
 
@@ -179,6 +166,51 @@ void LineBuffer::deleteAtPtr(line_t *_line)
     }
 
     m_lineCount--;
+
+}
+
+//---------------------------------------------------------------------------------------
+line_t *LineBuffer::appendThisToPrev(line_t *_line)
+{
+    if (_line->prev == NULL)
+        return _line;
+    
+    line_t *prev = _line->prev;
+    // realloc to fit both strings
+    size_t alloc_sz = prev->len + _line->len + 1;
+    if ((prev->content = (char *)realloc(prev->content, alloc_sz)) == NULL)
+        RAM_panic(prev);
+    // copy this to prev
+    memcpy(prev->content + prev->len, _line->content, _line->len);
+    // update len of prev
+    prev->len +=_line->len;
+    prev->content[prev->len] = '\0';
+
+    deleteAtPtr(_line);
+
+    // return the updated 'this line' (which is now this->prev)
+    return prev;
+
+}
+
+//---------------------------------------------------------------------------------------
+void LineBuffer::appendNextToThis(line_t *_line)
+{
+    if (_line->next == NULL)
+        return;
+
+    line_t *next = _line->next;
+    // realloc to fit both strings
+    size_t alloc_sz = _line->len + next->len + 1;
+    if ((_line->content = (char *)realloc(_line->content, alloc_sz)) == NULL) 
+        RAM_panic(_line);
+    // copy next to this
+    memcpy(_line->content+_line->len, next->content, next->len);
+    // update len
+    _line->len = _line->len + next->len;
+    _line->content[_line->len] = '\0';
+
+    deleteAtPtr(next);
 
 }
 

@@ -1,6 +1,7 @@
 
 #include "buffer_formatter.h"
 #include "core.h"
+#include "config.h"
 #include "utils/log.h"
 
 //
@@ -14,6 +15,7 @@ void BufferFormatter::render(API_WINDOW_PTR _api_window,
 
     line_t *line = _first;
 
+    line = _first;
     int len;
     while (line != NULL && y < m_windowRect.nrows && line != _last)
     {

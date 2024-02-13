@@ -31,15 +31,17 @@ public:
 
 
 private:
+    // flags
     bool m_shouldClose = false;
+    bool m_commandMode = false;
     
-    BufferWindow *m_bufferWindow = NULL;    // to become an undordered map of windows?
+    // windows
+    Buffer *m_bufferWindow = NULL;    // to become an undordered map of windows?
     Window *m_currentWindow = NULL;
 
+    //
     ivec2_t m_screenSize;
     
-    Cursor m_cursor;
-
 };
 
 

@@ -64,7 +64,7 @@ void Window::updateCursor()
 }
 
 //---------------------------------------------------------------------------------------
-void BufferWindow::onScroll(BufferScrollEvent *_e)
+void Buffer::onScroll(BufferScrollEvent *_e)
 {
     ivec2_t scroll = { 0, 0 };
     switch (_e->axis())
@@ -116,7 +116,7 @@ void BufferWindow::onScroll(BufferScrollEvent *_e)
 }
 
 //---------------------------------------------------------------------------------------
-void BufferWindow::moveCursor(int _dx, int _dy)
+void Buffer::moveCursor(int _dx, int _dy)
 {
     // save current position (to look for actual dy)
     ivec2_t prev_pos = m_cursor.pos();
@@ -134,7 +134,7 @@ void BufferWindow::moveCursor(int _dx, int _dy)
 }
 
 //---------------------------------------------------------------------------------------
-void BufferWindow::moveCursorToLineBegin()
+void Buffer::moveCursorToLineBegin()
 {
     // find first character (not tabs/spaces)
     int first_ch = 0;
@@ -151,7 +151,7 @@ void BufferWindow::moveCursorToLineBegin()
 }
 
 //---------------------------------------------------------------------------------------
-void BufferWindow::moveCursorToLineEnd()
+void Buffer::moveCursorToLineEnd()
 {
     int y = m_cursor.pos().y;
     m_cursor.setPosition((int)m_currentLine->len, y);
@@ -159,7 +159,70 @@ void BufferWindow::moveCursorToLineEnd()
 }
 
 //---------------------------------------------------------------------------------------
-void BufferWindow::updateCursor()
+void Buffer::insertCharAtCursor(char _c)
+{
+    m_currentLine->insert_char(_c, m_cursor.pos().x);
+    m_cursor.move(1, 0);
+    
+}
+
+//---------------------------------------------------------------------------------------
+void Buffer::insertStrAtCursor(char *_str, size_t _len)
+{
+    m_currentLine->insert_str(_str, _len, m_cursor.pos().x);
+    m_cursor.move(_len, 0);
+
+}
+
+//---------------------------------------------------------------------------------------
+void Buffer::deleteCharAtCursor()
+{
+    // <DEL>
+
+    if (m_cursor.pos().x == m_currentLine->len && m_currentLine->next == NULL)
+        return;
+
+    if (m_cursor.pos().x < m_currentLine->len)
+        m_currentLine->delete_at(m_cursor.pos().x);
+    else
+    {
+        m_lineBuffer.appendNextToThis(m_currentLine);
+        // update page pointers
+        if (m_pageLastLine->next != NULL)
+            m_pageLastLine = m_pageLastLine->next;
+    }
+}
+
+//---------------------------------------------------------------------------------------
+void Buffer::deleteCharBeforeCursor()
+{
+    // <BACKSPACE>
+    
+    if (m_cursor.pos().x == 0 && m_currentLine->prev == NULL)
+        return;
+
+    if (m_cursor.pos().x > 0)
+    {
+        ivec2_t cpos = m_cursor.pos();
+        m_cursor.setPosition(cpos.x - 1, cpos.y);
+        m_currentLine->delete_at(cpos.x);
+
+    }
+    else // at x 0
+    {
+        size_t prev_len = m_currentLine->prev->len;
+        m_currentLine = m_lineBuffer.appendThisToPrev(m_currentLine);
+        m_cursor.setPosition(prev_len, m_cursor.pos().y - 1);
+        // update page pointers
+        if (m_pageLastLine->next != NULL)
+            m_pageLastLine = m_pageLastLine->next;
+
+    }
+
+}
+
+//---------------------------------------------------------------------------------------
+void Buffer::updateCursor()
 {
     m_cursor.update();
     bufferCursorPos();
@@ -167,14 +230,14 @@ void BufferWindow::updateCursor()
 }
 
 //---------------------------------------------------------------------------------------
-void BufferWindow::bufferCursorPos()
+void Buffer::bufferCursorPos()
 {
     m_bufferCursorPos = m_scrollPos + m_cursor.pos();
 
 }
 
 //---------------------------------------------------------------------------------------
-void BufferWindow::updateCurrentLinePtr(int _dy)
+void Buffer::updateCurrentLinePtr(int _dy)
 {
     // if the cursor moved, update current line in buffer
     if (_dy > 0)
@@ -191,7 +254,7 @@ void BufferWindow::updateCurrentLinePtr(int _dy)
 }
 
 //---------------------------------------------------------------------------------------
-void BufferWindow::readFromFile(const char *_filename)
+void Buffer::readFromFile(const char *_filename)
 {
     FileIO::readFileIntoBuffer(_filename, &m_lineBuffer);
     // line pointers
@@ -204,7 +267,7 @@ void BufferWindow::readFromFile(const char *_filename)
 }
 
 //---------------------------------------------------------------------------------------
-void BufferWindow::draw()
+void Buffer::draw()
 {
     #define n_ 256
     char b[n_];
@@ -218,12 +281,14 @@ void BufferWindow::draw()
     if (m_currentLine != NULL)
     {
         memset(b, 0, n_);
-        snprintf(b, n_, "line: %s (%zu)", m_currentLine->content, m_currentLine->len);
+        snprintf(b, n_, "line: %s", m_currentLine->content);
         mvwprintw((WINDOW *)m_apiWindowPtr, 12, 120, "%s", b);
-
+        memset(b, 0, n_);
+        snprintf(b, n_, "len: %zu", m_currentLine->len);
+        mvwprintw((WINDOW *)m_apiWindowPtr, 13, 120, "%s", b);
+        
     }
     
-
     if (m_isVisible)
         m_formatter.render(m_apiWindowPtr, m_pageFirstLine, m_pageLastLine);
 

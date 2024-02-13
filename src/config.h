@@ -5,10 +5,7 @@
 class Config
 {
 public:
-
-    static void read_from_file(const char *_filename) {}
-
-public:    
+    static bool SHOW_LINE_NUMBERS;
     static int PAGE_SIZE;
 
 };

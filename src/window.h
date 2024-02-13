@@ -29,10 +29,15 @@ public:
     // creates a border around the drawable area
     virtual void enableBorder();
 
-    // move cursor
+    // cursor functions
     virtual void moveCursor(int _dx, int _dy);
     virtual void moveCursorToLineBegin();
     virtual void moveCursorToLineEnd();
+    virtual void insertCharAtCursor(char _c) {}
+    virtual void insertStrAtCursor(char *_str, size_t _len) {}
+    virtual void deleteCharAtCursor() {}        // <DEL>
+    virtual void deleteCharBeforeCursor() {}    // <BACKSPACE>
+
     // update window cursor (called during rendering and after keypress)
     virtual void updateCursor();
     
@@ -74,11 +79,10 @@ protected:
 };
 
 //
-class BufferWindow : public Window
+class Buffer : public Window
 {
 public:
     using Window::Window;
-    // BufferWindow(irect_t *_frame, const std::string &_id);
 
     // callback for ScrollEvent -- called from synio.cpp
     void onScroll(BufferScrollEvent *_e);
@@ -89,6 +93,11 @@ public:
     virtual void moveCursor(int _dx, int _dy) override;
     virtual void moveCursorToLineBegin() override;
     virtual void moveCursorToLineEnd() override;
+    virtual void insertCharAtCursor(char _c) override;
+    virtual void insertStrAtCursor(char *_str, size_t _len) override;
+    virtual void deleteCharAtCursor() override;     // <DEL>
+    virtual void deleteCharBeforeCursor() override; // <BACKSPACE>
+
     // update window cursor (called during rendering and after keypress)
     virtual void updateCursor() override;
     // calculate the position of the cursor in the buffer

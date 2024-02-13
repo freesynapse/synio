@@ -4,27 +4,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "types.h"  // for line_t 
+
 // insert flags
 #define INSERT_BEFORE   0x01
 #define INSERT_AFTER    0x10
 
 //
-typedef struct line_t line_t;
-struct line_t
-{
-    line_t *next  = NULL;
-    line_t *prev  = NULL;
-    char *content = NULL;
-    size_t len    = 0;
-
-    ~line_t() { free(content); }
-    void __debug_print(bool _show_ptrs=true, const char *_str="");
-    
-};
-
-//
 line_t *create_line(char *_content, size_t _len);
-// line_t *create_line(const char *_content) { create_line((char*)_content, strlen(_content)); }
 
 //
 // TODO : make templated for _content type?
@@ -47,6 +34,8 @@ public:
     void deleteAtIdx(int _index)            { deleteAtPtr(ptrFromIdx(_index));      }
     void deleteBeforeIdx(int _index)        { deleteAtPtr(ptrFromIdx(_index - 1));  }
     void deleteAfterIdx(int _index)         { deleteAtPtr(ptrFromIdx(_index + 1));  }
+    line_t *appendThisToPrev(line_t *_line);   // as when <BACKSPACE> is pressed at start of line
+    void appendNextToThis(line_t *_line);      // as when <DEL> is pressed at end of line
     void clear();   // deletes all lines
 
     //

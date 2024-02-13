@@ -69,6 +69,11 @@ API_WINDOW_PTR Ncurses_Impl::newBorderWindow(irect_t *_frame)
         new_frame.v1.x >= screen_dim.x || new_frame.v1.y >= screen_dim.y)
         LOG_WARNING("window border out of bounds");
 
+    if (new_frame.v0.x < 0) new_frame.v0.x = 0;
+    if (new_frame.v0.y < 0) new_frame.v0.y = 0;
+    if (new_frame.v1.x >= screen_dim.x) new_frame.v1.x = screen_dim.x;
+    if (new_frame.v1.y >= screen_dim.y) new_frame.v1.y = screen_dim.y;
+
     WINDOW *win = newwin(new_frame.nrows, new_frame.ncols, 
                          new_frame.v0.y, new_frame.v0.x);
 
@@ -109,8 +114,10 @@ int Ncurses_Impl::getKey()
 //---------------------------------------------------------------------------------------
 int Ncurses_Impl::moveCursor(API_WINDOW_PTR _w, int _x, int _y)
 {
-    return wmove((WINDOW *)_w, _y, _x);
-    
+    int ret = wmove((WINDOW *)_w, _y, _x);
+    // wrefresh((WINDOW *)_w);
+    return ret;
+
 }
 
 //---------------------------------------------------------------------------------------
