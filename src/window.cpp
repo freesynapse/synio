@@ -64,6 +64,19 @@ void Window::updateCursor()
 }
 
 //---------------------------------------------------------------------------------------
+#ifdef DEBUG
+void Window::__debug_print(int _x, int _y, const char *_fmt, ...)
+{
+    memset(__debug_buffer, 0, __DEBUG_BUFFER_LEN);
+    va_list arg_list;
+    va_start(arg_list, _fmt);
+    vsnprintf(__debug_buffer, __DEBUG_BUFFER_LEN, _fmt, arg_list);
+    va_end(arg_list);
+    mvwprintw((WINDOW*)m_apiWindowPtr, _y, _x, "%s", __debug_buffer);
+}
+#endif
+
+//---------------------------------------------------------------------------------------
 void Buffer::onScroll(BufferScrollEvent *_e)
 {
     ivec2_t scroll = { 0, 0 };
@@ -120,14 +133,30 @@ void Buffer::moveCursor(int _dx, int _dy)
 {
     // save current position (to look for actual dy)
     ivec2_t prev_pos = m_cursor.pos();
+    int dx = _dx;
+    int dy = _dy;
+    // moves in x at beginning or end of line
+    if (prev_pos.x == 0 && _dx == -1 && m_currentLine->prev != NULL)
+    {
+        m_cursor.setX(m_currentLine->prev->len);
+        dx = 0;
+        dy = -1;
+    }
+    else if (prev_pos.x == m_currentLine->len && _dx == 1 && m_currentLine->next != NULL) 
+    {
+        m_cursor.setX(0);
+        dx = 0;
+        dy = 1;
+    }
+
     // move the cursor (if possible)
-    m_cursor.move(_dx, _dy);
+    m_cursor.move(dx, dy);
     // get updated position
     ivec2_t new_pos = m_cursor.pos();
     
     updateCurrentLinePtr(new_pos.y - prev_pos.y);
 
-    // snap to line if x > len(line)
+    // snap to line end if x > len(line)
     if (new_pos.x > m_currentLine->len)
         m_cursor.setPosition((int)m_currentLine->len, new_pos.y);
 
@@ -171,6 +200,22 @@ void Buffer::insertStrAtCursor(char *_str, size_t _len)
 {
     m_currentLine->insert_str(_str, _len, m_cursor.pos().x);
     m_cursor.move(_len, 0);
+
+}
+
+//---------------------------------------------------------------------------------------
+void Buffer::insertNewLine()
+{
+    // split line at cursor x pos
+    line_t *new_line = m_currentLine->split_at_pos(m_cursor.pos().x);
+    m_lineBuffer.insertAtPtr(m_currentLine, INSERT_AFTER, new_line);
+    
+    m_currentLine = new_line;
+    m_cursor.move(0, 1); // scroll if needed
+    m_cursor.setPosition(0, m_cursor.pos().y);  // x should be 0
+    
+    if (m_pageLastLine->prev != NULL)
+        m_pageLastLine = m_pageLastLine->prev;
 
 }
 
@@ -269,25 +314,24 @@ void Buffer::readFromFile(const char *_filename)
 //---------------------------------------------------------------------------------------
 void Buffer::draw()
 {
-    #define n_ 256
-    char b[n_];
-    memset(b, 0, n_);
-    snprintf(b, n_, "cpos = (%d, %d)", m_bufferCursorPos.x, m_bufferCursorPos.y);
-    mvwprintw((WINDOW *)m_apiWindowPtr, 10, 120, "%s", b);
-    memset(b, 0, n_);
-    snprintf(b, n_, "spos = (%d, %d)", m_scrollPos.x , m_scrollPos.y);
-    mvwprintw((WINDOW *)m_apiWindowPtr, 11, 120, "%s", b);
-    
+    #ifdef DEBUG
+    int y = 0;
+    __debug_print(120, y++, "cpos = (%d, %d)", m_bufferCursorPos.x, m_bufferCursorPos.y);
+    __debug_print(120, y++, "spos = (%d, %d)", m_scrollPos.x , m_scrollPos.y);
+
     if (m_currentLine != NULL)
     {
-        memset(b, 0, n_);
-        snprintf(b, n_, "line: %s", m_currentLine->content);
-        mvwprintw((WINDOW *)m_apiWindowPtr, 12, 120, "%s", b);
-        memset(b, 0, n_);
-        snprintf(b, n_, "len: %zu", m_currentLine->len);
-        mvwprintw((WINDOW *)m_apiWindowPtr, 13, 120, "%s", b);
+        __debug_print(120, y++, "this line: '%s'", m_currentLine->content);
+        __debug_print(120, y++, "this len:  %zu", m_currentLine->len);
+
+    }
+    if (m_currentLine->prev != NULL)
+    {
+        __debug_print(120, y++, "prev line: '%s'", m_currentLine->prev->content);
+        __debug_print(120, y++, "prev len:  %zu", m_currentLine->prev->len);
         
     }
+    #endif
     
     if (m_isVisible)
         m_formatter.render(m_apiWindowPtr, m_pageFirstLine, m_pageLastLine);

@@ -118,6 +118,10 @@ void Synio::mainLoop()
                 case KEY_BACKSPACE:
                     m_currentWindow->deleteCharBeforeCursor();
                     break;
+                
+                case 10:    // <ENTER>
+                    m_currentWindow->insertNewLine();
+                    break;
 
                 default:
                     m_currentWindow->insertCharAtCursor((char)key);

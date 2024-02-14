@@ -35,6 +35,7 @@ public:
     virtual void moveCursorToLineEnd();
     virtual void insertCharAtCursor(char _c) {}
     virtual void insertStrAtCursor(char *_str, size_t _len) {}
+    virtual void insertNewLine() {}
     virtual void deleteCharAtCursor() {}        // <DEL>
     virtual void deleteCharBeforeCursor() {}    // <BACKSPACE>
 
@@ -51,6 +52,13 @@ public:
     const std::string &ID() const { return m_ID; }
     WCursor &cursor() { return m_cursor; }
     line_t *currentLine() { return m_currentLine; }
+
+    //
+    #ifdef DEBUG
+    #define __DEBUG_BUFFER_LEN 256
+    char __debug_buffer[__DEBUG_BUFFER_LEN];
+    void __debug_print(int _x, int _y, const char *_fmt, ...);
+    #endif
 
 protected:
     std::string m_ID = "";
@@ -95,6 +103,7 @@ public:
     virtual void moveCursorToLineEnd() override;
     virtual void insertCharAtCursor(char _c) override;
     virtual void insertStrAtCursor(char *_str, size_t _len) override;
+    virtual void insertNewLine() override;
     virtual void deleteCharAtCursor() override;     // <DEL>
     virtual void deleteCharBeforeCursor() override; // <BACKSPACE>
 
@@ -125,7 +134,6 @@ public:
 
     // accessors
     const char *loaded_filename() { return m_filename.c_str(); }
-
 
 private:
     std::string m_filename = "";

@@ -5,7 +5,22 @@
 #include "types.h"
 
 //
-void line_t::insert_char(char _c, int _pos)
+line_t *create_line(char *_content, size_t _len)
+{
+    line_t *new_line = (line_t *)malloc(sizeof(line_t));
+    new_line->next = NULL;
+    new_line->prev = NULL;
+    new_line->content = (char *)malloc(_len+1);
+    new_line->len = _len;
+    memset(new_line->content, 0, _len+1);
+    memcpy(new_line->content, _content, _len);
+
+    return new_line;
+
+}
+
+//---------------------------------------------------------------------------------------
+void line_t::insert_char(char _c, size_t _pos)
 {
     if ((content = (char *)realloc(content, len + 2)) == NULL) RAM_panic(this);
 
@@ -15,8 +30,8 @@ void line_t::insert_char(char _c, int _pos)
 
 }
 
-//
-void line_t::insert_str(char *_str, size_t _len, int _pos)
+//---------------------------------------------------------------------------------------
+void line_t::insert_str(char *_str, size_t _len, size_t _pos)
 {
     if ((content = (char *)realloc(content, len + _len + 1)) == NULL) RAM_panic(this);
 
@@ -27,16 +42,16 @@ void line_t::insert_str(char *_str, size_t _len, int _pos)
 
 }
 
-//
-void line_t::delete_at(int _pos)
+//---------------------------------------------------------------------------------------
+void line_t::delete_at(size_t _pos)
 {
     if (!len)
         return;
 
     int offset[2];
 
-    if (_pos > 0)   { offset[0] = -1; offset[1] = 0; }
-    else            { offset[0] =  0; offset[1] = 1; }
+    if (_pos > 0) { offset[0] = -1; offset[1] = 0; }
+    else          { offset[0] =  0; offset[1] = 1; }
     
     memmove(content + _pos + offset[0], content + _pos + offset[1], len - _pos);
     len--;
@@ -45,7 +60,23 @@ void line_t::delete_at(int _pos)
 
 }
 
-//
+//---------------------------------------------------------------------------------------
+line_t *line_t::split_at_pos(size_t _pos)
+{
+    size_t this_len = _pos;
+    size_t next_len = len - _pos;
+
+    line_t *new_line = create_line(content + _pos, next_len);
+
+    if ((content = (char *)realloc(content, this_len + 1)) == NULL) RAM_panic(this);
+    len = this_len;
+    content[len] = '\0';
+
+    return new_line;
+
+}
+
+//---------------------------------------------------------------------------------------
 #ifdef DEBUG
 void line_t::__debug_print(bool _show_ptrs, const char *_str)
 {

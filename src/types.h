@@ -16,15 +16,19 @@ struct line_t
 
     ~line_t() { free(content); }
     
-    void insert_char(char _c, int _pos);
-    void insert_str(char *_str, size_t _len, int _pos);
-    void delete_at(int _pos);
+    void insert_char(char _c, size_t _pos);
+    void insert_str(char *_str, size_t _len, size_t _pos);
+    void delete_at(size_t _pos);
+    line_t *split_at_pos(size_t _pos);
 
     #ifdef DEBUG
     void __debug_print(bool _show_ptrs, const char *_str="");
     #endif
 
 };
+
+// helper function for line creation (incl malloc)
+line_t *create_line(char *_content, size_t _len);
 
 // helper function for line_t realloc assertions
 static void RAM_panic(line_t *_line)

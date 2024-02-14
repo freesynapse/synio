@@ -15,6 +15,26 @@ void WCursor::setPosition(int _x, int _y)
 }
 
 //---------------------------------------------------------------------------------------
+void WCursor::setX(int _x)
+{
+    m_pos.x = _x;
+    clamp_to_frame_();
+
+    api->moveCursor(m_parent->m_apiWindowPtr, m_pos.x, m_pos.y);
+
+}
+
+//---------------------------------------------------------------------------------------
+void WCursor::setY(int _y)
+{
+    m_pos.y = _y;
+    clamp_to_frame_();
+
+    api->moveCursor(m_parent->m_apiWindowPtr, m_pos.x, m_pos.y);
+    
+}
+
+//---------------------------------------------------------------------------------------
 void WCursor::update()
 {
     clamp_to_frame_();

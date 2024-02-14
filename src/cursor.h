@@ -44,7 +44,9 @@ public:
     void update();
     
     void setPosition(int _x, int _y);
-
+    void setX(int _x);
+    void setY(int _y);
+    
     //
     void move(int _dx, int _dy);
 

@@ -8,21 +8,6 @@
 #include "utils/log.h"
 
 //
-line_t *create_line(char *_content, size_t _len)
-{
-    line_t *new_line = (line_t *)malloc(sizeof(line_t));
-    new_line->next = NULL;
-    new_line->prev = NULL;
-    new_line->content = (char *)malloc(_len+1);
-    new_line->len = _len;
-    memset(new_line->content, 0, _len+1);
-    memcpy(new_line->content, _content, _len);
-
-    return new_line;
-
-}
-
-//---------------------------------------------------------------------------------------
 void LineBuffer::push_front(line_t *_new_line)
 {
     if (m_head == NULL)
@@ -64,11 +49,9 @@ void LineBuffer::push_back(line_t *_new_line)
 }
 
 //---------------------------------------------------------------------------------------
-void LineBuffer::insertAtPtr(line_t *_at_line, int _insert_flag, const char *_content)
+void LineBuffer::insertAtPtr(line_t *_at_line, int _insert_flag, line_t *_new_line)
 {
     // _insert_flag is either INSERT_BEFORE or INSERT_AFTER
-
-    line_t *new_line = create_line((char*)_content, strlen(_content));
 
     //
     if (m_head == NULL || _at_line == NULL)
@@ -77,14 +60,14 @@ void LineBuffer::insertAtPtr(line_t *_at_line, int _insert_flag, const char *_co
     // before first line
     if ((_at_line == m_head) && (_insert_flag & INSERT_BEFORE))
     {
-        push_front(new_line);
+        push_front(_new_line);
 
     }
 
     // after tail
     else if ((_at_line == m_tail) && (_insert_flag & INSERT_AFTER))
     {
-        push_back(new_line);
+        push_back(_new_line);
 
     }
 
@@ -94,17 +77,17 @@ void LineBuffer::insertAtPtr(line_t *_at_line, int _insert_flag, const char *_co
         switch (_insert_flag)
         {
             case INSERT_BEFORE:
-                new_line->prev = _at_line->prev;
-                new_line->next = _at_line;
-                _at_line->prev->next = new_line;
-                _at_line->prev = new_line;
+                _new_line->prev = _at_line->prev;
+                _new_line->next = _at_line;
+                _at_line->prev->next = _new_line;
+                _at_line->prev = _new_line;
                 break;
 
             case INSERT_AFTER:
-                new_line->prev = _at_line;
-                new_line->next = _at_line->next;
-                _at_line->next->prev = new_line;
-                _at_line->next = new_line;
+                _new_line->prev = _at_line;
+                _new_line->next = _at_line->next;
+                _at_line->next->prev = _new_line;
+                _at_line->next = _new_line;
                 break;
 
             default:
