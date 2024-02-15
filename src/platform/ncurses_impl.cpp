@@ -71,15 +71,15 @@ API_WINDOW_PTR Ncurses_Impl::newBorderWindow(irect_t *_frame)
 
     if (new_frame.v0.x < 0) new_frame.v0.x = 0;
     if (new_frame.v0.y < 0) new_frame.v0.y = 0;
-    if (new_frame.v1.x >= screen_dim.x) new_frame.v1.x = screen_dim.x;
-    if (new_frame.v1.y >= screen_dim.y) new_frame.v1.y = screen_dim.y;
+    if (new_frame.v1.x >= screen_dim.x) new_frame.v1.x = screen_dim.x - 1;
+    if (new_frame.v1.y >= screen_dim.y) new_frame.v1.y = screen_dim.y - 1;
 
     WINDOW *win = newwin(new_frame.nrows, new_frame.ncols, 
                          new_frame.v0.y, new_frame.v0.x);
 
-    // wborder(win, '|', '|', '-', '-', '+', '+', '+', '+');
     wborder(win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
-                 ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+               ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+
     wrefresh(win);
 
     return win;
@@ -125,6 +125,20 @@ int Ncurses_Impl::printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _li
 {
     int len = mvwprintw((WINDOW *)_w, _cy, _cx, "%s", _line);
     return len;
+}
+
+//---------------------------------------------------------------------------------------
+int Ncurses_Impl::wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...)
+{
+    char buffer[128] = { 0 };
+    va_list arg_list;
+    va_start(arg_list, _fmt);
+    vsprintf(buffer, _fmt, arg_list);
+    va_end(arg_list);
+
+    int len = mvwprintw((WINDOW *)_w, _cy, _cx, "%s", buffer);
+    return len;
+
 }
 
 

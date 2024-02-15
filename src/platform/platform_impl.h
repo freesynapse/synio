@@ -36,6 +36,7 @@ public:
 
     // output
     virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) = 0;
+    virtual int wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...) = 0;
 
     // accessor
     API_WINDOW_PTR screenPtr() { return m_screenPtr; }

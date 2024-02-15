@@ -1,6 +1,6 @@
 
 #include "cursor.h"
-#include "window.h"
+#include "window/window.h"
 #include "event_handler.h"
 
 //

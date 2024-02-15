@@ -31,6 +31,7 @@ public:
     virtual int getKey() override;
     virtual int moveCursor(API_WINDOW_PTR _w, int _x, int _y) override;
     virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) override;
+    virtual int wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...) override;
 
 };
 

@@ -2,81 +2,6 @@
 #include "window.h"
 
 //
-Window::Window(irect_t *_frame, const std::string &_id, bool _border)
-{
-    m_frame = *_frame;
-    m_ID = _id;
-
-    m_apiWindowPtr = api->newWindow(&m_frame);
-    if (_border)
-        m_apiBorderWindowPtr = api->newBorderWindow(&m_frame);
-
-    m_formatter = BufferFormatter(m_frame);
-    m_cursor = WCursor(this);
-
-    LOG_INFO("'%s' [%p] created.", m_ID.c_str(), this);
-
-
-}
-
-//---------------------------------------------------------------------------------------
-Window::~Window() 
-{ 
-    if (m_apiWindowPtr != NULL) api->deleteWindow(m_apiWindowPtr);
-    if (m_apiBorderWindowPtr != NULL) api->deleteWindow(m_apiBorderWindowPtr);
-}
-
-//---------------------------------------------------------------------------------------
-void Window::enableBorder()
-{
-    m_apiBorderWindowPtr = api->newBorderWindow(&m_frame);
-
-}
-
-//---------------------------------------------------------------------------------------
-void Window::moveCursor(int _dx, int _dy)
-{
-    m_cursor.move(_dx, _dy);
-
-}
-
-//---------------------------------------------------------------------------------------
-void Window::moveCursorToLineBegin()
-{
-    int y = m_cursor.pos().y;
-    m_cursor.setPosition(0, y);
-
-}
-
-//---------------------------------------------------------------------------------------
-void Window::moveCursorToLineEnd()
-{
-    int y = m_cursor.pos().y;
-    m_cursor.setPosition(m_frame.ncols, y);
-
-}
-
-//---------------------------------------------------------------------------------------
-void Window::updateCursor()
-{
-    m_cursor.update();
-
-}
-
-//---------------------------------------------------------------------------------------
-#ifdef DEBUG
-void Window::__debug_print(int _x, int _y, const char *_fmt, ...)
-{
-    memset(__debug_buffer, 0, __DEBUG_BUFFER_LEN);
-    va_list arg_list;
-    va_start(arg_list, _fmt);
-    vsnprintf(__debug_buffer, __DEBUG_BUFFER_LEN, _fmt, arg_list);
-    va_end(arg_list);
-    mvwprintw((WINDOW*)m_apiWindowPtr, _y, _x, "%s", __debug_buffer);
-}
-#endif
-
-//---------------------------------------------------------------------------------------
 void Buffer::onScroll(BufferScrollEvent *_e)
 {
     ivec2_t scroll = { 0, 0 };
@@ -135,6 +60,7 @@ void Buffer::moveCursor(int _dx, int _dy)
     ivec2_t prev_pos = m_cursor.pos();
     int dx = _dx;
     int dy = _dy;
+    
     // moves in x at beginning or end of line
     if (prev_pos.x == 0 && _dx == -1 && m_currentLine->prev != NULL)
     {
@@ -149,11 +75,17 @@ void Buffer::moveCursor(int _dx, int _dy)
         dy = 1;
     }
 
+
     // move the cursor (if possible)
     m_cursor.move(dx, dy);
+
     // get updated position
     ivec2_t new_pos = m_cursor.pos();
-    
+
+    // handle tabs
+    // TODO : handle tabs here?! Yes?
+
+    // update pointer into line buffer
     updateCurrentLinePtr(new_pos.y - prev_pos.y);
 
     // snap to line end if x > len(line)
@@ -174,23 +106,21 @@ void Buffer::moveCursorToLineBegin()
         c++;
     }
 
-    int y = m_cursor.pos().y;
-    m_cursor.setPosition(first_ch, y);
+    m_cursor.setPosition(first_ch, m_cursor.y());
 
 }
 
 //---------------------------------------------------------------------------------------
 void Buffer::moveCursorToLineEnd()
 {
-    int y = m_cursor.pos().y;
-    m_cursor.setPosition((int)m_currentLine->len, y);
+    m_cursor.setPosition((int)m_currentLine->len, m_cursor.y());
 
 }
 
 //---------------------------------------------------------------------------------------
 void Buffer::insertCharAtCursor(char _c)
 {
-    m_currentLine->insert_char(_c, m_cursor.pos().x);
+    m_currentLine->insert_char(_c, m_cursor.x());
     m_cursor.move(1, 0);
     
 }
@@ -210,10 +140,11 @@ void Buffer::insertNewLine()
     line_t *new_line = m_currentLine->split_at_pos(m_cursor.pos().x);
     m_lineBuffer.insertAtPtr(m_currentLine, INSERT_AFTER, new_line);
     
-    m_currentLine = new_line;
-    m_cursor.move(0, 1); // scroll if needed
-    m_cursor.setPosition(0, m_cursor.pos().y);  // x should be 0
+    m_cursor.setX(0);
+    moveCursor(0, 1);
     
+    // scroll up one line since new line is inserted, keeping the number of viewable
+    // lines constant
     if (m_pageLastLine->prev != NULL)
         m_pageLastLine = m_pageLastLine->prev;
 
@@ -243,10 +174,10 @@ void Buffer::deleteCharBeforeCursor()
 {
     // <BACKSPACE>
     
-    if (m_cursor.pos().x == 0 && m_currentLine->prev == NULL)
+    if (m_cursor.x() == 0 && m_currentLine->prev == NULL)
         return;
 
-    if (m_cursor.pos().x > 0)
+    if (m_cursor.x() > 0)
     {
         ivec2_t cpos = m_cursor.pos();
         m_cursor.setPosition(cpos.x - 1, cpos.y);
@@ -257,7 +188,8 @@ void Buffer::deleteCharBeforeCursor()
     {
         size_t prev_len = m_currentLine->prev->len;
         m_currentLine = m_lineBuffer.appendThisToPrev(m_currentLine);
-        m_cursor.setPosition(prev_len, m_cursor.pos().y - 1);
+        m_cursor.setPosition(prev_len, m_cursor.y() - 1);
+        
         // update page pointers
         if (m_pageLastLine->next != NULL)
             m_pageLastLine = m_pageLastLine->next;
@@ -299,7 +231,7 @@ void Buffer::updateCurrentLinePtr(int _dy)
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::readFromFile(const char *_filename)
+void Buffer::readFromFile(const std::string &_filename)
 {
     FileIO::readFileIntoBuffer(_filename, &m_lineBuffer);
     // line pointers
@@ -314,30 +246,68 @@ void Buffer::readFromFile(const char *_filename)
 //---------------------------------------------------------------------------------------
 void Buffer::draw()
 {
+    // order matters
+    m_lineNumbers->draw();
+
     #ifdef DEBUG
+    int x = 110;
     int y = 0;
-    __debug_print(120, y++, "cpos = (%d, %d)", m_bufferCursorPos.x, m_bufferCursorPos.y);
-    __debug_print(120, y++, "spos = (%d, %d)", m_scrollPos.x , m_scrollPos.y);
+    __debug_print(x, y++, "cpos = (%d, %d)", m_bufferCursorPos.x, m_bufferCursorPos.y);
+    __debug_print(x, y++, "spos = (%d, %d)", m_scrollPos.x , m_scrollPos.y);
 
     if (m_currentLine != NULL)
     {
-        __debug_print(120, y++, "this line: '%s'", m_currentLine->content);
-        __debug_print(120, y++, "this len:  %zu", m_currentLine->len);
+        __debug_print(x, y++, "this line: '%s'", m_currentLine->content);
+        __debug_print(x, y++, "this len:  %zu", m_currentLine->len);
 
-    }
-    if (m_currentLine->prev != NULL)
-    {
-        __debug_print(120, y++, "prev line: '%s'", m_currentLine->prev->content);
-        __debug_print(120, y++, "prev len:  %zu", m_currentLine->prev->len);
-        
+        if (m_currentLine->prev != NULL)
+        {
+            __debug_print(x, y++, "prev line: '%s'", m_currentLine->prev->content);
+            __debug_print(x, y++, "prev len:  %zu", m_currentLine->prev->len);
+            
+        }
+
     }
     #endif
     
-    if (m_isVisible)
+    if (m_isWindowVisible)
         m_formatter.render(m_apiWindowPtr, m_pageFirstLine, m_pageLastLine);
 
 }
 
+//---------------------------------------------------------------------------------------
+void Buffer::clear()
+{
+    m_lineNumbers->clear();
 
+    api->clearWindow(m_apiWindowPtr);
 
+}
+//---------------------------------------------------------------------------------------
+void Buffer::refresh()
+{
+    m_lineNumbers->refresh();   // called first to move the cursor to the buffer window
+                                // on updateCursor()
+
+    if (m_apiBorderWindowPtr)
+        api->refreshBorder(m_apiBorderWindowPtr);
+    api->refreshWindow(m_apiWindowPtr);
+
+}
+
+//---------------------------------------------------------------------------------------
+void LineNumbers::draw()
+{
+    if (!m_isWindowVisible)
+        return;
+
+    int width = m_frame.v1.x - 1;
+
+    int y = 0;
+    int line_no = m_associatedBuffer->m_scrollPos.y + 1;
+
+    while (y < m_frame.nrows)
+        api->wprint(m_apiWindowPtr, 0, y++, "%*d", width, line_no++);
+
+}
 

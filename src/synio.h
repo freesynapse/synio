@@ -7,7 +7,7 @@
 #include "types.h"
 
 #include "utils/utils.h"
-#include "window.h"
+#include "window/window.h"
 #include "line_buffer.h"
 #include "buffer_formatter.h"
 #include "cursor.h"
@@ -18,7 +18,7 @@
 class Synio
 {
 public:
-    Synio(const char *_filename);
+    Synio(const std::string &_filename);
     ~Synio();
 
     //
@@ -37,10 +37,14 @@ private:
     
     // windows
     Buffer *m_bufferWindow = NULL;    // to become an undordered map of windows?
-    Window *m_currentWindow = NULL;
+    LineNumbers *m_lineNumbersWindow = NULL;
+    Buffer *m_currentBuffer = NULL;
 
     //
     ivec2_t m_screenSize;
+
+    // TODO : remove and read cl args properly
+    std::string m_filename = "";
     
 };
 

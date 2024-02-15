@@ -52,6 +52,8 @@ public:
 
     // accessors
     const ivec2_t &pos() { return m_pos; }
+    const int &x() { return m_pos.x; }
+    const int &y() { return m_pos.y; }
 
 private:
     void clamp_to_frame_();

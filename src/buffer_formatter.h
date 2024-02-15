@@ -10,13 +10,15 @@ class Window;
 class BufferFormatter
 {
 public:
-    BufferFormatter() {}
+    BufferFormatter() :
+        m_windowRect(0) {}
     BufferFormatter(irect_t &_render_rect) :
         m_windowRect(_render_rect) {}
     ~BufferFormatter() {}
 
-    void render(API_WINDOW_PTR _api_window, line_t *_first, line_t *_last);
-    
+    void render(API_WINDOW_PTR _api_window,
+                line_t *_first,
+                line_t *_last);    
 
 private:
     irect_t m_windowRect;

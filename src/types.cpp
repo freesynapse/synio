@@ -20,6 +20,12 @@ line_t *create_line(char *_content, size_t _len)
 }
 
 //---------------------------------------------------------------------------------------
+line_t *create_line(const char *_content)
+{
+    return create_line((char *)_content, strlen(_content));
+}
+
+//---------------------------------------------------------------------------------------
 void line_t::insert_char(char _c, size_t _pos)
 {
     if ((content = (char *)realloc(content, len + 2)) == NULL) RAM_panic(this);

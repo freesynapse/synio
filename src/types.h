@@ -29,6 +29,7 @@ struct line_t
 
 // helper function for line creation (incl malloc)
 line_t *create_line(char *_content, size_t _len);
+line_t *create_line(const char *_content);
 
 // helper function for line_t realloc assertions
 static void RAM_panic(line_t *_line)

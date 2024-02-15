@@ -17,11 +17,11 @@ void BufferFormatter::render(API_WINDOW_PTR _api_window,
 
     line = _first;
     int len;
-    while (line != NULL && y < m_windowRect.nrows && line != _last)
+
+    while (line != NULL && y < m_windowRect.nrows)// && line != _last)
     {
         api->printBufferLine(_api_window, x, y++, line->content);
         line = line->next;
-
     }
 
 }
