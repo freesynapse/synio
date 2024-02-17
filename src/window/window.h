@@ -145,7 +145,7 @@ public:
     // update window cursor (called during rendering and after keypress)
     virtual void updateCursor() override;
     // calculate the position of the cursor in the buffer
-    void bufferCursorPos();
+    void updateBufferCursorPos();
     // update the current line in the buffer based on cursor y movement
     // (called both my moveCursor() and onScroll())
     void updateCurrentLinePtr(int _dy);
@@ -163,6 +163,9 @@ public:
     const char *loadedFile() { return m_filename.c_str(); }
     line_t *currentLine() { return m_currentLine; }
 
+private:
+    void move_cursor_to_last_x_();
+
 protected:
     std::string m_filename = "";
 
@@ -174,6 +177,7 @@ protected:
     line_t *m_currentLine   = NULL;
     line_t *m_pageFirstLine = NULL;
     line_t *m_pageLastLine  = NULL;
+    int m_lastCursorX = 0;
 
     BufferFormatter m_formatter;
 

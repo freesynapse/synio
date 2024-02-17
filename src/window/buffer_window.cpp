@@ -46,10 +46,12 @@ void Buffer::onScroll(BufferScrollEvent *_e)
 
     updateCurrentLinePtr(scroll.y);
 
-
     // update scroll position and update cursor
     m_scrollPos += scroll;
-    bufferCursorPos();
+    updateBufferCursorPos();
+    
+    if (scroll.x == 0)
+        move_cursor_to_last_x_();   // hang on to previous x pos even through y scroll
 
 }
 
@@ -62,19 +64,18 @@ void Buffer::moveCursor(int _dx, int _dy)
     int dy = _dy;
     
     // moves in x at beginning or end of line
-    if (prev_pos.x == 0 && _dx == -1 && m_currentLine->prev != NULL)
+    if (prev_pos.x == 0 && dx < 0 && m_currentLine->prev != NULL)
     {
         m_cursor.setX(m_currentLine->prev->len);
         dx = 0;
         dy = -1;
     }
-    else if (prev_pos.x == m_currentLine->len && _dx == 1 && m_currentLine->next != NULL) 
+    else if (prev_pos.x == m_currentLine->len && dx > 0 && m_currentLine->next != NULL) 
     {
         m_cursor.setX(0);
         dx = 0;
         dy = 1;
     }
-
 
     // move the cursor (if possible)
     m_cursor.move(dx, dy);
@@ -82,16 +83,33 @@ void Buffer::moveCursor(int _dx, int _dy)
     // get updated position
     ivec2_t new_pos = m_cursor.pos();
 
+    // store x position so that we can go to the same column on up/down moves
+    if (dx != 0)
+        m_lastCursorX = new_pos.x;
+
     // handle tabs
     // TODO : handle tabs here?! Yes?
 
     // update pointer into line buffer
     updateCurrentLinePtr(new_pos.y - prev_pos.y);
 
-    // snap to line end if x > len(line)
+    // try to move in x to the same column as previous line visited
+    if (dy != 0)
+        move_cursor_to_last_x_();
+
+    // snap to end of line
     if (new_pos.x > m_currentLine->len)
         m_cursor.setPosition((int)m_currentLine->len, new_pos.y);
 
+}
+
+//---------------------------------------------------------------------------------------
+void Buffer::move_cursor_to_last_x_()
+{
+    if (m_lastCursorX <= m_currentLine->len)
+        m_cursor.setPosition(m_lastCursorX, m_cursor.y());
+    else if (m_lastCursorX > m_currentLine->len)
+        m_cursor.setPosition((int)m_currentLine->len, m_cursor.y());    
 }
 
 //---------------------------------------------------------------------------------------
@@ -106,14 +124,14 @@ void Buffer::moveCursorToLineBegin()
         c++;
     }
 
-    m_cursor.setPosition(first_ch, m_cursor.y());
+    moveCursor(-(m_cursor.x() - first_ch), 0);
 
 }
 
 //---------------------------------------------------------------------------------------
 void Buffer::moveCursorToLineEnd()
 {
-    m_cursor.setPosition((int)m_currentLine->len, m_cursor.y());
+    moveCursor(m_currentLine->len - m_cursor.x(), 0);
 
 }
 
@@ -121,7 +139,8 @@ void Buffer::moveCursorToLineEnd()
 void Buffer::insertCharAtCursor(char _c)
 {
     m_currentLine->insert_char(_c, m_cursor.x());
-    m_cursor.move(1, 0);
+    moveCursor(1, 0);
+    // m_cursor.move(1, 0);
     
 }
 
@@ -129,7 +148,8 @@ void Buffer::insertCharAtCursor(char _c)
 void Buffer::insertStrAtCursor(char *_str, size_t _len)
 {
     m_currentLine->insert_str(_str, _len, m_cursor.pos().x);
-    m_cursor.move(_len, 0);
+    moveCursor(_len, 0);
+    // m_cursor.move(_len, 0);
 
 }
 
@@ -140,8 +160,11 @@ void Buffer::insertNewLine()
     line_t *new_line = m_currentLine->split_at_pos(m_cursor.pos().x);
     m_lineBuffer.insertAtPtr(m_currentLine, INSERT_AFTER, new_line);
     
-    m_cursor.setX(0);
-    moveCursor(0, 1);
+    int cpos_x = m_cursor.x();
+
+    // m_cursor.setX(0);
+    moveCursor(-cpos_x, 1);
+    // moveCursor(0, 1);
     
     // scroll up one line since new line is inserted, keeping the number of viewable
     // lines constant
@@ -202,12 +225,12 @@ void Buffer::deleteCharBeforeCursor()
 void Buffer::updateCursor()
 {
     m_cursor.update();
-    bufferCursorPos();
+    updateBufferCursorPos();
 
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::bufferCursorPos()
+void Buffer::updateBufferCursorPos()
 {
     m_bufferCursorPos = m_scrollPos + m_cursor.pos();
 
@@ -241,12 +264,21 @@ void Buffer::readFromFile(const std::string &_filename)
 
     m_filename = std::string(_filename);
 
+    // initialize line numbers window
+    if (Config::SHOW_LINE_NUMBERS)
+    {
+        // TODO : resize the width of LineNumbers window based on number of lines in 
+        // file. 
+        // int width = round(std::log10((float)m_lineBuffer.size()));
+        //
+    }
+
 }
 
 //---------------------------------------------------------------------------------------
 void Buffer::draw()
 {
-    // order matters
+    // order matters here
     m_lineNumbers->draw();
 
     #ifdef DEBUG
@@ -291,6 +323,7 @@ void Buffer::refresh()
 
     if (m_apiBorderWindowPtr)
         api->refreshBorder(m_apiBorderWindowPtr);
+
     api->refreshWindow(m_apiWindowPtr);
 
 }

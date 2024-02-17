@@ -2,9 +2,13 @@
 #define __NCURSES_IMPL_H
 
 #include <ncurses.h>
+#include <unordered_map>
+#include <vector>
 
-#include "../core.h"
 #include "platform_impl.h"
+#include "../core.h"
+#include "../types.h"
+
 
 //
 class Ncurses_Impl : public Platform_Impl
@@ -29,9 +33,19 @@ public:
 
     //
     virtual int getKey() override;
+    virtual CtrlKeycodeAction getCtrlKeyAction(int _key) override;
     virtual int moveCursor(API_WINDOW_PTR _w, int _x, int _y) override;
     virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) override;
     virtual int wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...) override;
+
+    // ncurses-only functions and variables
+    void initKeycodeList();
+    void setCtrlKeycodes();
+
+private:
+    std::unordered_map<int, CtrlKeycodeAction> m_ctrlKeyActionMap;
+    std::vector<ctrl_keycode_t> m_ctrlKeycodesList;
+
 
 };
 

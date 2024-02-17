@@ -3,6 +3,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <string>
 
 #include "utils/log.h"
 
@@ -82,8 +83,32 @@ struct irect_t
         nrows = (v1.y - 1) - v0.y;
     }
     
-    //int ncols() { return (v1.x - 1) - v0.x; }
-    //int nrows() { return (v1.y - 1) - v0.y; }
+};
+
+// related to ncruses strange capture of control keys (ctrl, shift, alt)
+enum class CtrlKeycodeAction
+{
+    CTRL_LEFT, CTRL_RIGHT, CTRL_UP, CTRL_DOWN, CTRL_HOME, CTRL_END, CTRL_DELETE, 
+    CTRL_SHIFT_DELETE, SHIFT_UP, SHIFT_DOWN, SHIFT_CTRL_LEFT, SHIFT_CTRL_RIGHT, 
+    SHIFT_CTRL_UP, SHIFT_CTRL_DOWN, SHIFT_CTRL_HOME, SHIFT_CTRL_END, ALT_LEFT, 
+    ALT_RIGHT, ALT_UP, ALT_DOWN, ALT_PAGEUP, ALT_PAGEDOWN, ALT_INSERT, ALT_DELETE, 
+    SHIFT_ALT_LEFT, SHIFT_ALT_RIGHT, SHIFT_ALT_UP, SHIFT_ALT_DOWN, 
+    NONE
+};
+//
+#ifdef DEBUG
+const char *ctrlActionStr(CtrlKeycodeAction _action);
+#endif
+//
+struct ctrl_keycode_t
+{
+    std::string id;             // e..g "kLFT5" for <ctrl> + <left arrow>
+    CtrlKeycodeAction action;   // corresponding enum
+    
+    ctrl_keycode_t() {}
+    ctrl_keycode_t(const std::string &_id, CtrlKeycodeAction _action) :
+        id(_id), action(_action)
+    {}
 
 };
 
