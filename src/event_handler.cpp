@@ -14,7 +14,7 @@ unsigned short EventHandler::m_numCallbacks;
 std::multimap<EventType, std::function<void(Event *)>> g_mapHandlerFnc;
 
 //---------------------------------------------------------------------------------------
-void EventHandler::init()
+void EventHandler::initialize()
 {
     LOG_INFO("listening.");
 
@@ -38,9 +38,6 @@ void EventHandler::shutdown()
 
         }
     }
-
-    // LOG_INFO("%d event(s) deleted.", numCleared);
-
 }
 
 //---------------------------------------------------------------------------------------
@@ -68,12 +65,6 @@ int EventHandler::queue_length()
 }
 
 //---------------------------------------------------------------------------------------
-/* TODO: Eventually, different systems may register with the EventHandler to process events
-    * of the EventType (Event.h) corresponding to task of the registered class. Each class that
-    * registers for an event type have to provide a function pointer to the function used to
-    * process events of a certain EventType.
-    */
-//unsigned int ProcessEvent() {}
 Event *EventHandler::next_event()
 {
     if (m_queueHead == m_queueTail)
@@ -96,9 +87,7 @@ Event *EventHandler::next_event()
 }
 
 //---------------------------------------------------------------------------------------
-/*
-    Process events pushed by subsystems of SynapseCore.
-*/
+// Process events pushed by subsystems of SynapseCore.
 void EventHandler::process_events()
 {
     Event *e;

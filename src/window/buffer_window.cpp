@@ -2,6 +2,29 @@
 #include "window.h"
 
 //
+Buffer::Buffer(irect_t *_frame, const std::string &_id, bool _border) :
+        Window(_frame, _id, _border)
+{
+    m_formatter = BufferFormatter(m_frame);
+
+    // create a line numbers subwindow
+    irect_t line_numbers_rect(ivec2_t(0, 0), ivec2_t(m_frame.v0.x - 2, m_frame.v1.y));
+    m_lineNumbers = new LineNumbers(&line_numbers_rect, _id, _border);
+    m_lineNumbers->setBuffer(this);
+    if (!Config::SHOW_LINE_NUMBERS)
+        m_lineNumbers->setVisibility(false);
+
+}
+
+//---------------------------------------------------------------------------------------
+Buffer::~Buffer()
+{
+    delete m_lineNumbers;
+    // delete m_delimiters;
+
+}
+
+//---------------------------------------------------------------------------------------
 void Buffer::onScroll(BufferScrollEvent *_e)
 {
     ivec2_t scroll = { 0, 0 };
@@ -104,15 +127,6 @@ void Buffer::moveCursor(int _dx, int _dy)
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::move_cursor_to_last_x_()
-{
-    if (m_lastCursorX <= m_currentLine->len)
-        m_cursor.setPosition(m_lastCursorX, m_cursor.y());
-    else if (m_lastCursorX > m_currentLine->len)
-        m_cursor.setPosition((int)m_currentLine->len, m_cursor.y());    
-}
-
-//---------------------------------------------------------------------------------------
 void Buffer::moveCursorToLineBegin()
 {
     // find first character (not tabs/spaces)
@@ -132,6 +146,58 @@ void Buffer::moveCursorToLineBegin()
 void Buffer::moveCursorToLineEnd()
 {
     moveCursor(m_currentLine->len - m_cursor.x(), 0);
+
+}
+
+//---------------------------------------------------------------------------------------
+void Buffer::moveCursorToNextColDelim()
+{
+    char *p = m_currentLine->content + m_cursor.x();
+    int dx = 0;
+    while (*p != '\0')
+    {
+        dx++;
+        p++;
+
+        if (is_delimiter_(m_colDelimiters, *p))
+            break;
+    }
+
+    moveCursor(dx, 0);
+
+}
+
+//---------------------------------------------------------------------------------------
+void Buffer::moveCursorToPrevColDelim()
+{
+    char *p = m_currentLine->content + m_cursor.x();
+    int x = m_cursor.x();
+    while (x > 0)
+    {
+        x--;
+        p--;
+
+        if (is_delimiter_(m_colDelimiters, *p))
+            break;
+    }
+
+    moveCursor(-(m_cursor.x() - x), 0);
+
+}
+
+//---------------------------------------------------------------------------------------
+void Buffer::moveCursorToNextRowDelim()
+{
+    // TODO : implement moveCursorToNextRowDelim
+    LOG_INFO("called.");
+
+}
+
+//---------------------------------------------------------------------------------------
+void Buffer::moveCursorToPrevRowDelim()
+{
+    // TODO : implement moveCursorToPrevRowDelim
+    LOG_INFO("called.");
 
 }
 
@@ -326,6 +392,25 @@ void Buffer::refresh()
 
     api->refreshWindow(m_apiWindowPtr);
 
+}
+
+//---------------------------------------------------------------------------------------
+void Buffer::move_cursor_to_last_x_()
+{
+    if (m_lastCursorX <= m_currentLine->len)
+        m_cursor.setPosition(m_lastCursorX, m_cursor.y());
+    else if (m_lastCursorX > m_currentLine->len)
+        m_cursor.setPosition((int)m_currentLine->len, m_cursor.y());    
+}
+
+//---------------------------------------------------------------------------------------
+bool Buffer::is_delimiter_(const char *_delim, char _c)
+{
+    for (size_t i = 0; i < strlen(_delim); i++)
+        if (_c == _delim[i])
+            return true;
+    return false;
+    
 }
 
 //---------------------------------------------------------------------------------------

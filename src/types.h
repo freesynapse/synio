@@ -86,7 +86,7 @@ struct irect_t
 };
 
 // related to ncruses strange capture of control keys (ctrl, shift, alt)
-enum class CtrlKeycodeAction
+enum class CtrlKeyAction
 {
     CTRL_LEFT, CTRL_RIGHT, CTRL_UP, CTRL_DOWN, CTRL_HOME, CTRL_END, CTRL_DELETE, 
     CTRL_SHIFT_DELETE, SHIFT_UP, SHIFT_DOWN, SHIFT_CTRL_LEFT, SHIFT_CTRL_RIGHT, 
@@ -97,16 +97,16 @@ enum class CtrlKeycodeAction
 };
 //
 #ifdef DEBUG
-const char *ctrlActionStr(CtrlKeycodeAction _action);
+const char *ctrlActionStr(CtrlKeyAction _action);
 #endif
 //
 struct ctrl_keycode_t
 {
     std::string id;             // e..g "kLFT5" for <ctrl> + <left arrow>
-    CtrlKeycodeAction action;   // corresponding enum
+    CtrlKeyAction action;   // corresponding enum
     
     ctrl_keycode_t() {}
-    ctrl_keycode_t(const std::string &_id, CtrlKeycodeAction _action) :
+    ctrl_keycode_t(const std::string &_id, CtrlKeyAction _action) :
         id(_id), action(_action)
     {}
 

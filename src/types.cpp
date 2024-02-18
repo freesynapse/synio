@@ -100,38 +100,38 @@ void line_t::__debug_print(bool _show_ptrs, const char *_str)
 
 //---------------------------------------------------------------------------------------
 #ifdef DEBUG
-const char *ctrlActionStr(CtrlKeycodeAction _action)
+const char *ctrlActionStr(CtrlKeyAction _action)
 {
     switch (_action)
     {
-        case CtrlKeycodeAction::CTRL_LEFT:          return "CTRL_LEFT";
-        case CtrlKeycodeAction::CTRL_RIGHT:         return "CTRL_RIGHT";
-        case CtrlKeycodeAction::CTRL_UP:            return "CTRL_UP";
-        case CtrlKeycodeAction::CTRL_DOWN:          return "CTRL_DOWN";
-        case CtrlKeycodeAction::CTRL_HOME:          return "CTRL_HOME";
-        case CtrlKeycodeAction::CTRL_END:           return "CTRL_END";
-        case CtrlKeycodeAction::CTRL_DELETE:        return "CTRL_DELETE";
-        case CtrlKeycodeAction::CTRL_SHIFT_DELETE:  return "CTRL_SHIFT_DELETE";
-        case CtrlKeycodeAction::SHIFT_UP:           return "SHIFT_UP";
-        case CtrlKeycodeAction::SHIFT_DOWN:         return "SHIFT_DOWN";
-        case CtrlKeycodeAction::SHIFT_CTRL_LEFT:    return "SHIFT_CTRL_LEFT";
-        case CtrlKeycodeAction::SHIFT_CTRL_RIGHT:   return "SHIFT_CTRL_RIGHT";
-        case CtrlKeycodeAction::SHIFT_CTRL_UP:      return "SHIFT_CTRL_UP";
-        case CtrlKeycodeAction::SHIFT_CTRL_DOWN:    return "SHIFT_CTRL_DOWN";
-        case CtrlKeycodeAction::SHIFT_CTRL_HOME:    return "SHIFT_CTRL_HOME";
-        case CtrlKeycodeAction::SHIFT_CTRL_END:     return "SHIFT_CTRL_END";
-        case CtrlKeycodeAction::ALT_LEFT:           return "ALT_LEFT";
-        case CtrlKeycodeAction::ALT_RIGHT:          return "ALT_RIGHT";
-        case CtrlKeycodeAction::ALT_UP:             return "ALT_UP";
-        case CtrlKeycodeAction::ALT_DOWN:           return "ALT_DOWN";
-        case CtrlKeycodeAction::ALT_PAGEUP:         return "ALT_PAGEUP";
-        case CtrlKeycodeAction::ALT_PAGEDOWN:       return "ALT_PAGEDOWN";
-        case CtrlKeycodeAction::ALT_INSERT:         return "ALT_INSERT";
-        case CtrlKeycodeAction::ALT_DELETE:         return "ALT_DELETE";
-        case CtrlKeycodeAction::SHIFT_ALT_LEFT:     return "SHIFT_ALT_LEFT";
-        case CtrlKeycodeAction::SHIFT_ALT_RIGHT:    return "SHIFT_ALT_RIGHT";
-        case CtrlKeycodeAction::SHIFT_ALT_UP:       return "SHIFT_ALT_UP";
-        case CtrlKeycodeAction::SHIFT_ALT_DOWN:     return "SHIFT_ALT_DOWN";
+        case CtrlKeyAction::CTRL_LEFT:          return "CTRL_LEFT";
+        case CtrlKeyAction::CTRL_RIGHT:         return "CTRL_RIGHT";
+        case CtrlKeyAction::CTRL_UP:            return "CTRL_UP";
+        case CtrlKeyAction::CTRL_DOWN:          return "CTRL_DOWN";
+        case CtrlKeyAction::CTRL_HOME:          return "CTRL_HOME";
+        case CtrlKeyAction::CTRL_END:           return "CTRL_END";
+        case CtrlKeyAction::CTRL_DELETE:        return "CTRL_DELETE";
+        case CtrlKeyAction::CTRL_SHIFT_DELETE:  return "CTRL_SHIFT_DELETE";
+        case CtrlKeyAction::SHIFT_UP:           return "SHIFT_UP";
+        case CtrlKeyAction::SHIFT_DOWN:         return "SHIFT_DOWN";
+        case CtrlKeyAction::SHIFT_CTRL_LEFT:    return "SHIFT_CTRL_LEFT";
+        case CtrlKeyAction::SHIFT_CTRL_RIGHT:   return "SHIFT_CTRL_RIGHT";
+        case CtrlKeyAction::SHIFT_CTRL_UP:      return "SHIFT_CTRL_UP";
+        case CtrlKeyAction::SHIFT_CTRL_DOWN:    return "SHIFT_CTRL_DOWN";
+        case CtrlKeyAction::SHIFT_CTRL_HOME:    return "SHIFT_CTRL_HOME";
+        case CtrlKeyAction::SHIFT_CTRL_END:     return "SHIFT_CTRL_END";
+        case CtrlKeyAction::ALT_LEFT:           return "ALT_LEFT";
+        case CtrlKeyAction::ALT_RIGHT:          return "ALT_RIGHT";
+        case CtrlKeyAction::ALT_UP:             return "ALT_UP";
+        case CtrlKeyAction::ALT_DOWN:           return "ALT_DOWN";
+        case CtrlKeyAction::ALT_PAGEUP:         return "ALT_PAGEUP";
+        case CtrlKeyAction::ALT_PAGEDOWN:       return "ALT_PAGEDOWN";
+        case CtrlKeyAction::ALT_INSERT:         return "ALT_INSERT";
+        case CtrlKeyAction::ALT_DELETE:         return "ALT_DELETE";
+        case CtrlKeyAction::SHIFT_ALT_LEFT:     return "SHIFT_ALT_LEFT";
+        case CtrlKeyAction::SHIFT_ALT_RIGHT:    return "SHIFT_ALT_RIGHT";
+        case CtrlKeyAction::SHIFT_ALT_UP:       return "SHIFT_ALT_UP";
+        case CtrlKeyAction::SHIFT_ALT_DOWN:     return "SHIFT_ALT_DOWN";
         default: return "(unknown ctrl_keycode_action)";
 
     }

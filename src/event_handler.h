@@ -10,8 +10,8 @@
 class EventHandler
 {
 public:
-    // Methods declarations .............................................................
-    static void init();
+    // Function declarations ............................................................
+    static void initialize();
 
     /* Release all event pointers. This is the job of the EventHandler, even after dispatch to
     registered handlers. */

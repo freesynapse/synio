@@ -115,11 +115,11 @@ int Ncurses_Impl::getKey()
 }
 
 //---------------------------------------------------------------------------------------
-CtrlKeycodeAction Ncurses_Impl::getCtrlKeyAction(int _key)
+CtrlKeyAction Ncurses_Impl::getCtrlKeyAction(int _key)
 {
     //return (m_ctrlKeyActionMap.find(_key) == m_ctrlKeyActionMap.end() ? false : true);
     if (m_ctrlKeyActionMap.find(_key) == m_ctrlKeyActionMap.end())
-        return CtrlKeycodeAction::NONE;
+        return CtrlKeyAction::NONE;
     
     return m_ctrlKeyActionMap[_key];
     
@@ -159,34 +159,35 @@ int Ncurses_Impl::wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, 
 void Ncurses_Impl::initKeycodeList()
 {
     m_ctrlKeycodesList = {
-        ctrl_keycode_t("kLFT5", CtrlKeycodeAction::CTRL_LEFT),
-        ctrl_keycode_t("kRIT5", CtrlKeycodeAction::CTRL_RIGHT),
-        ctrl_keycode_t("kUP5",  CtrlKeycodeAction::CTRL_UP),
-        ctrl_keycode_t("kDN5",  CtrlKeycodeAction::CTRL_DOWN),
-        ctrl_keycode_t("kHOM5", CtrlKeycodeAction::CTRL_HOME),
-        ctrl_keycode_t("kEND5", CtrlKeycodeAction::CTRL_END),
-        ctrl_keycode_t("kDC5",  CtrlKeycodeAction::CTRL_DELETE),
-        ctrl_keycode_t("kDC6",  CtrlKeycodeAction::CTRL_SHIFT_DELETE),
-        ctrl_keycode_t("kUP",   CtrlKeycodeAction::SHIFT_UP),
-        ctrl_keycode_t("kDN",   CtrlKeycodeAction::SHIFT_DOWN),
-        ctrl_keycode_t("kLFT6", CtrlKeycodeAction::SHIFT_CTRL_LEFT),
-        ctrl_keycode_t("kRIT6", CtrlKeycodeAction::SHIFT_CTRL_RIGHT),
-        ctrl_keycode_t("kUP6",  CtrlKeycodeAction::SHIFT_CTRL_UP),
-        ctrl_keycode_t("kDN6",  CtrlKeycodeAction::SHIFT_CTRL_DOWN),
-        ctrl_keycode_t("kHOM6", CtrlKeycodeAction::SHIFT_CTRL_HOME),
-        ctrl_keycode_t("kEND6", CtrlKeycodeAction::SHIFT_CTRL_END),
-        ctrl_keycode_t("kLFT3", CtrlKeycodeAction::ALT_LEFT),
-        ctrl_keycode_t("kRIT3", CtrlKeycodeAction::ALT_RIGHT),
-        ctrl_keycode_t("kUP3",  CtrlKeycodeAction::ALT_UP),
-        ctrl_keycode_t("kDN3",  CtrlKeycodeAction::ALT_DOWN),
-        ctrl_keycode_t("kPRV3", CtrlKeycodeAction::ALT_PAGEUP),
-        ctrl_keycode_t("kNXT3", CtrlKeycodeAction::ALT_PAGEDOWN),
-        ctrl_keycode_t("kIC3",  CtrlKeycodeAction::ALT_INSERT),
-        ctrl_keycode_t("kDC3",  CtrlKeycodeAction::ALT_DELETE),
-        ctrl_keycode_t("kLFT4", CtrlKeycodeAction::SHIFT_ALT_LEFT),
-        ctrl_keycode_t("kRIT4", CtrlKeycodeAction::SHIFT_ALT_RIGHT),
-        ctrl_keycode_t("kUP4",  CtrlKeycodeAction::SHIFT_ALT_UP),
-        ctrl_keycode_t("kDN4",  CtrlKeycodeAction::SHIFT_ALT_DOWN),
+        ctrl_keycode_t("kLFT5", CtrlKeyAction::CTRL_LEFT),
+        ctrl_keycode_t("kRIT5", CtrlKeyAction::CTRL_RIGHT),
+        ctrl_keycode_t("kUP5",  CtrlKeyAction::CTRL_UP),
+        ctrl_keycode_t("kDN5",  CtrlKeyAction::CTRL_DOWN),
+        ctrl_keycode_t("kHOM5", CtrlKeyAction::CTRL_HOME),
+        ctrl_keycode_t("kEND5", CtrlKeyAction::CTRL_END),
+        ctrl_keycode_t("kDC5",  CtrlKeyAction::CTRL_DELETE),
+        ctrl_keycode_t("kDC6",  CtrlKeyAction::CTRL_SHIFT_DELETE),
+        ctrl_keycode_t("kUP",   CtrlKeyAction::SHIFT_UP),
+        ctrl_keycode_t("kDN",   CtrlKeyAction::SHIFT_DOWN),
+        ctrl_keycode_t("kLFT6", CtrlKeyAction::SHIFT_CTRL_LEFT),
+        ctrl_keycode_t("kRIT6", CtrlKeyAction::SHIFT_CTRL_RIGHT),
+        ctrl_keycode_t("kUP6",  CtrlKeyAction::SHIFT_CTRL_UP),
+        ctrl_keycode_t("kDN6",  CtrlKeyAction::SHIFT_CTRL_DOWN),
+        ctrl_keycode_t("kHOM6", CtrlKeyAction::SHIFT_CTRL_HOME),
+        ctrl_keycode_t("kEND6", CtrlKeyAction::SHIFT_CTRL_END),
+        ctrl_keycode_t("kLFT3", CtrlKeyAction::ALT_LEFT),
+        ctrl_keycode_t("kRIT3", CtrlKeyAction::ALT_RIGHT),
+        ctrl_keycode_t("kUP3",  CtrlKeyAction::ALT_UP),
+        ctrl_keycode_t("kDN3",  CtrlKeyAction::ALT_DOWN),
+        ctrl_keycode_t("kPRV3", CtrlKeyAction::ALT_PAGEUP),
+        ctrl_keycode_t("kNXT3", CtrlKeyAction::ALT_PAGEDOWN),
+        ctrl_keycode_t("kIC3",  CtrlKeyAction::ALT_INSERT),
+        ctrl_keycode_t("kDC3",  CtrlKeyAction::ALT_DELETE),
+        ctrl_keycode_t("kLFT4", CtrlKeyAction::SHIFT_ALT_LEFT),
+        ctrl_keycode_t("kRIT4", CtrlKeyAction::SHIFT_ALT_RIGHT),
+        ctrl_keycode_t("kUP4",  CtrlKeyAction::SHIFT_ALT_UP),
+        ctrl_keycode_t("kDN4",  CtrlKeyAction::SHIFT_ALT_DOWN),
+
     };
 
 }
@@ -194,11 +195,16 @@ void Ncurses_Impl::initKeycodeList()
 //---------------------------------------------------------------------------------------
 void Ncurses_Impl::setCtrlKeycodes()
 {
-    for (auto &key_t : m_ctrlKeycodesList)
+    for (auto &key : m_ctrlKeycodesList)
     {
-        const char *keyvalue = tigetstr(key_t.id.c_str());
+        const char *keyvalue = tigetstr(key.id.c_str());
         if (keyvalue != 0 && keyvalue != (char *)-1 && key_defined(keyvalue))
-            m_ctrlKeyActionMap[key_defined(keyvalue)] = key_t.action;
+            m_ctrlKeyActionMap[key_defined(keyvalue)] = key.action;
+        else
+        {
+            LOG_ERROR("Control keycode %s (%s) not set.", 
+                      key.id.c_str(), ctrlActionStr(key.action));
+        }
     }
 
 }

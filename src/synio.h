@@ -43,7 +43,7 @@ private:
     //
     ivec2_t m_screenSize;
 
-    // TODO : remove and read cl args properly
+    // TODO : remove and read command line args properly
     std::string m_filename = "";
     
 };

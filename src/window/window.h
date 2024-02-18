@@ -34,6 +34,10 @@ public:
     virtual void moveCursor(int _dx, int _dy);
     virtual void moveCursorToLineBegin();
     virtual void moveCursorToLineEnd();
+    virtual void moveCursorToNextColDelim() {}
+    virtual void moveCursorToPrevColDelim() {}
+    virtual void moveCursorToNextRowDelim() {}
+    virtual void moveCursorToPrevRowDelim() {}
     virtual void insertCharAtCursor(char _c) {}
     virtual void insertStrAtCursor(char *_str, size_t _len) {}
     virtual void insertNewLine() {}
@@ -113,19 +117,8 @@ public:
 
 public:
 
-    Buffer(irect_t *_frame, const std::string &_id, bool _border=true) :
-        Window(_frame, _id, _border)
-    {
-        m_formatter = BufferFormatter(m_frame);
-
-        irect_t line_numbers_rect(ivec2_t(0, 0), ivec2_t(m_frame.v0.x - 2, m_frame.v1.y));
-        m_lineNumbers = new LineNumbers(&line_numbers_rect, _id, _border);
-        m_lineNumbers->setBuffer(this);
-        if (!Config::SHOW_LINE_NUMBERS)
-            m_lineNumbers->setVisibility(false);
-
-    }
-    ~Buffer() { delete m_lineNumbers; }
+    Buffer(irect_t *_frame, const std::string &_id, bool _border=true);
+    ~Buffer();
 
     // callback for ScrollEvent -- called from synio.cpp
     void onScroll(BufferScrollEvent *_e);
@@ -136,6 +129,10 @@ public:
     virtual void moveCursor(int _dx, int _dy) override;
     virtual void moveCursorToLineBegin() override;
     virtual void moveCursorToLineEnd() override;
+    virtual void moveCursorToNextColDelim() override;
+    virtual void moveCursorToPrevColDelim() override;
+    virtual void moveCursorToNextRowDelim() override;
+    virtual void moveCursorToPrevRowDelim() override;
     virtual void insertCharAtCursor(char _c) override;
     virtual void insertStrAtCursor(char *_str, size_t _len) override;
     virtual void insertNewLine() override;
@@ -165,6 +162,7 @@ public:
 
 private:
     void move_cursor_to_last_x_();
+    bool is_delimiter_(const char *_delim, char _c);
 
 protected:
     std::string m_filename = "";
@@ -182,6 +180,9 @@ protected:
     BufferFormatter m_formatter;
 
     LineNumbers *m_lineNumbers = NULL;
+
+    const char *m_colDelimiters = ".:,;/()\\*+-$=~\t{} ";
+    const char *m_rowDelimiters = "\0 {}";
 
 };
 

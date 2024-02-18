@@ -10,7 +10,7 @@
 //
 Synio::Synio(const std::string &_filename)
 {
-    EventHandler::init();
+    EventHandler::initialize();
 
     m_filename = _filename;
     resize();
@@ -59,7 +59,6 @@ void Synio::mainLoop()
     while (!m_shouldClose)
     {
         // --- BEGIN DRAWING
-
         m_currentBuffer->clear();    // very good, clear() clears the borders...
         // ---> https://stackoverflow.com/questions/33986047/ncurses-is-it-possible-to-refresh-a-window-without-removing-its-borders
         // -- Changed in the Window class so that all extra 'border' windows can be drawn.
@@ -73,7 +72,7 @@ void Synio::mainLoop()
         int key = api->getKey();
 
         // check for control characters (e.g. ctrl, shift, alt key combinations)
-        CtrlKeycodeAction ctrl_action = api->getCtrlKeyAction(key);
+        CtrlKeyAction ctrl_action = api->getCtrlKeyAction(key);
         
         // command mode
         //
@@ -85,10 +84,14 @@ void Synio::mainLoop()
         //
         else
         {
-            if (ctrl_action != CtrlKeycodeAction::NONE)
+            if (ctrl_action != CtrlKeyAction::NONE)
             {
                 switch (ctrl_action)
                 {
+                    case CtrlKeyAction::CTRL_RIGHT: m_currentBuffer->moveCursorToNextColDelim(); break;
+                    case CtrlKeyAction::CTRL_LEFT:  m_currentBuffer->moveCursorToPrevColDelim(); break;
+                    case CtrlKeyAction::CTRL_UP:    m_currentBuffer->moveCursorToPrevRowDelim(); break;
+                    case CtrlKeyAction::CTRL_DOWN:  m_currentBuffer->moveCursorToPrevRowDelim(); break;
                     default: LOG_INFO("ctrl keycode %d : %s", key, ctrlActionStr(ctrl_action));
 
                 }

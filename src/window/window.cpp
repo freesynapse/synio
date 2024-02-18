@@ -13,7 +13,7 @@ Window::Window(irect_t *_frame, const std::string &_id, bool _border)
 
     m_cursor = WCursor(this);
 
-    LOG_INFO("'%s' [%p] created.", m_ID.c_str(), this);
+    LOG_INFO("Window '%s' [%p] created.", m_ID.c_str(), this);
 
 
 }

@@ -27,7 +27,7 @@ public:
 
     // interaction
     virtual int getKey() override {}
-    virtual CtrlKeycodeAction getCtrlKeyAction(int _key) override;
+    virtual CtrlKeyAction getCtrlKeyAction(int _key) override;
     virtual int moveCursor(API_WINDOW_PTR _w, int _x, int _y) override {}
 
     // output

@@ -32,7 +32,7 @@ public:
 
     // interaction
     virtual int getKey() = 0;
-    virtual CtrlKeycodeAction getCtrlKeyAction(int _key) = 0;
+    virtual CtrlKeyAction getCtrlKeyAction(int _key) = 0;
     virtual int moveCursor(API_WINDOW_PTR _w, int _x, int _y) = 0;
 
     // output
