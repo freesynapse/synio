@@ -34,10 +34,12 @@ public:
     virtual void moveCursor(int _dx, int _dy);
     virtual void moveCursorToLineBegin();
     virtual void moveCursorToLineEnd();
-    virtual void moveCursorToNextColDelim() {}
-    virtual void moveCursorToPrevColDelim() {}
-    virtual void moveCursorToNextRowDelim() {}
-    virtual void moveCursorToPrevRowDelim() {}
+    virtual void moveCursorToColDelim(int _dir) {}
+    // virtual void moveCursorToNextColDelim() {}
+    // virtual void moveCursorToPrevColDelim() {}
+    virtual void moveCursorToRowDelim(int _dir) {}
+    // virtual void moveCursorToNextRowDelim() {}
+    // virtual void moveCursorToPrevRowDelim() {}
     virtual void insertCharAtCursor(char _c) {}
     virtual void insertStrAtCursor(char *_str, size_t _len) {}
     virtual void insertNewLine() {}
@@ -129,10 +131,12 @@ public:
     virtual void moveCursor(int _dx, int _dy) override;
     virtual void moveCursorToLineBegin() override;
     virtual void moveCursorToLineEnd() override;
-    virtual void moveCursorToNextColDelim() override;
-    virtual void moveCursorToPrevColDelim() override;
-    virtual void moveCursorToNextRowDelim() override;
-    virtual void moveCursorToPrevRowDelim() override;
+    virtual void moveCursorToColDelim(int _dir) override;
+    // virtual void moveCursorToNextColDelim() override;
+    // virtual void moveCursorToPrevColDelim() override;
+    virtual void moveCursorToRowDelim(int _dir) override;
+    // virtual void moveCursorToNextRowDelim() override;
+    // virtual void moveCursorToPrevRowDelim() override;
     virtual void insertCharAtCursor(char _c) override;
     virtual void insertStrAtCursor(char *_str, size_t _len) override;
     virtual void insertNewLine() override;

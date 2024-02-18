@@ -26,9 +26,10 @@ public:
     virtual void clearScreen() = 0;
     virtual void refreshScreen() = 0;
 
-    virtual void clearWindow(API_WINDOW_PTR _w) = 0;
-    virtual void refreshWindow(API_WINDOW_PTR _w) = 0;
+    virtual void clearWindow(API_WINDOW_PTR _w) {};
+    virtual void refreshWindow(API_WINDOW_PTR _w) {};
     virtual void refreshBorder(API_WINDOW_PTR _w) {}
+    virtual void redrawScreen() {}
 
     // interaction
     virtual int getKey() = 0;

@@ -68,6 +68,9 @@ void Synio::mainLoop()
 
         // --- END DRAWING
 
+        // actually swap the buffers
+        api->redrawScreen();
+
         //
         int key = api->getKey();
 
@@ -88,10 +91,14 @@ void Synio::mainLoop()
             {
                 switch (ctrl_action)
                 {
-                    case CtrlKeyAction::CTRL_RIGHT: m_currentBuffer->moveCursorToNextColDelim(); break;
-                    case CtrlKeyAction::CTRL_LEFT:  m_currentBuffer->moveCursorToPrevColDelim(); break;
-                    case CtrlKeyAction::CTRL_UP:    m_currentBuffer->moveCursorToPrevRowDelim(); break;
-                    case CtrlKeyAction::CTRL_DOWN:  m_currentBuffer->moveCursorToPrevRowDelim(); break;
+                    // case CtrlKeyAction::CTRL_RIGHT: m_currentBuffer->moveCursorToNextColDelim(); break;
+                    // case CtrlKeyAction::CTRL_LEFT:  m_currentBuffer->moveCursorToPrevColDelim(); break;
+                    case CtrlKeyAction::CTRL_LEFT:  m_currentBuffer->moveCursorToColDelim(-1); break;
+                    case CtrlKeyAction::CTRL_RIGHT: m_currentBuffer->moveCursorToColDelim(1); break;
+                    // case CtrlKeyAction::CTRL_UP:    m_currentBuffer->moveCursorToPrevRowDelim(); break;
+                    // case CtrlKeyAction::CTRL_DOWN:  m_currentBuffer->moveCursorToNextRowDelim(); break;
+                    case CtrlKeyAction::CTRL_UP:    m_currentBuffer->moveCursorToRowDelim(-1); break;
+                    case CtrlKeyAction::CTRL_DOWN:  m_currentBuffer->moveCursorToRowDelim(1); break;
                     default: LOG_INFO("ctrl keycode %d : %s", key, ctrlActionStr(ctrl_action));
 
                 }
@@ -145,7 +152,7 @@ void Synio::mainLoop()
         }
 
         m_currentBuffer->updateCursor();
-        m_currentBuffer->refresh();
+        // m_currentBuffer->refresh();
 
         EventHandler::process_events();
 

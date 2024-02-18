@@ -1,4 +1,6 @@
 
+#include <assert.h>
+
 #include "window.h"
 
 //
@@ -150,54 +152,66 @@ void Buffer::moveCursorToLineEnd()
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::moveCursorToNextColDelim()
+void Buffer::moveCursorToColDelim(int _dir)
 {
+    assert(_dir == -1 || _dir == 1);
+
     char *p = m_currentLine->content + m_cursor.x();
-    int dx = 0;
-    while (*p != '\0')
+    int x = (_dir < 0 ? m_cursor.x() : 0);
+    bool on_delimiter = is_delimiter_(m_colDelimiters, *p);
+
+    bool do_continue = (_dir < 0 ? x > 0 : *p != '\0');
+    while (do_continue)
     {
-        dx++;
-        p++;
+        x = x + _dir;
+        p = p + _dir;
 
         if (is_delimiter_(m_colDelimiters, *p))
+        {
+            // skip continuous delimiters
+            if (on_delimiter && is_delimiter_(m_colDelimiters, *(p + _dir)))
+            {
+                while (is_delimiter_(m_colDelimiters, *p))
+                {
+                    x = x + _dir;
+                    p = p + _dir;
+                } 
+            }
+
             break;
+        }
+        
+        do_continue = (_dir < 0 ? x > 0 : *p != '\0');
     }
 
+    int dx = (_dir < 0 ? -(m_cursor.x() - x) : x);
     moveCursor(dx, 0);
 
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::moveCursorToPrevColDelim()
+void Buffer::moveCursorToRowDelim(int _dir)
 {
-    char *p = m_currentLine->content + m_cursor.x();
-    int x = m_cursor.x();
-    while (x > 0)
+    assert(_dir == -1 || _dir == 1);
+    line_t *curr_line = m_currentLine;
+    
+    int y = (_dir < 0 ? m_cursor.y() : 0);
+    bool do_continue = (_dir < 0 ? curr_line->prev != NULL : curr_line->next != NULL);
+    while (do_continue)
     {
-        x--;
-        p--;
+        curr_line = (_dir < 0 ? curr_line->prev : curr_line->next);
+        y += _dir;
 
-        if (is_delimiter_(m_colDelimiters, *p))
+        if ((curr_line->len == 1 && is_delimiter_(m_rowDelimiters, curr_line->content[0])) ||
+            (curr_line->len == 0))
             break;
+
+        do_continue = (_dir < 0 ? curr_line->prev != NULL : curr_line->next != NULL);
+
     }
 
-    moveCursor(-(m_cursor.x() - x), 0);
-
-}
-
-//---------------------------------------------------------------------------------------
-void Buffer::moveCursorToNextRowDelim()
-{
-    // TODO : implement moveCursorToNextRowDelim
-    LOG_INFO("called.");
-
-}
-
-//---------------------------------------------------------------------------------------
-void Buffer::moveCursorToPrevRowDelim()
-{
-    // TODO : implement moveCursorToPrevRowDelim
-    LOG_INFO("called.");
+    int dy = (_dir < 0 ? -(m_cursor.y() - y) : y);
+    moveCursor(0, dy);
 
 }
 
