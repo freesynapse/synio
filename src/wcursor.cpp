@@ -68,7 +68,6 @@ void WCursor::move(int _dx, int _dy)
                                         abs(m_pos.y),
                                         m_parent));
         // keep cursor inside window
-        clamp_to_frame_();
     }
     else if (m_pos.y >= m_parent->m_frame.nrows - 1)
     {
@@ -77,8 +76,9 @@ void WCursor::move(int _dx, int _dy)
                                         _dy,
                                         abs(m_pos.y - (m_parent->m_frame.nrows - 1)),
                                         m_parent));
-        clamp_to_frame_();
     }
+
+    clamp_to_frame_();
 
 }
 

@@ -5,6 +5,7 @@
 
 
 //
+#ifdef GLFW_IMPL
 class GLFW_Impl : public Platform_Impl
 {
 public:
@@ -19,6 +20,8 @@ public:
     virtual API_WINDOW_PTR newBorderWindow(irect_t *_frame) override {}
     virtual void deleteWindow(API_WINDOW_PTR _w) override {}
 
+    virtual API_WINDOW_PTR newVerticalBarWindow(int _x, int _y0, int _y1) override { return NULL; }
+
     //
     virtual void clearScreen() override {}
     virtual void refreshScreen() override {}
@@ -31,11 +34,13 @@ public:
     virtual int moveCursor(API_WINDOW_PTR _w, int _x, int _y) override {}
 
     // output
-    virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) override {}
+    virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _line) override {}
+    // TODO : safe to remove?
+    // virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) override {}
     virtual int wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...) override {}
 
 };
-
+#endif
 
 
 #endif // __GLFW_IMPL_H

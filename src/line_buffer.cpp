@@ -105,10 +105,6 @@ void LineBuffer::insertAtPtr(line_t *_at_line, int _insert_flag, line_t *_new_li
 //---------------------------------------------------------------------------------------
 void LineBuffer::deleteAtPtr(line_t *_line)
 {
-    #ifdef DEBUG
-    if (_line) _line->__debug_print(true, __func__);
-    #endif
-    
     // empty
     if (m_head == NULL || _line == NULL)
         return;
@@ -160,8 +156,8 @@ line_t *LineBuffer::appendThisToPrev(line_t *_line)
     
     line_t *prev = _line->prev;
     // realloc to fit both strings
-    size_t alloc_sz = prev->len + _line->len + 1;
-    if ((prev->content = (char *)realloc(prev->content, alloc_sz)) == NULL)
+    size_t alloc_sz = CHTYPE_SIZE *  (prev->len + _line->len + 1);
+    if ((prev->content = (CHTYPE_PTR)realloc(prev->content, alloc_sz)) == NULL)
         RAM_panic(prev);
     // copy this to prev
     memcpy(prev->content + prev->len, _line->content, _line->len);
@@ -184,8 +180,8 @@ void LineBuffer::appendNextToThis(line_t *_line)
 
     line_t *next = _line->next;
     // realloc to fit both strings
-    size_t alloc_sz = _line->len + next->len + 1;
-    if ((_line->content = (char *)realloc(_line->content, alloc_sz)) == NULL) 
+    size_t alloc_sz = CHTYPE_SIZE *  (_line->len + next->len + 1);
+    if ((_line->content = (CHTYPE_PTR)realloc(_line->content, alloc_sz)) == NULL) 
         RAM_panic(_line);
     // copy next to this
     memcpy(_line->content+_line->len, next->content, next->len);
@@ -306,9 +302,9 @@ void LineBuffer::__debug_inspect()
         char ht[7] = { 0 };
         if      (p == m_head)   sprintf(ht, "(HEAD)");
         else if (p == m_tail)   sprintf(ht, "(TAIL)");
-        LOG_INFO("[%2zu] %p: %s %s", n, p, p->content, ht);
-        LOG_INFO("        next: %s", p->next == NULL ? "NULL" : p->next->content);
-        LOG_INFO("        prev: %s", p->prev == NULL ? "NULL" : p->prev->content);
+        LOG_INFO("[%2zu] %p: %s %s", n, p, p->content_to_str(), ht);
+        LOG_INFO("        next: %s", p->next == NULL ? "NULL" : p->next->content_to_str());
+        LOG_INFO("        prev: %s", p->prev == NULL ? "NULL" : p->prev->content_to_str());
         
         p = p->next;
         n++;
@@ -323,7 +319,7 @@ void LineBuffer::__debug_print()
     line_t *p = m_head;
     while (p != NULL)
     {
-        printf("%s\n", p->content);
+        printf("%s\n", p->content_to_str());
         p = p->next;
 
     }

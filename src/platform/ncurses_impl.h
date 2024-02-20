@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "platform_impl.h"
-#include "../core.h"
 #include "../types.h"
 
 
@@ -24,10 +23,13 @@ public:
     virtual API_WINDOW_PTR newBorderWindow(irect_t *_frame) override;
     virtual void deleteWindow(API_WINDOW_PTR _w) override;
 
+    virtual API_WINDOW_PTR newVerticalBarWindow(int _x, int _y0, int _y1) override;
+
     //
     virtual void clearScreen() override     { wclear((WINDOW *)m_screenPtr);   }
     virtual void refreshScreen() override   { wrefresh((WINDOW *)m_screenPtr); }
     virtual void clearWindow(API_WINDOW_PTR _w) override     { wclear((WINDOW *)_w);   }
+    // TODO : rename current refreshWindow to updateWindow and keep refreshWindow below
     // virtual void refreshWindow(API_WINDOW_PTR _w) override   { wrefresh((WINDOW *)_w); }
     virtual void refreshWindow(API_WINDOW_PTR _w) override   { wnoutrefresh((WINDOW *)_w); }
     virtual void redrawScreen() override { doupdate(); }
@@ -37,7 +39,9 @@ public:
     virtual int getKey() override;
     virtual CtrlKeyAction getCtrlKeyAction(int _key) override;
     virtual int moveCursor(API_WINDOW_PTR _w, int _x, int _y) override;
-    virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) override;
+    virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _line) override;
+    // TODO : safe to remove?
+    // virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) override;
     virtual int wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...) override;
 
     // ncurses-only functions and variables

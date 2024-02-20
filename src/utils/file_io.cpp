@@ -2,7 +2,7 @@
 #include <fstream>
 
 #include "file_io.h"
-#include "utils/utils.h"
+#include "utils.h"
 
 // static decls
 std::string FileIO::s_lastReadFile = "";
@@ -19,7 +19,7 @@ int FileIO::readFileIntoBuffer(const std::string &_filename, LineBuffer *_buffer
     //
     std::string line;
     while (std::getline(file, line))
-        _buffer->push_back(create_line((char*)line.c_str(), line.length()));
+        _buffer->push_back(create_line((char *)line.c_str(), line.length()));
 
     if (_buffer->m_tail->content[_buffer->m_tail->len] != '\n')
     {

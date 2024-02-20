@@ -1,8 +1,15 @@
 
+#include "types.h"
+
 #include <stdlib.h>
 #include <string.h>
 
-#include "types.h"
+#if defined NCURSES_IMPL
+#include <ncurses.h>
+#endif
+
+#include "platform/platform.h"
+
 
 //
 line_t *create_line(char *_content, size_t _len)
@@ -10,10 +17,14 @@ line_t *create_line(char *_content, size_t _len)
     line_t *new_line = (line_t *)malloc(sizeof(line_t));
     new_line->next = NULL;
     new_line->prev = NULL;
-    new_line->content = (char *)malloc(_len+1);
+    size_t bytes = CHTYPE_SIZE * (_len+1);
+    new_line->content = (CHTYPE_PTR)malloc(bytes);
     new_line->len = _len;
-    memset(new_line->content, 0, _len+1);
-    memcpy(new_line->content, _content, _len);
+    memset(new_line->content, 0, bytes);
+    //memcpy(new_line->content, _content, _len);
+    for (size_t i = 0; i < _len; i++)
+        new_line->content[i] = _content[i];
+    new_line->content[_len] = 0;
 
     return new_line;
 
@@ -23,14 +34,34 @@ line_t *create_line(char *_content, size_t _len)
 line_t *create_line(const char *_content)
 {
     return create_line((char *)_content, strlen(_content));
+    
+}
+
+//---------------------------------------------------------------------------------------
+line_t *create_line(CHTYPE_PTR _content, size_t _len)
+{
+    line_t *new_line = (line_t *)malloc(sizeof(line_t));
+    new_line->next = NULL;
+    new_line->prev = NULL;
+    size_t bytes = CHTYPE_SIZE * (_len+1);
+    new_line->content = (CHTYPE_PTR)malloc(bytes);
+    new_line->len = _len;
+    memset(new_line->content, 0, bytes);
+    memcpy(new_line->content, _content, bytes);
+    for (size_t i = 0; i < _len; i++)
+        new_line->content[i] = _content[i];
+    new_line->content[_len] = 0;
+
+    return new_line;
+
 }
 
 //---------------------------------------------------------------------------------------
 void line_t::insert_char(char _c, size_t _pos)
 {
-    if ((content = (char *)realloc(content, len + 2)) == NULL) RAM_panic(this);
+    if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (len + 2))) == NULL) RAM_panic(this);
 
-    memmove(content + _pos + 1, content + _pos, len - _pos);
+    memmove(content + _pos + 1, content + _pos, CHTYPE_SIZE * (len - _pos));
     content[_pos] = _c;
     content[++len] = '\0';
 
@@ -39,9 +70,9 @@ void line_t::insert_char(char _c, size_t _pos)
 //---------------------------------------------------------------------------------------
 void line_t::insert_str(char *_str, size_t _len, size_t _pos)
 {
-    if ((content = (char *)realloc(content, len + _len + 1)) == NULL) RAM_panic(this);
+    if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (len + _len + 1))) == NULL) RAM_panic(this);
 
-    memmove(content + _pos + _len, content + _pos, len - _pos);
+    memmove(content + _pos + _len, content + _pos, CHTYPE_SIZE * (len - _pos));
     memcpy(content + _pos, _str, _len);
     len += _len;
     content[len] = '\0';
@@ -59,10 +90,10 @@ void line_t::delete_at(size_t _pos)
     if (_pos > 0) { offset[0] = -1; offset[1] = 0; }
     else          { offset[0] =  0; offset[1] = 1; }
     
-    memmove(content + _pos + offset[0], content + _pos + offset[1], len - _pos);
+    memmove(content + _pos + offset[0], content + _pos + offset[1], CHTYPE_SIZE * (len - _pos));
     len--;
-    if ((content = (char *)realloc(content, len + 1)) == NULL) RAM_panic(this);
-    content[len] = '\0';
+    if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (len + 1))) == NULL) RAM_panic(this);
+    content[len] = 0;
 
 }
 
@@ -74,9 +105,9 @@ line_t *line_t::split_at_pos(size_t _pos)
 
     line_t *new_line = create_line(content + _pos, next_len);
 
-    if ((content = (char *)realloc(content, this_len + 1)) == NULL) RAM_panic(this);
+    if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (this_len + 1))) == NULL) RAM_panic(this);
     len = this_len;
-    content[len] = '\0';
+    content[len] = 0;
 
     return new_line;
 
@@ -84,16 +115,52 @@ line_t *line_t::split_at_pos(size_t _pos)
 
 //---------------------------------------------------------------------------------------
 #ifdef DEBUG
-void line_t::__debug_print(bool _show_ptrs, const char *_str)
+void __debug_addchstr(API_WINDOW_PTR _w, const char *_fmt, ...)
 {
-    if (strcmp(_str, "") != 0)
-        LOG_INFO("%s", _str);
-    LOG_INFO("%p: [%s]", this, content);
-    if (_show_ptrs)
-    {
-        LOG_INFO("    next: %s", next == NULL ? "NULL" : next->content);
-        LOG_INFO("    prev: %s", prev == NULL ? "NULL" : prev->content);
-    }
+    int x, y;
+    getyx((WINDOW *)_w, y, x);
+    char buffer0[256] = { 0 };
+    va_list args;
+    va_start(args, _fmt);
+    int n = vsprintf(buffer0, _fmt, args);
+    va_end(args);
+
+    // convert to chtype
+    CHTYPE_PTR print_buffer = (CHTYPE_PTR)malloc(CHTYPE_SIZE * (n + 1));
+    for (size_t i = 0; i < n; i++)
+        print_buffer[i] = buffer0[i];
+    addchstr(print_buffer);
+
+    move(y+1, x);
+
+    free(print_buffer);
+
+}
+#endif
+
+//---------------------------------------------------------------------------------------
+#ifdef DEBUG
+void __debug_addchstr(API_WINDOW_PTR _w, CHTYPE_PTR _str)
+{
+    int x, y;
+    getyx((WINDOW *)_w, y, x);
+
+    addchstr(_str);
+
+    move(y+1, x);
+
+}
+#endif
+
+//---------------------------------------------------------------------------------------
+#ifdef DEBUG
+void __debug_mvaddchstr(API_WINDOW_PTR _w, int _y, int _x, CHTYPE_PTR _str)
+{
+    int x, y;
+    getyx((WINDOW *)_w, y, x);
+    mvaddchstr(_y, _x, _str);
+
+    move(y, x);
 
 }
 #endif

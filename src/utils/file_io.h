@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string>
 
-#include "line_buffer.h"
+#include "../line_buffer.h"
 
 //
 class FileIO

@@ -3,7 +3,7 @@
 
 #include "synio.h"
 #include "utils/log.h"
-#include "file_io.h"
+// #include "file_io.h"
 #include "event_handler.h"
 #include "core.h"
 
@@ -30,8 +30,10 @@ Synio::~Synio()
     EventHandler::shutdown();
 
     delete m_bufferWindow;
-    delete m_lineNumbersWindow;
 
+    // --DEBUG
+    // TODO : vertical bar implementation
+    // delete bar;
 }
 
 //---------------------------------------------------------------------------------------
@@ -39,9 +41,14 @@ void Synio::resize()
 {
     api->getRenderSize(&m_screenSize);
     irect_t buffer_window_rect(ivec2_t(8, 0), ivec2_t(m_screenSize.x, m_screenSize.y));
-    m_bufferWindow = new Buffer(&buffer_window_rect, "buffer_window", false);
+    m_bufferWindow = new Buffer(buffer_window_rect, "buffer_window", false);
     m_bufferWindow->readFromFile(m_filename);
     m_currentBuffer = m_bufferWindow;
+
+    // --DEBUG
+    // TODO : vertical bar implementation
+    // irect_t vbar_rect = irect_t(ivec2_t(0, 0), ivec2_t(1, 30));
+    // bar = new VerticalBar(20, 10, 40);
 
 }
 
@@ -68,6 +75,9 @@ void Synio::mainLoop()
 
         // --- END DRAWING
 
+        // TODO : vertical bar implementation
+        // bar->refresh();
+
         // actually swap the buffers
         api->redrawScreen();
 
@@ -91,15 +101,11 @@ void Synio::mainLoop()
             {
                 switch (ctrl_action)
                 {
-                    // case CtrlKeyAction::CTRL_RIGHT: m_currentBuffer->moveCursorToNextColDelim(); break;
-                    // case CtrlKeyAction::CTRL_LEFT:  m_currentBuffer->moveCursorToPrevColDelim(); break;
                     case CtrlKeyAction::CTRL_LEFT:  m_currentBuffer->moveCursorToColDelim(-1); break;
                     case CtrlKeyAction::CTRL_RIGHT: m_currentBuffer->moveCursorToColDelim(1); break;
-                    // case CtrlKeyAction::CTRL_UP:    m_currentBuffer->moveCursorToPrevRowDelim(); break;
-                    // case CtrlKeyAction::CTRL_DOWN:  m_currentBuffer->moveCursorToNextRowDelim(); break;
                     case CtrlKeyAction::CTRL_UP:    m_currentBuffer->moveCursorToRowDelim(-1); break;
                     case CtrlKeyAction::CTRL_DOWN:  m_currentBuffer->moveCursorToRowDelim(1); break;
-                    default: LOG_INFO("ctrl keycode %d : %s", key, ctrlActionStr(ctrl_action));
+                    default: LOG_INFO("ctrl keycode %d : %s", key, ctrlActionStr(ctrl_action)); break;
 
                 }
             }
@@ -163,7 +169,7 @@ void Synio::mainLoop()
 //=======================================================================================
 int main(int argc, char *argv[])
 {
-    const char *filename = "test.txt";
+    const char *filename = "test.cpp";
 
     //
     Log::open();

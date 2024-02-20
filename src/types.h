@@ -6,31 +6,57 @@
 #include <string>
 
 #include "utils/log.h"
+//
+typedef void* API_WINDOW_PTR;
+
+// the basic char type
+#if defined NCURSES_IMPL
+#include <ncurses.h>
+#define CHTYPE chtype
+#define CHTYPE_PTR chtype *
+// #elif defined (GLFW_IMPL)
+#else
+#define CHTYPE char
+#define CHTYPE_PTR char *
+#endif
+#define CHTYPE_SIZE sizeof(CHTYPE)
+#define CHTYPE_PTR_SIZE sizeof(CHTYPE_PTR)
+
+// something to write in for conversions
+#define buf0_sz 1024
+static char buf0[buf0_sz];
 
 //
 struct line_t
 {
-    line_t *next  = NULL;
-    line_t *prev  = NULL;
-    char *content = NULL;
-    size_t len    = 0;
+    line_t *next        = NULL;
+    line_t *prev        = NULL;
+    CHTYPE_PTR content  = NULL;
+    size_t len          = 0;
 
     ~line_t() { free(content); }
-    
+
     void insert_char(char _c, size_t _pos);
     void insert_str(char *_str, size_t _len, size_t _pos);
     void delete_at(size_t _pos);
     line_t *split_at_pos(size_t _pos);
 
-    #ifdef DEBUG
-    void __debug_print(bool _show_ptrs, const char *_str="");
-    #endif
+    // conversion to char * in case of debug printing
+    char *content_to_str()
+    {
+        memset(buf0, 0, buf0_sz);
+        for (size_t i = 0; i < len; i++)
+            buf0[i] = (content[i] & 0x000000ff);
+        buf0[len] = '\0';
+        return buf0;
+    }
 
 };
 
 // helper function for line creation (incl malloc)
 line_t *create_line(char *_content, size_t _len);
 line_t *create_line(const char *_content);
+line_t *create_line(CHTYPE_PTR _content, size_t _len);
 
 // helper function for line_t realloc assertions
 static void RAM_panic(line_t *_line)
@@ -40,7 +66,12 @@ static void RAM_panic(line_t *_line)
     _line->len = 0;
     LOG_CRITICAL_ERROR("couldn't reallocate char buffer, considering buying more RAM.");
 }
-
+#ifdef DEBUG
+// printing debugging function
+void __debug_addchstr(API_WINDOW_PTR _w, const char *_fmt, ...);
+void __debug_addchstr(API_WINDOW_PTR _w, CHTYPE_PTR _str);
+void __debug_mvaddchstr(API_WINDOW_PTR _w, int _y, int _x, CHTYPE_PTR _str);
+#endif
 
 //
 struct ivec2_t

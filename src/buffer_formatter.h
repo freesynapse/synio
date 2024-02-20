@@ -3,7 +3,6 @@
 
 #include "line_buffer.h"
 #include "types.h"
-#include "platform/platform_impl.h"
 
 // could also be platform agnostic, requires more work though. For now ncurses ftw.
 class Window;

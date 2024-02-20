@@ -2,7 +2,7 @@
 #include <locale.h>
 
 #include "ncurses_impl.h"
-
+#include "ncurses_colors.h"
 #include "../core.h"
 #include "../utils/utils.h"
 #include "../utils/log.h"
@@ -15,12 +15,17 @@ int Ncurses_Impl::initialize()
 
     m_screenPtr = initscr();
 
+    init_colors(m_screenPtr);
+
 	cbreak();
 	keypad(stdscr, TRUE);
 	noecho();
 	clear();
     refresh();
 
+    // control characters (defined in termifo for current $TERM, eg TERM=xterm-256color)
+    // NOTE : kitty have its own terminfo, kitty-xterm, not compliant with ncurses control
+    //        codes. Hence, extra cursor movement flavour will not work in kitty...
     initKeycodeList();
     setCtrlKeycodes();
 
@@ -81,7 +86,7 @@ API_WINDOW_PTR Ncurses_Impl::newBorderWindow(irect_t *_frame)
                          new_frame.v0.y, new_frame.v0.x);
 
     wborder(win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
-               ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+                 ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
 
     wrefresh(win);
 
@@ -95,6 +100,32 @@ void Ncurses_Impl::deleteWindow(API_WINDOW_PTR _w)
     wborder((WINDOW *)_w, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
     wrefresh((WINDOW *)_w);
     delwin((WINDOW *)_w);
+
+}
+
+//---------------------------------------------------------------------------------------
+API_WINDOW_PTR Ncurses_Impl::newVerticalBarWindow(int _x, int _y0, int _y1)
+{
+    irect_t frame = irect_t(ivec2_t(_x, _y0), ivec2_t(_x + 10, _y1));
+    
+    ivec2_t screen_dim;
+    getRenderSize(&screen_dim);
+    if (frame.v0.x < 0 || frame.v0.y < 0 ||
+        frame.v1.x >= screen_dim.x || frame.v1.y >= screen_dim.y)
+        LOG_WARNING("window border out of bounds");
+
+    if (frame.v0.x < 0) frame.v0.x = 0;
+    if (frame.v0.y < 0) frame.v0.y = 0;
+    if (frame.v1.x >= screen_dim.x) frame.v1.x = screen_dim.x - 1;
+    if (frame.v1.y >= screen_dim.y) frame.v1.y = screen_dim.y - 1;
+
+    WINDOW *win = newwin(frame.nrows, frame.ncols, frame.v0.y, frame.v0.x);
+    wborder(win, ACS_VLINE, ACS_VLINE, ACS_VLINE, ACS_VLINE, 
+                 ACS_VLINE, ACS_VLINE, ACS_VLINE, ACS_VLINE);
+    
+    wrefresh(win);
+
+    return win;
 
 }
 
@@ -117,7 +148,6 @@ int Ncurses_Impl::getKey()
 //---------------------------------------------------------------------------------------
 CtrlKeyAction Ncurses_Impl::getCtrlKeyAction(int _key)
 {
-    //return (m_ctrlKeyActionMap.find(_key) == m_ctrlKeyActionMap.end() ? false : true);
     if (m_ctrlKeyActionMap.find(_key) == m_ctrlKeyActionMap.end())
         return CtrlKeyAction::NONE;
     
@@ -135,9 +165,10 @@ int Ncurses_Impl::moveCursor(API_WINDOW_PTR _w, int _x, int _y)
 }
 
 //---------------------------------------------------------------------------------------
-int Ncurses_Impl::printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line)
+int Ncurses_Impl::printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _line)
 {
-    int len = mvwprintw((WINDOW *)_w, _cy, _cx, "%s", _line);
+    // int len = mvwprintw((WINDOW *)_w, _cy, _cx, "%s", _line);
+    int len = mvwaddchstr((WINDOW *)_w, _cy, _cx, _line);
     return len;
 }
 

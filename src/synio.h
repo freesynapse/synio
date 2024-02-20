@@ -2,7 +2,6 @@
 #define __SYNIO_H
 
 // define backend
-#define NCURSES_IMPL
 #include "core.h"
 #include "types.h"
 
@@ -37,8 +36,10 @@ private:
     
     // windows
     Buffer *m_bufferWindow = NULL;    // to become an undordered map of windows?
-    LineNumbers *m_lineNumbersWindow = NULL;
     Buffer *m_currentBuffer = NULL;
+
+    // TODO : vertical bar implementation
+    // VerticalBar *bar = NULL;
 
     //
     ivec2_t m_screenSize;

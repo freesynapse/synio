@@ -2,9 +2,9 @@
 #include "window.h"
 
 //
-Window::Window(irect_t *_frame, const std::string &_id, bool _border)
+Window::Window(const irect_t &_frame, const std::string &_id, bool _border)
 {
-    m_frame = *_frame;
+    m_frame = _frame;
     m_ID = _id;
 
     m_apiWindowPtr = api->newWindow(&m_frame);
@@ -17,6 +17,7 @@ Window::Window(irect_t *_frame, const std::string &_id, bool _border)
 
 
 }
+// Window(const ivec2_t &_v0, const ivec2_t &_v1, const std::string &_id, bool _border);
 
 //---------------------------------------------------------------------------------------
 Window::~Window() 
@@ -74,4 +75,21 @@ void Window::__debug_print(int _x, int _y, const char *_fmt, ...)
     mvwprintw((WINDOW*)m_apiWindowPtr, _y, _x, "%s", __debug_buffer);
 }
 #endif
+
+//---------------------------------------------------------------------------------------
+// LineNumber functions
+void LineNumbers::draw()
+{
+    if (!m_isWindowVisible)
+        return;
+
+    int width = m_frame.v1.x - 1;
+
+    int y = 0;
+    int line_no = m_associatedBuffer->m_scrollPos.y + 1;
+
+    while (y < m_frame.nrows)
+        api->wprint(m_apiWindowPtr, 0, y++, "%*d", width, line_no++);
+
+}
 

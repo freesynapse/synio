@@ -7,10 +7,10 @@
 #include "../types.h"
 #include "../cursor.h"
 #include "../utils/log.h"
+#include "../utils/file_io.h"
 #include "../buffer_formatter.h"
 #include "../line_buffer.h"
-#include "../platform/platform_impl.h"
-#include "../file_io.h"
+#include "../platform/platform.h"
 #include "../events.h"
 #include "../config.h"
 
@@ -24,7 +24,9 @@ public:
 
 public:
     Window() {}
-    Window(irect_t *_frame, const std::string &_id, bool _border=true);
+    // Window(irect_t *_frame, const std::string &_id, bool _border=true);
+    Window(const irect_t &_frame, const std::string &_id, bool _border=true);
+    // Window(const ivec2_t &_v0, const ivec2_t &_v1, const std::string &_id, bool _border);
     ~Window();
     
     // creates a border around the drawable area
@@ -35,11 +37,7 @@ public:
     virtual void moveCursorToLineBegin();
     virtual void moveCursorToLineEnd();
     virtual void moveCursorToColDelim(int _dir) {}
-    // virtual void moveCursorToNextColDelim() {}
-    // virtual void moveCursorToPrevColDelim() {}
     virtual void moveCursorToRowDelim(int _dir) {}
-    // virtual void moveCursorToNextRowDelim() {}
-    // virtual void moveCursorToPrevRowDelim() {}
     virtual void insertCharAtCursor(char _c) {}
     virtual void insertStrAtCursor(char *_str, size_t _len) {}
     virtual void insertNewLine() {}
@@ -119,7 +117,7 @@ public:
 
 public:
 
-    Buffer(irect_t *_frame, const std::string &_id, bool _border=true);
+    Buffer(const irect_t &_frame, const std::string &_id, bool _border=true);
     ~Buffer();
 
     // callback for ScrollEvent -- called from synio.cpp
@@ -132,11 +130,7 @@ public:
     virtual void moveCursorToLineBegin() override;
     virtual void moveCursorToLineEnd() override;
     virtual void moveCursorToColDelim(int _dir) override;
-    // virtual void moveCursorToNextColDelim() override;
-    // virtual void moveCursorToPrevColDelim() override;
     virtual void moveCursorToRowDelim(int _dir) override;
-    // virtual void moveCursorToNextRowDelim() override;
-    // virtual void moveCursorToPrevRowDelim() override;
     virtual void insertCharAtCursor(char _c) override;
     virtual void insertStrAtCursor(char *_str, size_t _len) override;
     virtual void insertNewLine() override;
@@ -167,6 +161,7 @@ public:
 private:
     void move_cursor_to_last_x_();
     bool is_delimiter_(const char *_delim, char _c);
+    bool is_row_empty_(line_t *_line);
 
 protected:
     std::string m_filename = "";
@@ -185,10 +180,28 @@ protected:
 
     LineNumbers *m_lineNumbers = NULL;
 
-    const char *m_colDelimiters = ".:,;/()\\*+-$=~\t{} ";
-    const char *m_rowDelimiters = "\0 {}";
-
 };
 
+// TODO : vertical bar implementation
+// Bars -- treated as one (1) column or row Window with custom border
+/*
+class VerticalBar : public Window
+{
+public:
+    VerticalBar(int _x, int _y0, int _y1, Window *_parent=NULL)
+    {
+        m_frame = irect_t(ivec2_t(_x, _y0), ivec2_t(_x + 1, _y1));
+        m_parent = _parent;
+        m_apiBorderWindowPtr = api->newVerticalBarWindow(_x, _y0, _y1);
+    }
+
+    // virtual compulsory functions
+    virtual void draw() override {};
+
+protected:
+    Window *m_parent;
+
+};
+*/
 
 #endif // __WINDOW_H

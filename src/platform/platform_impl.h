@@ -1,11 +1,11 @@
 #ifndef __PLATFORM_IMPL_H
 #define __PLATFORM_IMPL_H
 
+#if defined NCURSES_IMPL
 #include <ncurses.h>
+#endif
+
 #include "../types.h"
-
-typedef void* API_WINDOW_PTR;
-
 
 //
 class Platform_Impl
@@ -22,6 +22,8 @@ public:
     virtual API_WINDOW_PTR newBorderWindow(irect_t *_frame) = 0;
     virtual void deleteWindow(API_WINDOW_PTR _w) = 0;
 
+    virtual API_WINDOW_PTR newVerticalBarWindow(int _x, int _y0, int _y1) { return NULL; }
+
     //
     virtual void clearScreen() = 0;
     virtual void refreshScreen() = 0;
@@ -37,7 +39,9 @@ public:
     virtual int moveCursor(API_WINDOW_PTR _w, int _x, int _y) = 0;
 
     // output
-    virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) = 0;
+    virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _line) = 0;
+    // TODO : safe to remove?
+    // virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) = 0;
     virtual int wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...) = 0;
 
     // accessor

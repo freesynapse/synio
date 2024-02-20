@@ -2,16 +2,17 @@
 #include <assert.h>
 
 #include "window.h"
+#include "../platform/ncurses_colors.h"
 
 //
-Buffer::Buffer(irect_t *_frame, const std::string &_id, bool _border) :
+Buffer::Buffer(const irect_t &_frame, const std::string &_id, bool _border) :
         Window(_frame, _id, _border)
 {
     m_formatter = BufferFormatter(m_frame);
 
     // create a line numbers subwindow
     irect_t line_numbers_rect(ivec2_t(0, 0), ivec2_t(m_frame.v0.x - 2, m_frame.v1.y));
-    m_lineNumbers = new LineNumbers(&line_numbers_rect, _id, _border);
+    m_lineNumbers = new LineNumbers(line_numbers_rect, _id, _border);
     m_lineNumbers->setBuffer(this);
     if (!Config::SHOW_LINE_NUMBERS)
         m_lineNumbers->setVisibility(false);
@@ -84,21 +85,21 @@ void Buffer::onScroll(BufferScrollEvent *_e)
 void Buffer::moveCursor(int _dx, int _dy)
 {
     // save current position (to look for actual dy)
-    ivec2_t prev_pos = m_cursor.pos();
+    ivec2_t curr_pos = m_cursor.pos();
     int dx = _dx;
     int dy = _dy;
     
-    // moves in x at beginning or end of line
-    if (prev_pos.x == 0 && dx < 0 && m_currentLine->prev != NULL)
+    // moves in x at beginning of next or end of previous line
+    if (curr_pos.x == 0 && dx < 0 && m_currentLine->prev != NULL)
     {
-        m_cursor.setX(m_currentLine->prev->len);
-        dx = 0;
+        // m_cursor.setX(m_currentLine->prev->len);
+        dx = m_currentLine->prev->len - curr_pos.x;
         dy = -1;
     }
-    else if (prev_pos.x == m_currentLine->len && dx > 0 && m_currentLine->next != NULL) 
+    else if (curr_pos.x == m_currentLine->len && dx > 0 && m_currentLine->next != NULL) 
     {
-        m_cursor.setX(0);
-        dx = 0;
+        // m_cursor.setX(0);
+        dx = -curr_pos.x;
         dy = 1;
     }
 
@@ -116,7 +117,7 @@ void Buffer::moveCursor(int _dx, int _dy)
     // TODO : handle tabs here?! Yes?
 
     // update pointer into line buffer
-    updateCurrentLinePtr(new_pos.y - prev_pos.y);
+    updateCurrentLinePtr(new_pos.y - curr_pos.y);
 
     // try to move in x to the same column as previous line visited
     if (dy != 0)
@@ -133,7 +134,7 @@ void Buffer::moveCursorToLineBegin()
 {
     // find first character (not tabs/spaces)
     int first_ch = 0;
-    char *c = m_currentLine->content;
+    CHTYPE_PTR c = m_currentLine->content;
     while ((*c == ' ' || *c == '\t') && *c != 0)
     {
         first_ch++;
@@ -156,9 +157,9 @@ void Buffer::moveCursorToColDelim(int _dir)
 {
     assert(_dir == -1 || _dir == 1);
 
-    char *p = m_currentLine->content + m_cursor.x();
+    CHTYPE_PTR p = m_currentLine->content + m_cursor.x();
     int x = (_dir < 0 ? m_cursor.x() : 0);
-    bool on_delimiter = is_delimiter_(m_colDelimiters, *p);
+    bool on_delimiter = is_delimiter_(Config::COL_DELIMITERS, *p);
 
     bool do_continue = (_dir < 0 ? x > 0 : *p != '\0');
     while (do_continue)
@@ -166,12 +167,12 @@ void Buffer::moveCursorToColDelim(int _dir)
         x = x + _dir;
         p = p + _dir;
 
-        if (is_delimiter_(m_colDelimiters, *p))
+        if (is_delimiter_(Config::COL_DELIMITERS, *p))
         {
             // skip continuous delimiters
-            if (on_delimiter && is_delimiter_(m_colDelimiters, *(p + _dir)))
+            if (on_delimiter && is_delimiter_(Config::COL_DELIMITERS, *(p + _dir)))
             {
-                while (is_delimiter_(m_colDelimiters, *p))
+                while (is_delimiter_(Config::COL_DELIMITERS, *p))
                 {
                     x = x + _dir;
                     p = p + _dir;
@@ -202,8 +203,7 @@ void Buffer::moveCursorToRowDelim(int _dir)
         curr_line = (_dir < 0 ? curr_line->prev : curr_line->next);
         y += _dir;
 
-        if ((curr_line->len == 1 && is_delimiter_(m_rowDelimiters, curr_line->content[0])) ||
-            (curr_line->len == 0))
+        if (curr_line->len == 0 || is_row_empty_(curr_line))
             break;
 
         do_continue = (_dir < 0 ? curr_line->prev != NULL : curr_line->next != NULL);
@@ -220,7 +220,6 @@ void Buffer::insertCharAtCursor(char _c)
 {
     m_currentLine->insert_char(_c, m_cursor.x());
     moveCursor(1, 0);
-    // m_cursor.move(1, 0);
     
 }
 
@@ -229,7 +228,6 @@ void Buffer::insertStrAtCursor(char *_str, size_t _len)
 {
     m_currentLine->insert_str(_str, _len, m_cursor.pos().x);
     moveCursor(_len, 0);
-    // m_cursor.move(_len, 0);
 
 }
 
@@ -240,11 +238,7 @@ void Buffer::insertNewLine()
     line_t *new_line = m_currentLine->split_at_pos(m_cursor.pos().x);
     m_lineBuffer.insertAtPtr(m_currentLine, INSERT_AFTER, new_line);
     
-    int cpos_x = m_cursor.x();
-
-    // m_cursor.setX(0);
-    moveCursor(-cpos_x, 1);
-    // moveCursor(0, 1);
+    moveCursor(-m_cursor.x(), 1);
     
     // scroll up one line since new line is inserted, keeping the number of viewable
     // lines constant
@@ -337,6 +331,17 @@ void Buffer::updateCurrentLinePtr(int _dy)
 void Buffer::readFromFile(const std::string &_filename)
 {
     FileIO::readFileIntoBuffer(_filename, &m_lineBuffer);
+    
+    // DEBUG
+    #if defined DEBUG && defined NCURSES_IMPL
+    line_t *line = m_lineBuffer.m_head;
+    while (line != NULL)
+    {
+        color_substr(line, 0, line->len, SYNIO_COLOR_NUMBER);
+        line = line->next;
+    }
+    #endif
+
     // line pointers
     m_currentLine = m_lineBuffer.m_head;
     m_pageFirstLine = m_lineBuffer.m_head;
@@ -349,7 +354,7 @@ void Buffer::readFromFile(const std::string &_filename)
     {
         // TODO : resize the width of LineNumbers window based on number of lines in 
         // file. 
-        // int width = round(std::log10((float)m_lineBuffer.size()));
+        // --> ~ int width = round(std::log10((float)m_lineBuffer.size()));
         //
     }
 
@@ -369,12 +374,12 @@ void Buffer::draw()
 
     if (m_currentLine != NULL)
     {
-        __debug_print(x, y++, "this line: '%s'", m_currentLine->content);
+        __debug_print(x, y++, "this line: '%s'", m_currentLine->content_to_str());
         __debug_print(x, y++, "this len:  %zu", m_currentLine->len);
 
         if (m_currentLine->prev != NULL)
         {
-            __debug_print(x, y++, "prev line: '%s'", m_currentLine->prev->content);
+            __debug_print(x, y++, "prev line: '%s'", m_currentLine->prev->content_to_str());
             __debug_print(x, y++, "prev len:  %zu", m_currentLine->prev->len);
             
         }
@@ -428,18 +433,17 @@ bool Buffer::is_delimiter_(const char *_delim, char _c)
 }
 
 //---------------------------------------------------------------------------------------
-void LineNumbers::draw()
+bool Buffer::is_row_empty_(line_t *_line)
 {
-    if (!m_isWindowVisible)
-        return;
+    CHTYPE_PTR p = _line->content;
+    while (*p != '\0')
+    {
+        if (*p != ' ' && *p != '\t')
+            return false;
+        p++;
+    }
 
-    int width = m_frame.v1.x - 1;
-
-    int y = 0;
-    int line_no = m_associatedBuffer->m_scrollPos.y + 1;
-
-    while (y < m_frame.nrows)
-        api->wprint(m_apiWindowPtr, 0, y++, "%*d", width, line_no++);
+    return true;
 
 }
 
