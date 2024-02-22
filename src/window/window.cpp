@@ -4,20 +4,22 @@
 //
 Window::Window(const irect_t &_frame, const std::string &_id, bool _border)
 {
-    m_frame = _frame;
-    m_ID = _id;
+   m_frame = _frame;
+   m_ID = _id;
 
-    m_apiWindowPtr = api->newWindow(&m_frame);
-    if (_border)
-        m_apiBorderWindowPtr = api->newBorderWindow(&m_frame);
+   m_apiWindowPtr = api->newWindow(&m_frame);
+   if (_border)
+       m_apiBorderWindowPtr = api->newBorderWindow(&m_frame);
 
-    m_cursor = WCursor(this);
+   m_cursor = WCursor(this);
 
-    LOG_INFO("Window '%s' [%p] created.", m_ID.c_str(), this);
+   LOG_INFO("Window '%s' [%p] created.", m_ID.c_str(), this);
 
 
 }
-// Window(const ivec2_t &_v0, const ivec2_t &_v1, const std::string &_id, bool _border);
+// Window(const ivec2_t &_v0, const ivec2_t &_v1, const std::string &_id, bool _border)
+// {    
+// }
 
 //---------------------------------------------------------------------------------------
 Window::~Window() 
@@ -83,13 +85,20 @@ void LineNumbers::draw()
     if (!m_isWindowVisible)
         return;
 
-    int width = m_frame.v1.x - 1;
+    int width = m_frame.v1.x - 2;
 
     int y = 0;
     int line_no = m_associatedBuffer->m_scrollPos.y + 1;
+    line_t *curr_line = m_associatedBuffer->m_pageFirstLine;
 
-    while (y < m_frame.nrows)
+    while (y < m_frame.nrows && curr_line != NULL)
+    {
         api->wprint(m_apiWindowPtr, 0, y++, "%*d", width, line_no++);
+        curr_line = curr_line->next;
+    }
+
+    // TODO : move this into platform_impl and sub-classes thereof
+    mvwvline((WINDOW *)m_apiWindowPtr, 0, m_frame.ncols - 1, ACS_VLINE, m_frame.nrows);
 
 }
 

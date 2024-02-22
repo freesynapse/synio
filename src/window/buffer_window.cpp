@@ -6,7 +6,7 @@
 
 //
 Buffer::Buffer(const irect_t &_frame, const std::string &_id, bool _border) :
-        Window(_frame, _id, _border)
+    Window(_frame, _id, _border)
 {
     m_formatter = BufferFormatter(m_frame);
 
@@ -16,7 +16,6 @@ Buffer::Buffer(const irect_t &_frame, const std::string &_id, bool _border) :
     m_lineNumbers->setBuffer(this);
     if (!Config::SHOW_LINE_NUMBERS)
         m_lineNumbers->setVisibility(false);
-
 }
 
 //---------------------------------------------------------------------------------------
@@ -103,6 +102,10 @@ void Buffer::moveCursor(int _dx, int _dy)
         dy = 1;
     }
 
+    // prevent out of bounds
+    if (dy > 0 && m_currentLine->next == NULL)
+        return;
+
     // move the cursor (if possible)
     m_cursor.move(dx, dy);
 
@@ -161,7 +164,7 @@ void Buffer::moveCursorToColDelim(int _dir)
     int x = (_dir < 0 ? m_cursor.x() : 0);
     bool on_delimiter = is_delimiter_(Config::COL_DELIMITERS, *p);
 
-    bool do_continue = (_dir < 0 ? x > 0 : *p != '\0');
+    bool do_continue = (_dir < 0 ? x > 0 : *p != 0);
     while (do_continue)
     {
         x = x + _dir;
@@ -193,6 +196,8 @@ void Buffer::moveCursorToColDelim(int _dir)
 //---------------------------------------------------------------------------------------
 void Buffer::moveCursorToRowDelim(int _dir)
 {
+    // TODO : doesn't recognize '\t' as an empty line (eg line 8 in 'test.cpp')
+
     assert(_dir == -1 || _dir == 1);
     line_t *curr_line = m_currentLine;
     
@@ -337,10 +342,14 @@ void Buffer::readFromFile(const std::string &_filename)
     line_t *line = m_lineBuffer.m_head;
     while (line != NULL)
     {
-        color_substr(line, 0, line->len, SYNIO_COLOR_NUMBER);
+        color_substr(line, 0, line->len, SYNIO_COLOR_KEYWORD);
         line = line->next;
     }
     #endif
+
+    // DEBUG
+    m_lineBuffer.push_front(create_line("\ttabbed inside SYNIO"));
+
 
     // line pointers
     m_currentLine = m_lineBuffer.m_head;
@@ -423,10 +432,10 @@ void Buffer::move_cursor_to_last_x_()
 }
 
 //---------------------------------------------------------------------------------------
-bool Buffer::is_delimiter_(const char *_delim, char _c)
+bool Buffer::is_delimiter_(const char *_delim, CHTYPE _c)
 {
     for (size_t i = 0; i < strlen(_delim); i++)
-        if (_c == _delim[i])
+        if ((_c & 0x000000ff) == _delim[i])
             return true;
     return false;
     

@@ -123,11 +123,7 @@ void Synio::mainLoop()
                     case KEY_HOME:  m_currentBuffer->moveCursorToLineBegin(); break;
                     case KEY_END:   m_currentBuffer->moveCursorToLineEnd(); break;
 
-                    // jump by delimiter
-                    case KEY_SRIGHT: LOG_INFO("CTRL(right)"); break;
-                    case CTRL(KEY_LEFT): LOG_INFO("CTRL(left)"); break;
-
-                    // command control
+                    // TODO : enter command mode (eventually)
                     case CTRL('x'):
                         m_shouldClose = true;
                         break;
@@ -169,7 +165,10 @@ void Synio::mainLoop()
 //=======================================================================================
 int main(int argc, char *argv[])
 {
-    const char *filename = "test.cpp";
+    std::string filename = "test.cpp";
+
+    if (argc > 1)
+        filename = std::string(argv[1]);
 
     //
     Log::open();

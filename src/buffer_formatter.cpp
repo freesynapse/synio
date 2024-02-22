@@ -20,7 +20,10 @@ void BufferFormatter::render(API_WINDOW_PTR _api_window,
 
     while (line != NULL && y < m_windowRect.nrows)// && line != _last)
     {
-        api->printBufferLine(_api_window, x, y++, line->content);
+        //LOG_INFO("len of line=%d", line->len);
+        //if ((line->content[0] & CHTYPE_CHAR_MASK) == '\t')
+        //    LOG_INFO("found a tab!");
+        api->printBufferLine(_api_window, x, y++, line->content, line->len);
         line = line->next;
     }
 

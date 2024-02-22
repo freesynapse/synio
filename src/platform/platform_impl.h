@@ -39,7 +39,7 @@ public:
     virtual int moveCursor(API_WINDOW_PTR _w, int _x, int _y) = 0;
 
     // output
-    virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _line) = 0;
+    virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _line, size_t _len) = 0;
     // TODO : safe to remove?
     // virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) = 0;
     virtual int wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...) = 0;

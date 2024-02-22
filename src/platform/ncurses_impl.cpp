@@ -6,7 +6,7 @@
 #include "../core.h"
 #include "../utils/utils.h"
 #include "../utils/log.h"
-
+#include "../config.h"
 
 //
 int Ncurses_Impl::initialize()
@@ -16,6 +16,8 @@ int Ncurses_Impl::initialize()
     m_screenPtr = initscr();
 
     init_colors(m_screenPtr);
+
+    TABSIZE = Config::TAB_SIZE;
 
 	cbreak();
 	keypad(stdscr, TRUE);
@@ -165,11 +167,30 @@ int Ncurses_Impl::moveCursor(API_WINDOW_PTR _w, int _x, int _y)
 }
 
 //---------------------------------------------------------------------------------------
-int Ncurses_Impl::printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _line)
+int Ncurses_Impl::printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _line, size_t _len)
 {
     // int len = mvwprintw((WINDOW *)_w, _cy, _cx, "%s", _line);
-    int len = mvwaddchstr((WINDOW *)_w, _cy, _cx, _line);
-    return len;
+    // int res = mvwaddchstr((WINDOW *)_w, _cy, _cx, _line);
+
+    // since mvwaddchstr can't handle '\t', let's implement our own...
+    WINDOW *w = (WINDOW *)_w;
+    wmove(w, _cy, _cx);
+
+    int x = _cx;
+    for (size_t i = 0; i < _len; i++)
+    {
+        if ((_line[i] & A_CHARTEXT) == '\t')
+        {
+            x = (x + (TABSIZE - (x % TABSIZE)));
+            wmove(w, _cy, x);
+        }
+        else
+            waddch(w, _line[i]);
+
+        x++;
+    }
+
+    return RETURN_SUCCESS;
 }
 
 //---------------------------------------------------------------------------------------

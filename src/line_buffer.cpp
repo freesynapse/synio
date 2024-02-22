@@ -160,10 +160,10 @@ line_t *LineBuffer::appendThisToPrev(line_t *_line)
     if ((prev->content = (CHTYPE_PTR)realloc(prev->content, alloc_sz)) == NULL)
         RAM_panic(prev);
     // copy this to prev
-    memcpy(prev->content + prev->len, _line->content, _line->len);
+    memcpy(prev->content + prev->len, _line->content, CHTYPE_SIZE * _line->len);
     // update len of prev
     prev->len +=_line->len;
-    prev->content[prev->len] = '\0';
+    prev->content[prev->len] = 0;
 
     deleteAtPtr(_line);
 
@@ -184,10 +184,10 @@ void LineBuffer::appendNextToThis(line_t *_line)
     if ((_line->content = (CHTYPE_PTR)realloc(_line->content, alloc_sz)) == NULL) 
         RAM_panic(_line);
     // copy next to this
-    memcpy(_line->content+_line->len, next->content, next->len);
+    memcpy(_line->content+_line->len, next->content, CHTYPE_SIZE * next->len);
     // update len
     _line->len = _line->len + next->len;
-    _line->content[_line->len] = '\0';
+    _line->content[_line->len] = 0;
 
     deleteAtPtr(next);
 

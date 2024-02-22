@@ -9,15 +9,21 @@
 //
 typedef void* API_WINDOW_PTR;
 
+#define CHTYPE_CHAR_MASK 0x000000ff
+
 // the basic char type
 #if defined NCURSES_IMPL
 #include <ncurses.h>
 #define CHTYPE chtype
 #define CHTYPE_PTR chtype *
+#define CHTYPE_COLOR_MASK 0x0000ff00
+#define CHTYPE_ATTR_MASK  0xffff0000
 // #elif defined (GLFW_IMPL)
 #else
 #define CHTYPE char
 #define CHTYPE_PTR char *
+#define CHTYPE_COLOR_MASK 0xffffffff
+#define CHTYPE_ATTR_MASK  0xffffffff
 #endif
 #define CHTYPE_SIZE sizeof(CHTYPE)
 #define CHTYPE_PTR_SIZE sizeof(CHTYPE_PTR)

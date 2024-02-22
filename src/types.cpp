@@ -15,6 +15,7 @@
 line_t *create_line(char *_content, size_t _len)
 {
     line_t *new_line = (line_t *)malloc(sizeof(line_t));
+    
     new_line->next = NULL;
     new_line->prev = NULL;
     size_t bytes = CHTYPE_SIZE * (_len+1);
@@ -59,9 +60,10 @@ line_t *create_line(CHTYPE_PTR _content, size_t _len)
 //---------------------------------------------------------------------------------------
 void line_t::insert_char(char _c, size_t _pos)
 {
+    // TODO : also, this isn't working properly anymore
     if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (len + 2))) == NULL) RAM_panic(this);
-
     memmove(content + _pos + 1, content + _pos, CHTYPE_SIZE * (len - _pos));
+    // TODO : add color here? -- no, surely on future onRowUpdate() callback?
     content[_pos] = _c;
     content[++len] = '\0';
 
@@ -71,8 +73,8 @@ void line_t::insert_char(char _c, size_t _pos)
 void line_t::insert_str(char *_str, size_t _len, size_t _pos)
 {
     if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (len + _len + 1))) == NULL) RAM_panic(this);
-
     memmove(content + _pos + _len, content + _pos, CHTYPE_SIZE * (len - _pos));
+    // TODO : add color here? -- no, surely on future onRowUpdate() callback?
     memcpy(content + _pos, _str, _len);
     len += _len;
     content[len] = '\0';
@@ -86,7 +88,7 @@ void line_t::delete_at(size_t _pos)
         return;
 
     int offset[2];
-
+    
     if (_pos > 0) { offset[0] = -1; offset[1] = 0; }
     else          { offset[0] =  0; offset[1] = 1; }
     

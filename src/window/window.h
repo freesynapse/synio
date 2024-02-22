@@ -23,11 +23,10 @@ public:
     friend class Synio;
 
 public:
-    Window() {}
-    // Window(irect_t *_frame, const std::string &_id, bool _border=true);
+    //Window() {}
     Window(const irect_t &_frame, const std::string &_id, bool _border=true);
     // Window(const ivec2_t &_v0, const ivec2_t &_v1, const std::string &_id, bool _border);
-    ~Window();
+    virtual ~Window();
     
     // creates a border around the drawable area
     virtual void enableBorder();
@@ -117,7 +116,7 @@ public:
 
 public:
 
-    Buffer(const irect_t &_frame, const std::string &_id, bool _border=true);
+    Buffer(const irect_t &_frame, const std::string &_id, bool _border=false);
     ~Buffer();
 
     // callback for ScrollEvent -- called from synio.cpp
@@ -160,7 +159,7 @@ public:
 
 private:
     void move_cursor_to_last_x_();
-    bool is_delimiter_(const char *_delim, char _c);
+    bool is_delimiter_(const char *_delim, CHTYPE _c);
     bool is_row_empty_(line_t *_line);
 
 protected:

@@ -21,6 +21,9 @@ void init_colors(API_WINDOW_PTR _w)
     LOG_INFO("max COLORS=%d", COLORS);
     LOG_INFO("max PAIRS=%d", COLOR_PAIRS);
 
+    // TODO : get values from Config::readConfigFile (if any), otherwise use defaults 
+    //        below.
+    
     // background colors
     init_color(SYNIO_COLOR_BKGD,             0,    0,    0);
     init_color(SYNIO_COLOR_SELECTED_BKGD,  300,  300,  300);
