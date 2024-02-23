@@ -59,7 +59,7 @@ void Ncurses_Impl::getRenderSize(ivec2_t *_v)
 }
 
 //---------------------------------------------------------------------------------------
-API_WINDOW_PTR Ncurses_Impl::newWindow(irect_t *_frame)
+API_WINDOW_PTR Ncurses_Impl::newWindow(frame_t *_frame)
 {
     WINDOW *win = newwin(_frame->nrows, _frame->ncols, _frame->v0.y, _frame->v0.x);
     wrefresh(win);
@@ -68,10 +68,10 @@ API_WINDOW_PTR Ncurses_Impl::newWindow(irect_t *_frame)
 }
 
 //---------------------------------------------------------------------------------------
-API_WINDOW_PTR Ncurses_Impl::newBorderWindow(irect_t *_frame)
+API_WINDOW_PTR Ncurses_Impl::newBorderWindow(frame_t *_frame)
 {
     // takes the original window frame as argument, so have to check that within bounds
-    irect_t new_frame = irect_t(ivec2_t(_frame->v0.x - 1, _frame->v0.y - 1),
+    frame_t new_frame = frame_t(ivec2_t(_frame->v0.x - 1, _frame->v0.y - 1),
                                 ivec2_t(_frame->v1.x + 1, _frame->v1.y + 1));
     ivec2_t screen_dim;
     getRenderSize(&screen_dim);
@@ -108,7 +108,7 @@ void Ncurses_Impl::deleteWindow(API_WINDOW_PTR _w)
 //---------------------------------------------------------------------------------------
 API_WINDOW_PTR Ncurses_Impl::newVerticalBarWindow(int _x, int _y0, int _y1)
 {
-    irect_t frame = irect_t(ivec2_t(_x, _y0), ivec2_t(_x + 10, _y1));
+    frame_t frame = frame_t(ivec2_t(_x, _y0), ivec2_t(_x + 10, _y1));
     
     ivec2_t screen_dim;
     getRenderSize(&screen_dim);
@@ -167,11 +167,17 @@ int Ncurses_Impl::moveCursor(API_WINDOW_PTR _w, int _x, int _y)
 }
 
 //---------------------------------------------------------------------------------------
+int Ncurses_Impl::clearBufferLine(API_WINDOW_PTR _w, int _cy, int _win_maxx)
+{
+    memset(m_clearBuffer, ' ', _win_maxx);
+    m_clearBuffer[_win_maxx] = 0;
+    return mvwaddnstr((WINDOW *)_w, _cy, 0, m_clearBuffer, _win_maxx);
+
+}
+
+//---------------------------------------------------------------------------------------
 int Ncurses_Impl::printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _line, size_t _len)
 {
-    // int len = mvwprintw((WINDOW *)_w, _cy, _cx, "%s", _line);
-    // int res = mvwaddchstr((WINDOW *)_w, _cy, _cx, _line);
-
     // since mvwaddchstr can't handle '\t', let's implement our own...
     WINDOW *w = (WINDOW *)_w;
     wmove(w, _cy, _cx);
@@ -181,7 +187,8 @@ int Ncurses_Impl::printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PT
     {
         if ((_line[i] & A_CHARTEXT) == '\t')
         {
-            x = (x + (TABSIZE - (x % TABSIZE)));
+            x = (x + (Config::TAB_SIZE - (x % Config::TAB_SIZE)));
+            waddch(w, 'T' | A_BOLD);
             wmove(w, _cy, x);
         }
         else
@@ -199,7 +206,7 @@ int Ncurses_Impl::wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, 
     char buffer[128] = { 0 };
     va_list arg_list;
     va_start(arg_list, _fmt);
-    vsprintf(buffer, _fmt, arg_list);
+    vsnprintf(buffer, 128, _fmt, arg_list);
     va_end(arg_list);
 
     int len = mvwprintw((WINDOW *)_w, _cy, _cx, "%s", buffer);

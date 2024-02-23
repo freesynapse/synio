@@ -5,62 +5,54 @@
 #include "utils/utils.h"
 
 // forward decl
-class Window;
+class Buffer;
 
 //
 class Cursor
 {
 public:
     Cursor() {}
+    Cursor(Buffer *_parent) : m_parent(_parent) {}
     ~Cursor() = default;
-
-    //
-    void update(Window *_window);
-    void setPosition(Window *_window, int _x, int _y);
-
-    //
-    void move(Window *_window, int _dx, int _dy);
-
-    // accessors
-    const ivec2_t &pos() { return m_pos; }
-
-private:
-    void clamp_to_frame_(Window *_window);
-
-private:
-    ivec2_t m_pos;  // position in current window
-
-};
-
-
-class WCursor
-{
-public:
-    WCursor() {}
-    WCursor(Window *_parent) : m_parent(_parent) {}
-    ~WCursor() = default;
 
     //
     void update();
     
-    void setPosition(int _x, int _y);
-    void setX(int _x);
-    void setY(int _y);
+    void set_cpos(const ivec2_t &_p) { set_cpos(_p.x, _p.y); };
+    void set_cpos(int _x, int _y);
+    void set_cx(int _x);
+    void set_cy(int _y);
+    void set_rpos(const ivec2_t &_p) { set_rpos(_p.x, _p.y); };
+    void set_rpos(int _x, int _y);
+    void set_rx(int _x);
+    void set_ry(int _y);
     
     //
     void move(int _dx, int _dy);
 
     // accessors
-    const ivec2_t &pos() { return m_pos; }
-    const int &x() { return m_pos.x; }
-    const int &y() { return m_pos.y; }
+    const ivec2_t &cpos() { return m_cpos; }
+    const int &cx() { return m_cpos.x; }
+    const int &cy() { return m_cpos.y; }
+    const ivec2_t &rpos() { return m_rpos; }
+    const int &rx() { return m_rpos.x; }
+    const int &ry() { return m_rpos.y; }
+    const int &last_rx() { return m_last_rx; }
+    const int &dx() { return m_dx; }
+    const int &dy() { return m_dy; }
 
 private:
     void clamp_to_frame_();
 
 private:
-    ivec2_t m_pos;  // position in current window
-    Window *m_parent;
+    int m_dx = 0;
+    int m_dy = 0;
+    ivec2_t m_cpos;
+    ivec2_t m_rpos;
+    
+    int m_last_rx = 0;
+
+    Buffer *m_parent;
 
 };
 

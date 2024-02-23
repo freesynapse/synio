@@ -13,7 +13,7 @@ Synio::Synio(const std::string &_filename)
     EventHandler::initialize();
 
     m_filename = _filename;
-    resize();
+    initialize();
 
     // register callbacks
     EventHandler::register_callback(EventType::BUFFER_SCROLL, 
@@ -29,26 +29,19 @@ Synio::~Synio()
 {
     EventHandler::shutdown();
 
+    //
     delete m_bufferWindow;
 
-    // --DEBUG
-    // TODO : vertical bar implementation
-    // delete bar;
 }
 
 //---------------------------------------------------------------------------------------
-void Synio::resize()
+void Synio::initialize()
 {
     api->getRenderSize(&m_screenSize);
-    irect_t buffer_window_rect(ivec2_t(8, 0), ivec2_t(m_screenSize.x, m_screenSize.y));
+    frame_t buffer_window_rect(ivec2_t(8, 0), ivec2_t(m_screenSize.x, m_screenSize.y));
     m_bufferWindow = new Buffer(buffer_window_rect, "buffer_window", false);
     m_bufferWindow->readFromFile(m_filename);
     m_currentBuffer = m_bufferWindow;
-
-    // --DEBUG
-    // TODO : vertical bar implementation
-    // irect_t vbar_rect = irect_t(ivec2_t(0, 0), ivec2_t(1, 30));
-    // bar = new VerticalBar(20, 10, 40);
 
 }
 
@@ -66,27 +59,31 @@ void Synio::mainLoop()
     while (!m_shouldClose)
     {
         // --- BEGIN DRAWING
+        //
+        
         m_currentBuffer->clear();    // very good, clear() clears the borders...
         // ---> https://stackoverflow.com/questions/33986047/ncurses-is-it-possible-to-refresh-a-window-without-removing-its-borders
         // -- Changed in the Window class so that all extra 'border' windows can be drawn.
-        m_currentBuffer->draw();
+        m_currentBuffer->redraw();
         m_currentBuffer->updateCursor();
         m_currentBuffer->refresh();
-
+        
+        //
         // --- END DRAWING
-
-        // TODO : vertical bar implementation
-        // bar->refresh();
 
         // actually swap the buffers
         api->redrawScreen();
 
-        //
+        // get keypress; may be important
         int key = api->getKey();
 
         // check for control characters (e.g. ctrl, shift, alt key combinations)
         CtrlKeyAction ctrl_action = api->getCtrlKeyAction(key);
         
+        // DEBUG
+        const char *debug_insert_str = "__TEST_INSERT_STRING__";
+        frame_t debug_new_frame = frame_t(ivec2_t(8, 0), ivec2_t(m_screenSize.x-10, m_screenSize.y-10));
+
         // command mode
         //
         if (m_commandMode)
@@ -128,9 +125,13 @@ void Synio::mainLoop()
                         m_shouldClose = true;
                         break;
 
+                    case CTRL('a'):
+                        m_currentBuffer->resize(debug_new_frame);
+                        break;
+
                     // test insert string in line
                     case CTRL('v'):
-                        // m_currentBuffer->insertStrAtCursor((char *)s, strlen(s));
+                        m_currentBuffer->insertStrAtCursor((char *)debug_insert_str, strlen(debug_insert_str));
                         break;
 
                     case KEY_DC:
@@ -153,8 +154,7 @@ void Synio::mainLoop()
             }
         }
 
-        m_currentBuffer->updateCursor();
-        // m_currentBuffer->refresh();
+        // m_currentBuffer->updateCursor();
 
         EventHandler::process_events();
 

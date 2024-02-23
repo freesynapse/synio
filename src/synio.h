@@ -21,7 +21,7 @@ public:
     ~Synio();
 
     //
-    void resize();
+    void initialize();
     void onBufferScroll(Event *_e);
 
     //

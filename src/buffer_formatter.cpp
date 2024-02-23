@@ -18,7 +18,7 @@ void BufferFormatter::render(API_WINDOW_PTR _api_window,
     line = _first;
     int len;
 
-    while (line != NULL && y < m_windowRect.nrows)// && line != _last)
+    while (line != NULL && y < m_windowRect->nrows)// && line != _last)
     {
         //LOG_INFO("len of line=%d", line->len);
         //if ((line->content[0] & CHTYPE_CHAR_MASK) == '\t')

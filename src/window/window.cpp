@@ -2,7 +2,7 @@
 #include "window.h"
 
 //
-Window::Window(const irect_t &_frame, const std::string &_id, bool _border)
+Window::Window(const frame_t &_frame, const std::string &_id, bool _border)
 {
    m_frame = _frame;
    m_ID = _id;
@@ -10,8 +10,6 @@ Window::Window(const irect_t &_frame, const std::string &_id, bool _border)
    m_apiWindowPtr = api->newWindow(&m_frame);
    if (_border)
        m_apiBorderWindowPtr = api->newBorderWindow(&m_frame);
-
-   m_cursor = WCursor(this);
 
    LOG_INFO("Window '%s' [%p] created.", m_ID.c_str(), this);
 
@@ -36,51 +34,48 @@ void Window::enableBorder()
 }
 
 //---------------------------------------------------------------------------------------
-void Window::moveCursor(int _dx, int _dy)
+void Window::resize(frame_t _new_frame)
 {
-    m_cursor.move(_dx, _dy);
+    m_frame = _new_frame;
 
+    api->clearWindow(m_apiWindowPtr);
+    api->deleteWindow(m_apiWindowPtr);
+    m_apiWindowPtr = api->newWindow(&m_frame);
+    // resfresh called by api->newWindow()
+
+    if (m_apiBorderWindowPtr)
+    {
+        api->clearWindow(m_apiBorderWindowPtr);
+        api->deleteWindow(m_apiBorderWindowPtr);
+        m_apiBorderWindowPtr = api->newBorderWindow(&m_frame);
+    }
+    
 }
 
 //---------------------------------------------------------------------------------------
-void Window::moveCursorToLineBegin()
-{
-    int y = m_cursor.y();
-    m_cursor.setPosition(0, y);
-
-}
-
-//---------------------------------------------------------------------------------------
-void Window::moveCursorToLineEnd()
-{
-    int y = m_cursor.y();
-    m_cursor.setPosition(m_frame.ncols, y);
-
-}
-
-//---------------------------------------------------------------------------------------
-void Window::updateCursor()
-{
-    m_cursor.update();
-
-}
-
-//---------------------------------------------------------------------------------------
-#ifdef DEBUG
+#if (defined DEBUG) & (defined NCURSES_IMPL)
 void Window::__debug_print(int _x, int _y, const char *_fmt, ...)
 {
-    memset(__debug_buffer, 0, __DEBUG_BUFFER_LEN);
+    memset(DEBUG_BUFFER, 0, DEBUG_BUFFER_SZ);
     va_list arg_list;
     va_start(arg_list, _fmt);
-    vsnprintf(__debug_buffer, __DEBUG_BUFFER_LEN, _fmt, arg_list);
+    size_t n = vsnprintf(DEBUG_BUFFER, DEBUG_BUFFER_SZ, _fmt, arg_list);
     va_end(arg_list);
-    mvwprintw((WINDOW*)m_apiWindowPtr, _y, _x, "%s", __debug_buffer);
+
+    int i = 0;
+    while (i < m_frame.v1.x - _x)
+    {
+        mvwaddch((WINDOW *)m_apiWindowPtr, _y, _x+i, ' ');
+        i++;
+    }
+    mvwprintw((WINDOW*)m_apiWindowPtr, _y, _x, "%s", DEBUG_BUFFER);
+    
 }
 #endif
 
 //---------------------------------------------------------------------------------------
 // LineNumber functions
-void LineNumbers::draw()
+void LineNumbers::redraw()
 {
     if (!m_isWindowVisible)
         return;

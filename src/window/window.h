@@ -2,6 +2,7 @@
 #define __WINDOW_H
 
 #include <string>
+#include <set>
 
 #include "../core.h"
 #include "../types.h"
@@ -24,65 +25,65 @@ public:
 
 public:
     //Window() {}
-    Window(const irect_t &_frame, const std::string &_id, bool _border=true);
+    Window(const frame_t &_frame, const std::string &_id, bool _border=true);
     // Window(const ivec2_t &_v0, const ivec2_t &_v1, const std::string &_id, bool _border);
     virtual ~Window();
     
     // creates a border around the drawable area
     virtual void enableBorder();
 
-    // cursor functions
-    virtual void moveCursor(int _dx, int _dy);
-    virtual void moveCursorToLineBegin();
-    virtual void moveCursorToLineEnd();
-    virtual void moveCursorToColDelim(int _dir) {}
-    virtual void moveCursorToRowDelim(int _dir) {}
-    virtual void insertCharAtCursor(char _c) {}
-    virtual void insertStrAtCursor(char *_str, size_t _len) {}
-    virtual void insertNewLine() {}
-    virtual void deleteCharAtCursor() {}        // <DEL>
-    virtual void deleteCharBeforeCursor() {}    // <BACKSPACE>
-
-    // update window cursor (called during rendering and after keypress)
-    virtual void updateCursor();
-    
-    // virtual compulsory functions
-    virtual void draw() = 0;
-
     // Platform interactions
-    virtual void clear() { api->clearWindow(m_apiWindowPtr); }
+    virtual void resize(frame_t _new_frame);
+    virtual void redraw() = 0;
+    virtual void clear()
+    { 
+        if (!m_clearNextFrame)
+            return;
+
+        api->clearWindow(m_apiWindowPtr);
+        if (m_apiBorderWindowPtr)
+            api->clearWindow(m_apiBorderWindowPtr);
+    }
     virtual void refresh()
     {
+        if (!m_refreshNextFrame)
+            return;
+
         if (m_apiBorderWindowPtr)
             api->refreshBorder(m_apiBorderWindowPtr);
         api->refreshWindow(m_apiWindowPtr);
     }
 
     // accessors
-    const irect_t &frame() { return m_frame; }
+    const frame_t &frame() { return m_frame; }
     const std::string &ID() const { return m_ID; }
-    WCursor &cursor() { return m_cursor; }
     void setVisibility(bool _b) { m_isWindowVisible = _b; }
 
     //
     #ifdef DEBUG
-    #define __DEBUG_BUFFER_LEN 256
-    char __debug_buffer[__DEBUG_BUFFER_LEN];
     void __debug_print(int _x, int _y, const char *_fmt, ...);
     #endif
 
 protected:
-    std::string m_ID = "";
-    irect_t m_frame = irect_t(0);
+    __always_inline void clear_next_frame_() { m_clearNextFrame = true; }
+    __always_inline void refresh_next_frame_() { m_refreshNextFrame = true; }
 
-    WCursor m_cursor;
-    ivec2_t m_bufferCursorPos;
-    ivec2_t m_scrollPos;
+protected:
+    std::string m_ID = "";
+    frame_t m_frame = frame_t(0);
 
     API_WINDOW_PTR m_apiWindowPtr = NULL;
     API_WINDOW_PTR m_apiBorderWindowPtr = NULL;
 
     bool m_isWindowVisible = true;
+    bool m_clearNextFrame = true;
+    bool m_refreshNextFrame = true;
+
+    // vector of lines (in cursor corrdinates) in need of update (and thus clearing and 
+    // re-rendering) to avoid using clear
+    #ifdef NCURSES_IMPL
+    std::set<int> m_linesToUpdate;
+    #endif
 
 };
 
@@ -96,7 +97,7 @@ public:
     using Window::Window;
 
     // virtual compulsory functions
-    virtual void draw() override;
+    virtual void redraw() override;
 
     // set associated buffer
     void setBuffer(Buffer *_buffer) { m_associatedBuffer = _buffer; }
@@ -113,10 +114,11 @@ class Buffer : public Window
 {
 public:
     friend class LineNumbers;
+    friend class Cursor;
 
 public:
 
-    Buffer(const irect_t &_frame, const std::string &_id, bool _border=false);
+    Buffer(const frame_t &_frame, const std::string &_id, bool _border=false);
     ~Buffer();
 
     // callback for ScrollEvent -- called from synio.cpp
@@ -125,19 +127,19 @@ public:
     // Cursor functions
     //
     // move cursor inside window
-    virtual void moveCursor(int _dx, int _dy) override;
-    virtual void moveCursorToLineBegin() override;
-    virtual void moveCursorToLineEnd() override;
-    virtual void moveCursorToColDelim(int _dir) override;
-    virtual void moveCursorToRowDelim(int _dir) override;
-    virtual void insertCharAtCursor(char _c) override;
-    virtual void insertStrAtCursor(char *_str, size_t _len) override;
-    virtual void insertNewLine() override;
-    virtual void deleteCharAtCursor() override;     // <DEL>
-    virtual void deleteCharBeforeCursor() override; // <BACKSPACE>
+    virtual void moveCursor(int _dx, int _dy);
+    virtual void moveCursorToLineBegin();
+    virtual void moveCursorToLineEnd();
+    virtual void moveCursorToColDelim(int _dir);
+    virtual void moveCursorToRowDelim(int _dir);
+    virtual void insertCharAtCursor(char _c);
+    virtual void insertStrAtCursor(char *_str, size_t _len);
+    virtual void insertNewLine();
+    virtual void deleteCharAtCursor();     // <DEL>
+    virtual void deleteCharBeforeCursor(); // <BACKSPACE>
 
     // update window cursor (called during rendering and after keypress)
-    virtual void updateCursor() override;
+    virtual void updateCursor();
     // calculate the position of the cursor in the buffer
     void updateBufferCursorPos();
     // update the current line in the buffer based on cursor y movement
@@ -149,7 +151,8 @@ public:
 
     // draw the buffer within window bounds using the BufferFormatter. Also draw Window
     // border (if any)
-    virtual void draw() override;
+    virtual void resize(frame_t _new_frame) override;
+    virtual void redraw() override;
     virtual void clear() override;
     virtual void refresh() override;
 
@@ -161,6 +164,12 @@ private:
     void move_cursor_to_last_x_();
     bool is_delimiter_(const char *_delim, CHTYPE _c);
     bool is_row_empty_(line_t *_line);
+    __always_inline void clear_lines_after_y_(int _y)
+    {
+        for (int i = _y; i < m_frame.nrows; i++)
+            m_linesToUpdate.insert(i);
+    }
+    
 
 protected:
     std::string m_filename = "";
@@ -173,7 +182,13 @@ protected:
     line_t *m_currentLine   = NULL;
     line_t *m_pageFirstLine = NULL;
     line_t *m_pageLastLine  = NULL;
-    int m_lastCursorX = 0;
+
+    Cursor m_cursor;
+
+    ivec2_t m_bufferCursorPos;
+    ivec2_t m_scrollPos;
+
+    // int m_idxIntoContent = 0;
 
     BufferFormatter m_formatter;
 
@@ -189,13 +204,13 @@ class VerticalBar : public Window
 public:
     VerticalBar(int _x, int _y0, int _y1, Window *_parent=NULL)
     {
-        m_frame = irect_t(ivec2_t(_x, _y0), ivec2_t(_x + 1, _y1));
+        m_frame = frame_t(ivec2_t(_x, _y0), ivec2_t(_x + 1, _y1));
         m_parent = _parent;
         m_apiBorderWindowPtr = api->newVerticalBarWindow(_x, _y0, _y1);
     }
 
     // virtual compulsory functions
-    virtual void draw() override {};
+    virtual void redraw() override {};
 
 protected:
     Window *m_parent;

@@ -16,12 +16,14 @@ typedef void* API_WINDOW_PTR;
 #include <ncurses.h>
 #define CHTYPE chtype
 #define CHTYPE_PTR chtype *
+#define CHTYPE_CHAR_MASK  0x000000ff
 #define CHTYPE_COLOR_MASK 0x0000ff00
 #define CHTYPE_ATTR_MASK  0xffff0000
 // #elif defined (GLFW_IMPL)
 #else
 #define CHTYPE char
 #define CHTYPE_PTR char *
+#define CHTYPE_CHAR_MASK  0xffffffff
 #define CHTYPE_COLOR_MASK 0xffffffff
 #define CHTYPE_ATTR_MASK  0xffffffff
 #endif
@@ -39,6 +41,7 @@ struct line_t
     line_t *prev        = NULL;
     CHTYPE_PTR content  = NULL;
     size_t len          = 0;
+    size_t rlen         = 0;    // rendered len, including tabs etc
 
     ~line_t() { free(content); }
 
@@ -80,6 +83,11 @@ void __debug_mvaddchstr(API_WINDOW_PTR _w, int _y, int _x, CHTYPE_PTR _str);
 #endif
 
 //
+#ifdef DEBUG
+#define DEBUG_BUFFER_SZ 1024
+static char DEBUG_BUFFER[DEBUG_BUFFER_SZ];
+#endif
+
 struct ivec2_t
 {
     int x = 0;
@@ -93,6 +101,7 @@ struct ivec2_t
     // operators
     ivec2_t &operator=(const ivec2_t &_v)   { x = _v.x; y =_v.y; return *this;      }
     bool operator==(const ivec2_t &_v)      { return (x == _v.x && y == _v.y);      }
+    bool operator!=(const ivec2_t &_v)      { return (x != _v.x || y != _v.y);      }
     ivec2_t operator+(const ivec2_t &_v)    { return ivec2_t(x + _v.x, y + _v.y);   }
     void operator+=(const ivec2_t &_v)      { x += _v.x; y += _v.y;                 }
     ivec2_t operator-(const ivec2_t &_v)    { return ivec2_t(x - _v.x, y - _v.y);   }
@@ -120,7 +129,23 @@ struct irect_t
         nrows = (v1.y - 1) - v0.y;
     }
     
+    #ifdef DEBUG
+    void __debug_print(const std::string &_prefix="")
+    {
+        
+        memset(DEBUG_BUFFER, 0, DEBUG_BUFFER_SZ);
+        size_t n = 0;
+        if (_prefix != "")
+            n = sprintf(DEBUG_BUFFER, "%s: ", _prefix.c_str());
+        sprintf(DEBUG_BUFFER + n, "v0: () %d  %d ), v1: () %d  %d ), ncols=%d, ncols=%d", 
+                v0.x, v0.y, v1.x, v1.y, ncols, nrows);
+        LOG_INFO("%s", DEBUG_BUFFER);
+            
+    }
+    #endif
+    
 };
+typedef irect_t frame_t;
 
 // related to ncruses strange capture of control keys (ctrl, shift, alt)
 enum class CtrlKeyAction
