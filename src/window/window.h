@@ -166,7 +166,6 @@ public:
     line_t *currentLine() { return m_currentLine; }
 
 private:
-    void update_page_last_line_();
     bool is_delimiter_(const char *_delim, CHTYPE _c);
     bool is_row_empty_(line_t *_line);
     __always_inline void update_lines_after_y_(int _y)
@@ -188,7 +187,6 @@ protected:
 
     line_t *m_currentLine   = NULL;
     line_t *m_pageFirstLine = NULL;
-    line_t *m_pageLastLine  = NULL;
 
     Cursor m_cursor;
 

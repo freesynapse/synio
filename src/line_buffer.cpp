@@ -296,6 +296,7 @@ void LineBuffer::clear()
 }
 
 //---------------------------------------------------------------------------------------
+#ifdef DEBUG
 void LineBuffer::__debug_inspect()
 {
     printf("== __DEBUG_DUMP() =========================\n");
@@ -319,8 +320,10 @@ void LineBuffer::__debug_inspect()
     }
 
 }
+#endif
 
 //---------------------------------------------------------------------------------------
+#ifdef DEBUG
 void LineBuffer::__debug_print()
 {
     line_t *p = m_head;
@@ -334,3 +337,4 @@ void LineBuffer::__debug_print()
     printf("\n");
 
 }
+#endif

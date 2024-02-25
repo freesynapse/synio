@@ -37,8 +37,10 @@ public:
     void clear();   // deletes all lines
 
     //
+    #ifdef DEBUG
     void __debug_inspect();
     void __debug_print();
+    #endif
 
     // accessors
     line_t *ptrFromIdx(int _index);

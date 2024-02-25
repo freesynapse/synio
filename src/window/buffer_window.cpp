@@ -13,7 +13,7 @@ Buffer::Buffer(const frame_t &_frame, const std::string &_id, bool _border) :
     
     // create a line numbers subwindow
     // TODO : auto-deduct width
-    frame_t line_numbers_rect(ivec2_t(0, 0), ivec2_t(m_frame.v0.x, m_frame.v1.y));
+    frame_t line_numbers_rect(ivec2_t(0, m_frame.v0.y), ivec2_t(m_frame.v0.x, m_frame.v1.y));
     m_lineNumbers = new LineNumbers(line_numbers_rect, _id, _border);
     m_lineNumbers->setBuffer(this);
     if (!Config::SHOW_LINE_NUMBERS)
@@ -48,7 +48,6 @@ void Buffer::scroll_(int _axis, int _dir, int _steps, bool _update_current_line)
                 while (n < _steps && m_pageFirstLine->prev != NULL)
                 {
                     m_pageFirstLine = m_pageFirstLine->prev;
-                    m_pageLastLine = m_pageLastLine->prev;
                     n++;
                     n_scrolled_y--;
                 }
@@ -57,10 +56,9 @@ void Buffer::scroll_(int _axis, int _dir, int _steps, bool _update_current_line)
             // scroll down
             else
             {
-                while (n < _steps && m_pageLastLine->next != NULL)
+                while (n < _steps)
                 {
                     m_pageFirstLine = m_pageFirstLine->next;
-                    m_pageLastLine = m_pageLastLine->next;
                     n++;
                     n_scrolled_y++;
                 }
@@ -307,20 +305,22 @@ void Buffer::insertStrAtCursor(char *_str, size_t _len)
 //---------------------------------------------------------------------------------------
 void Buffer::insertNewLine()
 {
-    // split line at cursor x pos
+    // split line at cursor pos.x
     line_t *new_line = m_currentLine->split_at_pos(m_cursor.cpos().x);
     m_lineBuffer.insertAtPtr(m_currentLine, INSERT_AFTER, new_line);
 
     // find correct indentation -- use spaces, not tabs
+    // TODO :   1.  Use TabsOrSpaces Config::USE_TABS_OR_SPACES to determine tabs or
+    //              spaces, for now, use spaces.
+    //          2.  Also fix for backspace, so that when pressed and all whitespace,
+    //              a whole TABs worth of spaces are removed per keypress.
+    //
     int white_spaces = find_indentation_level_(m_currentLine);
     for (int i = 0; i < white_spaces; i++)
         new_line->insert_char(' ', 0);
 
     moveCursor(-m_cursor.cx() + white_spaces, 1);
     
-    // scroll up one line since new line is inserted, keeping the number of viewable
-    // lines constant
-    update_page_last_line_();
     // redraw lines
     update_lines_after_y_(m_cursor.cy() - 1);
     refresh_next_frame_();
@@ -343,23 +343,12 @@ void Buffer::deleteCharAtCursor()
     else
     {
         m_lineBuffer.appendNextToThis(m_currentLine);
-        update_page_last_line_();
         // redraw lines
         update_lines_after_y_(m_cursor.cy());
     }
 
     refresh_next_frame_();
 
-}
-
-//---------------------------------------------------------------------------------------
-void Buffer::update_page_last_line_()
-{
-    // TODO : add chunking in the LineBuffer; pointers to every eg 500 lines, so that
-    //        we can perform a smarter search (ie bucketed, not linear like now).
-    //        Chunk pointers updated in background thread perhaps..
-    int last_idx = m_scrollPos.y + (m_lineBuffer.m_lineCount - 1 - m_scrollPos.y);
-    m_pageLastLine = m_lineBuffer.ptrFromIdx(last_idx);
 }
 
 //---------------------------------------------------------------------------------------
@@ -383,8 +372,6 @@ void Buffer::deleteCharBeforeCursor()
         m_cursor.set_cpos(prev_len, m_cursor.cy() - 1);
         // m_cursor.move(prev_len, -1);
 
-        // update page pointers
-        update_page_last_line_();
         // redraw lines
         update_lines_after_y_(m_cursor.cy());
 
@@ -468,8 +455,6 @@ void Buffer::readFromFile(const std::string &_filename)
     // line pointers
     m_currentLine = m_lineBuffer.m_head;
     m_pageFirstLine = m_lineBuffer.m_head;
-    int last_line_idx = MIN(m_lineBuffer.m_lineCount - 1, m_frame.nrows - 1);
-    m_pageLastLine = m_lineBuffer.ptrFromIdx(last_line_idx);
 
     m_filename = std::string(_filename);
 
@@ -501,7 +486,7 @@ void Buffer::resize(frame_t _new_frame)
         m_apiBorderWindowPtr = api->newBorderWindow(&m_frame);
     }
 
-    frame_t line_numbers_rect(ivec2_t(0, 0), ivec2_t(m_frame.v0.x - 2, m_frame.v1.y));
+    frame_t line_numbers_rect(ivec2_t(0, m_frame.v0.y), ivec2_t(m_frame.v0.x - 2, m_frame.v1.y));
     m_lineNumbers->resize(line_numbers_rect);
 
 }
@@ -532,8 +517,6 @@ void Buffer::redraw()
     y++;
     if (m_pageFirstLine != NULL)    __debug_print(x, y++, "page[ 0]: '%s'", m_pageFirstLine->__debug_str());
     else                            __debug_print(x, y++, "page[ 0]: NULL");
-    if (m_pageLastLine != NULL)     __debug_print(x, y++, "page[-1]: '%s'", m_pageLastLine->__debug_str());
-    else                            __debug_print(x, y++, "page[-1]: NULL");
     #endif
     
     if (m_isWindowVisible)
@@ -544,7 +527,7 @@ void Buffer::redraw()
 
         m_linesUpdateList.clear();
 
-        m_formatter.render(m_apiWindowPtr, m_pageFirstLine, m_pageLastLine);
+        m_formatter.render(m_apiWindowPtr, m_pageFirstLine, NULL);
     }
 
     updateCursor();

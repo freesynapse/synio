@@ -38,7 +38,7 @@ Synio::~Synio()
 void Synio::initialize()
 {
     api->getRenderSize(&m_screenSize);
-    frame_t buffer_window_rect(ivec2_t(8, 0), ivec2_t(m_screenSize.x, m_screenSize.y));
+    frame_t buffer_window_rect(ivec2_t(8, 1), ivec2_t(m_screenSize.x, m_screenSize.y - 3));
     m_bufferWindow = new Buffer(buffer_window_rect, "buffer_window", false);
     m_bufferWindow->readFromFile(m_filename);
     m_currentBuffer = m_bufferWindow;
