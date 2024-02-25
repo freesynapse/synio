@@ -65,7 +65,7 @@ void Synio::mainLoop()
         // ---> https://stackoverflow.com/questions/33986047/ncurses-is-it-possible-to-refresh-a-window-without-removing-its-borders
         // -- Changed in the Window class so that all extra 'border' windows can be drawn.
         m_currentBuffer->redraw();
-        m_currentBuffer->updateCursor();
+        // m_currentBuffer->updateCursor(); // called in redraw
         m_currentBuffer->refresh();
         
         //
@@ -165,7 +165,8 @@ void Synio::mainLoop()
 //=======================================================================================
 int main(int argc, char *argv[])
 {
-    std::string filename = "test.cpp";
+    // std::string filename = "test.cpp";
+    std::string filename = "tabbed_file.txt";
 
     if (argc > 1)
         filename = std::string(argv[1]);

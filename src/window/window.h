@@ -82,7 +82,7 @@ protected:
     // vector of lines (in cursor corrdinates) in need of update (and thus clearing and 
     // re-rendering) to avoid using clear
     #ifdef NCURSES_IMPL
-    std::set<int> m_linesToUpdate;
+    std::set<int> m_linesUpdateList;
     #endif
 
 };
@@ -123,6 +123,7 @@ public:
 
     // callback for ScrollEvent -- called from synio.cpp
     void onScroll(BufferScrollEvent *_e);
+    void scroll_(int _axis, int _dir, int _steps, bool _update_current_line=true);
 
     // Cursor functions
     //
@@ -164,10 +165,10 @@ private:
     void move_cursor_to_last_x_();
     bool is_delimiter_(const char *_delim, CHTYPE _c);
     bool is_row_empty_(line_t *_line);
-    __always_inline void clear_lines_after_y_(int _y)
+    __always_inline void update_lines_after_y_(int _y)
     {
         for (int i = _y; i < m_frame.nrows; i++)
-            m_linesToUpdate.insert(i);
+            m_linesUpdateList.insert(i);
     }
     
 

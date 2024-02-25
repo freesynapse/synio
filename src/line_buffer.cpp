@@ -167,6 +167,10 @@ line_t *LineBuffer::appendThisToPrev(line_t *_line)
 
     deleteAtPtr(_line);
 
+    #ifdef DEBUG
+    prev->__debug_content_to_str_();
+    #endif
+
     // return the updated 'this line' (which is now this->prev)
     return prev;
 
@@ -188,6 +192,10 @@ void LineBuffer::appendNextToThis(line_t *_line)
     // update len
     _line->len = _line->len + next->len;
     _line->content[_line->len] = 0;
+
+    #ifdef DEBUG
+    _line->__debug_content_to_str_();
+    #endif
 
     deleteAtPtr(next);
 
@@ -302,9 +310,9 @@ void LineBuffer::__debug_inspect()
         char ht[7] = { 0 };
         if      (p == m_head)   sprintf(ht, "(HEAD)");
         else if (p == m_tail)   sprintf(ht, "(TAIL)");
-        LOG_INFO("[%2zu] %p: %s %s", n, p, p->content_to_str(), ht);
-        LOG_INFO("        next: %s", p->next == NULL ? "NULL" : p->next->content_to_str());
-        LOG_INFO("        prev: %s", p->prev == NULL ? "NULL" : p->prev->content_to_str());
+        LOG_INFO("[%2zu] %p: %s %s", n, p, p->__debug_str(), ht);
+        LOG_INFO("        next: %s", p->next == NULL ? "NULL" : p->next->__debug_str());
+        LOG_INFO("        prev: %s", p->prev == NULL ? "NULL" : p->prev->__debug_str());
         
         p = p->next;
         n++;
@@ -319,7 +327,7 @@ void LineBuffer::__debug_print()
     line_t *p = m_head;
     while (p != NULL)
     {
-        printf("%s\n", p->content_to_str());
+        printf("%s\n", p->__debug_str());
         p = p->next;
 
     }

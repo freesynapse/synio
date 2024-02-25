@@ -21,11 +21,11 @@ int FileIO::readFileIntoBuffer(const std::string &_filename, LineBuffer *_buffer
     while (std::getline(file, line))
         _buffer->push_back(create_line((char *)line.c_str(), line.length()));
 
-    if (_buffer->m_tail->content[_buffer->m_tail->len] != '\n')
-    {
-        LOG_WARNING("no EOF newline in %s.", _filename.c_str());
-        _buffer->push_back(create_line(""));
-    }
+    // if (_buffer->m_tail->content[_buffer->m_tail->len] != '\n')
+    // {
+    //     LOG_WARNING("no EOF newline in %s.", _filename.c_str());
+    //     _buffer->push_back(create_line(""));
+    // }
 
     file.close();
     s_lastReadFile = std::string(_filename);

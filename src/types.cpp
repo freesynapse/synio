@@ -27,6 +27,10 @@ line_t *create_line(char *_content, size_t _len)
         new_line->content[i] = _content[i];
     new_line->content[_len] = 0;
 
+    #ifdef DEBUG
+    new_line->__debug_content_to_str_();
+    #endif
+
     return new_line;
 
 }
@@ -53,6 +57,10 @@ line_t *create_line(CHTYPE_PTR _content, size_t _len)
         new_line->content[i] = _content[i];
     new_line->content[_len] = 0;
 
+    #ifdef DEBUG
+    new_line->__debug_content_to_str_();
+    #endif
+
     return new_line;
 
 }
@@ -67,6 +75,10 @@ void line_t::insert_char(char _c, size_t _pos)
     content[_pos] = _c;
     content[++len] = '\0';
 
+    #ifdef DEBUG
+    __debug_content_to_str_();
+    #endif
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -78,6 +90,10 @@ void line_t::insert_str(char *_str, size_t _len, size_t _pos)
     memcpy(content + _pos, _str, _len);
     len += _len;
     content[len] = '\0';
+
+    #ifdef DEBUG
+    __debug_content_to_str_();
+    #endif
 
 }
 
@@ -97,6 +113,10 @@ void line_t::delete_at(size_t _pos)
     if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (len + 1))) == NULL) RAM_panic(this);
     content[len] = 0;
 
+    #ifdef DEBUG
+    __debug_content_to_str_();
+    #endif
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -110,6 +130,10 @@ line_t *line_t::split_at_pos(size_t _pos)
     if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (this_len + 1))) == NULL) RAM_panic(this);
     len = this_len;
     content[len] = 0;
+
+    #ifdef DEBUG
+    __debug_content_to_str_();
+    #endif
 
     return new_line;
 

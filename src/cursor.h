@@ -18,14 +18,14 @@ public:
     //
     void update();
     
-    void set_cpos(const ivec2_t &_p) { set_cpos(_p.x, _p.y); };
+    //void set_cpos(const ivec2_t &_p) { set_cpos(_p.x, _p.y); };
     void set_cpos(int _x, int _y);
     void set_cx(int _x);
     void set_cy(int _y);
-    void set_rpos(const ivec2_t &_p) { set_rpos(_p.x, _p.y); };
-    void set_rpos(int _x, int _y);
-    void set_rx(int _x);
-    void set_ry(int _y);
+    //void set_rpos(const ivec2_t &_p) { set_rpos(_p.x, _p.y); };
+    //void set_rpos(int _x, int _y);
+    //void set_rx(int _x);
+    //void set_ry(int _y);
     
     //
     void move(int _dx, int _dy);
@@ -43,16 +43,18 @@ public:
 
 private:
     void clamp_to_frame_();
+    int calc_rposx_from_cposx_();
+    int calc_cposx_from_rposx_();
 
 private:
     int m_dx = 0;
     int m_dy = 0;
-    ivec2_t m_cpos;
-    ivec2_t m_rpos;
+    ivec2_t m_cpos = ivec2_t(0);
+    ivec2_t m_rpos = ivec2_t(0);
     
     int m_last_rx = 0;
 
-    Buffer *m_parent;
+    Buffer *m_parent = NULL;
 
 };
 

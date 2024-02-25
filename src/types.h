@@ -31,8 +31,8 @@ typedef void* API_WINDOW_PTR;
 #define CHTYPE_PTR_SIZE sizeof(CHTYPE_PTR)
 
 // something to write in for conversions
-#define buf0_sz 1024
-static char buf0[buf0_sz];
+//#define buf0_sz 1024
+//static char buf0[buf0_sz];
 
 //
 struct line_t
@@ -42,6 +42,9 @@ struct line_t
     CHTYPE_PTR content  = NULL;
     size_t len          = 0;
     size_t rlen         = 0;    // rendered len, including tabs etc
+    #ifdef DEBUG
+    char __debug_content_str[1024];
+    #endif
 
     ~line_t() { free(content); }
 
@@ -51,14 +54,25 @@ struct line_t
     line_t *split_at_pos(size_t _pos);
 
     // conversion to char * in case of debug printing
-    char *content_to_str()
+    //char *content_to_str()
+    //{
+    //    memset(buf0, 0, buf0_sz);
+    //    for (size_t i = 0; i < len; i++)
+    //        buf0[i] = (content[i] & 0x000000ff);
+    //    buf0[len] = '\0';
+    //    return buf0;
+    //}
+
+    #ifdef DEBUG
+    void __debug_content_to_str_()
     {
-        memset(buf0, 0, buf0_sz);
         for (size_t i = 0; i < len; i++)
-            buf0[i] = (content[i] & 0x000000ff);
-        buf0[len] = '\0';
-        return buf0;
+            __debug_content_str[i] = (char)(content[i] & CHTYPE_CHAR_MASK);
+        __debug_content_str[len] = '\0';
     }
+
+    char *__debug_str() { return __debug_content_str; }
+    #endif
 
 };
 
