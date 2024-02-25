@@ -10,6 +10,7 @@ Buffer::Buffer(const frame_t &_frame, const std::string &_id, bool _border) :
 {
     m_formatter = BufferFormatter(&m_frame);
     m_cursor = Cursor(this);
+    
     // create a line numbers subwindow
     // TODO : auto-deduct width
     frame_t line_numbers_rect(ivec2_t(0, 0), ivec2_t(m_frame.v0.x, m_frame.v1.y));
@@ -34,6 +35,7 @@ void Buffer::scroll_(int _axis, int _dir, int _steps, bool _update_current_line)
     {
         case X_AXIS:
             scroll.x = _dir < 0 ? -_steps : _steps;
+            m_cursor.set_scrolled_x();
             break;
 
         case Y_AXIS:
@@ -66,6 +68,7 @@ void Buffer::scroll_(int _axis, int _dir, int _steps, bool _update_current_line)
             }
 
             scroll.y = n_scrolled_y;
+            m_cursor.set_scrolled_y();
             break;
     }
     
@@ -76,66 +79,6 @@ void Buffer::scroll_(int _axis, int _dir, int _steps, bool _update_current_line)
     m_scrollPos += scroll;
     updateBufferCursorPos();
     
-    if (scroll.x == 0)
-        move_cursor_to_last_x_();   // hang on to previous x pos even through y scroll
-
-    clear_next_frame_();
-
-}
-
-//---------------------------------------------------------------------------------------
-void Buffer::onScroll(BufferScrollEvent *_e)
-{
-    ivec2_t scroll = { 0, 0 };
-    switch (_e->axis())
-    {
-        case X_AXIS:
-            scroll.x = _e->dir() < 0 ? -_e->steps() : _e->steps();
-            break;
-
-        case Y_AXIS:
-            int n = 0;
-            int n_scrolled_y = 0;
-            
-            // scroll up
-            if (_e->dir() < 0)
-            {
-                while (n < _e->steps() && m_pageFirstLine->prev != NULL)
-                {
-                    m_pageFirstLine = m_pageFirstLine->prev;
-                    m_pageLastLine = m_pageLastLine->prev;
-                    n++;
-                    n_scrolled_y--;
-                }
-
-            }
-            // scroll down
-            else
-            {
-                while (n < _e->steps() && m_pageLastLine->next != NULL)
-                {
-                    m_pageFirstLine = m_pageFirstLine->next;
-                    m_pageLastLine = m_pageLastLine->next;
-                    n++;
-                    n_scrolled_y++;
-                }
-
-            }
-
-            scroll.y = n_scrolled_y;
-            break;
-    }
-    LOG_INFO("scroll.y = %d", scroll.y);
-
-    updateCurrentLinePtr(scroll.y);
-
-    // update scroll position and update cursor
-    m_scrollPos += scroll;
-    updateBufferCursorPos();
-    
-    if (scroll.x == 0)
-        move_cursor_to_last_x_();   // hang on to previous x pos even through y scroll
-
     clear_next_frame_();
 
 }
@@ -297,6 +240,38 @@ void Buffer::moveCursorToRowDelim(int _dir)
 }
 
 //---------------------------------------------------------------------------------------
+void Buffer::pageUp()
+{
+    moveCursor(0, -Config::PAGE_SIZE);
+
+}
+
+//---------------------------------------------------------------------------------------
+void Buffer::pageDown()
+{
+    int steps = Config::PAGE_SIZE;
+    if (m_bufferCursorPos.y + Config::PAGE_SIZE > m_lineBuffer.lineCount() - 1)
+        steps = m_lineBuffer.lineCount() - 1 - m_bufferCursorPos.y;
+    moveCursor(0, steps);
+
+}
+
+//---------------------------------------------------------------------------------------
+void Buffer::moveHome()
+{
+    moveCursor(-m_cursor.cx(), -m_bufferCursorPos.y);
+
+}
+
+//---------------------------------------------------------------------------------------
+void Buffer::moveEnd()
+{
+    int steps = m_lineBuffer.lineCount() - 1 - m_bufferCursorPos.y;
+    moveCursor(m_lineBuffer.m_tail->len - m_cursor.cx(), steps);
+
+}
+
+//---------------------------------------------------------------------------------------
 void Buffer::insertCharAtCursor(char _c)
 {
     m_currentLine->insert_char(_c, m_cursor.cx());
@@ -335,17 +310,19 @@ void Buffer::insertNewLine()
     // split line at cursor x pos
     line_t *new_line = m_currentLine->split_at_pos(m_cursor.cpos().x);
     m_lineBuffer.insertAtPtr(m_currentLine, INSERT_AFTER, new_line);
-    
-    moveCursor(-m_cursor.cx(), 1);
+
+    // find correct indentation -- use spaces, not tabs
+    int white_spaces = find_indentation_level_(m_currentLine);
+    for (int i = 0; i < white_spaces; i++)
+        new_line->insert_char(' ', 0);
+
+    moveCursor(-m_cursor.cx() + white_spaces, 1);
     
     // scroll up one line since new line is inserted, keeping the number of viewable
     // lines constant
-    if (m_pageLastLine->prev != NULL)
-        m_pageLastLine = m_pageLastLine->prev;
-
-    m_linesUpdateList.insert(m_cursor.cy() - 1);
-    update_lines_after_y_(m_cursor.cy());
-
+    update_page_last_line_();
+    // redraw lines
+    update_lines_after_y_(m_cursor.cy() - 1);
     refresh_next_frame_();
 
 }
@@ -366,10 +343,8 @@ void Buffer::deleteCharAtCursor()
     else
     {
         m_lineBuffer.appendNextToThis(m_currentLine);
-        // update page pointers
-        if (m_pageLastLine->next != NULL)
-            m_pageLastLine = m_pageLastLine->next;
-        
+        update_page_last_line_();
+        // redraw lines
         update_lines_after_y_(m_cursor.cy());
     }
 
@@ -378,24 +353,27 @@ void Buffer::deleteCharAtCursor()
 }
 
 //---------------------------------------------------------------------------------------
+void Buffer::update_page_last_line_()
+{
+    // TODO : add chunking in the LineBuffer; pointers to every eg 500 lines, so that
+    //        we can perform a smarter search (ie bucketed, not linear like now).
+    //        Chunk pointers updated in background thread perhaps..
+    int last_idx = m_scrollPos.y + (m_lineBuffer.m_lineCount - 1 - m_scrollPos.y);
+    m_pageLastLine = m_lineBuffer.ptrFromIdx(last_idx);
+}
+
+//---------------------------------------------------------------------------------------
 void Buffer::deleteCharBeforeCursor()
 {
     // <BACKSPACE>
     
-    if (m_cursor.cx() == 0 && m_currentLine->prev == NULL)
+    if (m_cursor.cx() == 0 && m_currentLine->prev == NULL) // beggining of first line
     {
         m_cursor.move(0, 0);
         refresh_next_frame_();
         return;
     }
-    else if (m_cursor.cx() > 0)
-    {
-        m_cursor.move(-1, 0);
-        m_currentLine->delete_at(m_cursor.cx() + 1);
-        m_linesUpdateList.insert(m_cursor.cy());
-
-    }
-    else if (m_cursor.cx() == 0 && m_currentLine->prev != NULL)// at x 0
+    else if (m_cursor.cx() == 0 && m_currentLine->prev != NULL)// at x 0 and not first line
     {
         if (m_cursor.cy() == 0)
             scroll_(Y_AXIS, -1, 1, false);
@@ -403,12 +381,19 @@ void Buffer::deleteCharBeforeCursor()
         size_t prev_len = m_currentLine->prev->len;
         m_currentLine = m_lineBuffer.appendThisToPrev(m_currentLine);
         m_cursor.set_cpos(prev_len, m_cursor.cy() - 1);
+        // m_cursor.move(prev_len, -1);
 
         // update page pointers
-        if (m_pageLastLine->next != NULL)
-            m_pageLastLine = m_pageLastLine->next;
-
+        update_page_last_line_();
+        // redraw lines
         update_lines_after_y_(m_cursor.cy());
+
+    }
+    else if (m_cursor.cx() > 0) // inside line
+    {
+        m_cursor.move(-1, 0);
+        m_currentLine->delete_at(m_cursor.cx() + 1);
+        m_linesUpdateList.insert(m_cursor.cy());
 
     }
 
@@ -483,7 +468,8 @@ void Buffer::readFromFile(const std::string &_filename)
     // line pointers
     m_currentLine = m_lineBuffer.m_head;
     m_pageFirstLine = m_lineBuffer.m_head;
-    m_pageLastLine = m_lineBuffer.ptrFromIdx(m_frame.nrows - 1);
+    int last_line_idx = MIN(m_lineBuffer.m_lineCount - 1, m_frame.nrows - 1);
+    m_pageLastLine = m_lineBuffer.ptrFromIdx(last_line_idx);
 
     m_filename = std::string(_filename);
 
@@ -534,9 +520,6 @@ void Buffer::redraw()
     __debug_print(x, y++, "cpos = (%d, %d)", m_cursor.cx(), m_cursor.cy());
     __debug_print(x, y++, "rpos = (%d, %d)", m_cursor.rx(), m_cursor.ry());
     y++;
-    //__debug_print(x, y++, "R to C : %d --> %d", m_cursor.rx(), m_cursor.__debug_calc_cpos_from_rpos_());
-    //__debug_print(x, y++, "C to R : %d --> %d", m_cursor.cx(), m_cursor.__debug_calc_rpos_from_cpos_());
-    //y++;
     __debug_print(x, y++, "last_rx = %d", m_cursor.last_rx());
     __debug_print(x, y++, "spos = (%d, %d)", m_scrollPos.x , m_scrollPos.y);
     y++;
@@ -545,19 +528,12 @@ void Buffer::redraw()
         __debug_print(x, y++, "this line: '%s'", m_currentLine->__debug_str());
         __debug_print(x, y++, "this len:  %zu", m_currentLine->len);
 
-        //if (m_currentLine->prev != NULL)
-        //{
-        //    __debug_print(x, y++, "prev line: '%s'", m_currentLine->prev->__debug_str());
-        //    __debug_print(x, y++, "prev len:  %zu", m_currentLine->prev->len);
-        //    
-        //}
-
     }
     y++;
-    if (m_pageFirstLine != NULL)
-        __debug_print(x, y++, "page[ 0]: '%s'", m_pageFirstLine->__debug_str());
-    if (m_pageLastLine != NULL)
-        __debug_print(x, y++, "page[-1]: '%s'", m_pageLastLine->__debug_str());
+    if (m_pageFirstLine != NULL)    __debug_print(x, y++, "page[ 0]: '%s'", m_pageFirstLine->__debug_str());
+    else                            __debug_print(x, y++, "page[ 0]: NULL");
+    if (m_pageLastLine != NULL)     __debug_print(x, y++, "page[-1]: '%s'", m_pageLastLine->__debug_str());
+    else                            __debug_print(x, y++, "page[-1]: NULL");
     #endif
     
     if (m_isWindowVisible)
@@ -606,16 +582,6 @@ void Buffer::refresh()
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::move_cursor_to_last_x_()
-{
-    // if (m_cursor.last_rx() <= m_currentLine->len)
-    //     m_cursor.set_cpos(m_cursor.last_rx(), m_cursor.cy());
-    // else if (m_cursor.last_rx() > m_currentLine->len)
-    //     m_cursor.set_cpos((int)m_currentLine->len, m_cursor.cy());
-
-}
-
-//---------------------------------------------------------------------------------------
 bool Buffer::is_delimiter_(const char *_delim, CHTYPE _c)
 {
     for (size_t i = 0; i < strlen(_delim); i++)
@@ -641,3 +607,36 @@ bool Buffer::is_row_empty_(line_t *_line)
 
 }
 
+//---------------------------------------------------------------------------------------
+int Buffer::find_indentation_level_(line_t *_line)
+{
+    int first_char_idx = find_first_non_empty_char_(_line);
+    
+    if ((_line->content[first_char_idx] & CHTYPE_CHAR_MASK) == '{')
+        return first_char_idx + Config::TAB_SIZE;
+    
+    return first_char_idx;
+        
+}
+
+//---------------------------------------------------------------------------------------
+int Buffer::find_first_non_empty_char_(line_t *_line)
+{
+    CHTYPE_PTR p = _line->content;
+    int x = 0;
+    while (((*p & CHTYPE_CHAR_MASK) != '\0'))
+    {
+        if ((*p & CHTYPE_CHAR_MASK) == ' ')
+            x++;
+        else if ((*p & CHTYPE_CHAR_MASK) == '\t')
+            x += Config::TAB_SIZE;
+        else if ((*p & CHTYPE_CHAR_MASK) != ' ' && 
+                 (*p & CHTYPE_CHAR_MASK) != '\t')
+            break;
+
+        p++;
+    }
+
+    return x;
+
+}

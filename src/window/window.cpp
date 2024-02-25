@@ -15,9 +15,6 @@ Window::Window(const frame_t &_frame, const std::string &_id, bool _border)
 
 
 }
-// Window(const ivec2_t &_v0, const ivec2_t &_v1, const std::string &_id, bool _border)
-// {    
-// }
 
 //---------------------------------------------------------------------------------------
 Window::~Window() 

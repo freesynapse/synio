@@ -97,8 +97,7 @@ void LineBuffer::insertAtPtr(line_t *_at_line, int _insert_flag, line_t *_new_li
 
         m_lineCount++;
 
-    }    
-
+    }
 
 }
 
@@ -205,7 +204,7 @@ void LineBuffer::appendNextToThis(line_t *_line)
 line_t *LineBuffer::ptrFromIdx(int _index)
 {
     /* TODO (?):
-     * Could chunk this every eg 500 LineBuffer, so that we start the search either forwards 
+     * Could chunk this every eg 500 lines, so that we start the search either forwards 
      * backwards from the nearest chunk boundary. Problem: we need to update the chunks
      * periodically, which I guess could be done threaded.
      * 
@@ -216,7 +215,7 @@ line_t *LineBuffer::ptrFromIdx(int _index)
     // trivial cases
     if (m_lineCount == 0) 
         return NULL;
-    else if (m_lineCount == 1)
+    if (m_lineCount == 1)
         return m_head;
 
     // out-of bounds indexing

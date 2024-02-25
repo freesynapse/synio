@@ -41,6 +41,11 @@ public:
     const int &dx() { return m_dx; }
     const int &dy() { return m_dy; }
 
+    void set_scrolled_x() { m_scrolled_x = true; }
+    void set_scrolled_y() { m_scrolled_y = true; }
+    bool was_scrolled_x() { return m_scrolled_x; }
+    bool was_scrolled_y() { return m_scrolled_y; }
+
 private:
     void clamp_to_frame_();
     int calc_rposx_from_cposx_();
@@ -53,6 +58,9 @@ private:
     ivec2_t m_rpos = ivec2_t(0);
     
     int m_last_rx = 0;
+
+    bool m_scrolled_x = false;
+    bool m_scrolled_y = false;
 
     Buffer *m_parent = NULL;
 

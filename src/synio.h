@@ -22,7 +22,6 @@ public:
 
     //
     void initialize();
-    void onBufferScroll(Event *_e);
 
     //
     void mainLoop();

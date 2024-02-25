@@ -123,7 +123,7 @@ public:
 
     // callback for ScrollEvent -- called from synio.cpp
     void onScroll(BufferScrollEvent *_e);
-    void scroll_(int _axis, int _dir, int _steps, bool _update_current_line=true);
+    void scroll_(int _axis, int _dir, int _steps, bool _update_current_line);
 
     // Cursor functions
     //
@@ -133,6 +133,10 @@ public:
     virtual void moveCursorToLineEnd();
     virtual void moveCursorToColDelim(int _dir);
     virtual void moveCursorToRowDelim(int _dir);
+    virtual void pageUp();
+    virtual void pageDown();
+    virtual void moveHome();
+    virtual void moveEnd();
     virtual void insertCharAtCursor(char _c);
     virtual void insertStrAtCursor(char *_str, size_t _len);
     virtual void insertNewLine();
@@ -162,7 +166,7 @@ public:
     line_t *currentLine() { return m_currentLine; }
 
 private:
-    void move_cursor_to_last_x_();
+    void update_page_last_line_();
     bool is_delimiter_(const char *_delim, CHTYPE _c);
     bool is_row_empty_(line_t *_line);
     __always_inline void update_lines_after_y_(int _y)
@@ -170,6 +174,8 @@ private:
         for (int i = _y; i < m_frame.nrows; i++)
             m_linesUpdateList.insert(i);
     }
+    int find_indentation_level_(line_t *_line);
+    int find_first_non_empty_char_(line_t *_line);
     
 
 protected:
@@ -196,27 +202,5 @@ protected:
     LineNumbers *m_lineNumbers = NULL;
 
 };
-
-// TODO : vertical bar implementation
-// Bars -- treated as one (1) column or row Window with custom border
-/*
-class VerticalBar : public Window
-{
-public:
-    VerticalBar(int _x, int _y0, int _y1, Window *_parent=NULL)
-    {
-        m_frame = frame_t(ivec2_t(_x, _y0), ivec2_t(_x + 1, _y1));
-        m_parent = _parent;
-        m_apiBorderWindowPtr = api->newVerticalBarWindow(_x, _y0, _y1);
-    }
-
-    // virtual compulsory functions
-    virtual void redraw() override {};
-
-protected:
-    Window *m_parent;
-
-};
-*/
 
 #endif // __WINDOW_H

@@ -2,6 +2,7 @@
 #define __EVENTS_H
 
 #include <string>
+#include "types.h"
 
 //
 #define EVENT_TYPE(_type) static EventType staticType() { return EventType::_type; } \
@@ -29,8 +30,6 @@ public:
 
 //
 class Window;
-#define X_AXIS 1
-#define Y_AXIS 2
 class BufferScrollEvent : public Event
 {
 public:

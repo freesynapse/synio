@@ -16,8 +16,8 @@ Synio::Synio(const std::string &_filename)
     initialize();
 
     // register callbacks
-    EventHandler::register_callback(EventType::BUFFER_SCROLL, 
-                                    EVENT_MEMBER_FNC(Synio::onBufferScroll));
+    // EventHandler::register_callback(EventType::BUFFER_SCROLL, 
+    //                                 EVENT_MEMBER_FNC(Synio::onBufferScroll));
 
     //
     mainLoop();
@@ -42,14 +42,6 @@ void Synio::initialize()
     m_bufferWindow = new Buffer(buffer_window_rect, "buffer_window", false);
     m_bufferWindow->readFromFile(m_filename);
     m_currentBuffer = m_bufferWindow;
-
-}
-
-//---------------------------------------------------------------------------------------
-void Synio::onBufferScroll(Event *_e)
-{
-    BufferScrollEvent *e = dynamic_cast<BufferScrollEvent*>(_e);
-    dynamic_cast<Buffer*>(m_currentBuffer)->onScroll(e);
 
 }
 
@@ -98,10 +90,12 @@ void Synio::mainLoop()
             {
                 switch (ctrl_action)
                 {
-                    case CtrlKeyAction::CTRL_LEFT:  m_currentBuffer->moveCursorToColDelim(-1); break;
-                    case CtrlKeyAction::CTRL_RIGHT: m_currentBuffer->moveCursorToColDelim(1); break;
-                    case CtrlKeyAction::CTRL_UP:    m_currentBuffer->moveCursorToRowDelim(-1); break;
-                    case CtrlKeyAction::CTRL_DOWN:  m_currentBuffer->moveCursorToRowDelim(1); break;
+                    case CtrlKeyAction::CTRL_LEFT:  m_currentBuffer->moveCursorToColDelim(-1);  break;
+                    case CtrlKeyAction::CTRL_RIGHT: m_currentBuffer->moveCursorToColDelim(1);   break;
+                    case CtrlKeyAction::CTRL_UP:    m_currentBuffer->moveCursorToRowDelim(-1);  break;
+                    case CtrlKeyAction::CTRL_DOWN:  m_currentBuffer->moveCursorToRowDelim(1);   break;
+                    case CtrlKeyAction::CTRL_HOME:   m_currentBuffer->moveHome();               break;
+                    case CtrlKeyAction::CTRL_END:   m_currentBuffer->moveEnd();                 break;
                     default: LOG_INFO("ctrl keycode %d : %s", key, ctrlActionStr(ctrl_action)); break;
 
                 }
@@ -111,14 +105,14 @@ void Synio::mainLoop()
                 switch (key)
                 {
                     // cursor movement
-                    case KEY_DOWN:  m_currentBuffer->moveCursor(0, 1);   break;
-                    case KEY_UP:    m_currentBuffer->moveCursor(0, -1);  break;
-                    case KEY_LEFT:  m_currentBuffer->moveCursor(-1, 0);  break;
-                    case KEY_RIGHT: m_currentBuffer->moveCursor(1, 0);   break;
-                    case KEY_PPAGE: m_currentBuffer->moveCursor(0, -Config::PAGE_SIZE);  break;
-                    case KEY_NPAGE: m_currentBuffer->moveCursor(0, Config::PAGE_SIZE);   break;
-                    case KEY_HOME:  m_currentBuffer->moveCursorToLineBegin(); break;
-                    case KEY_END:   m_currentBuffer->moveCursorToLineEnd(); break;
+                    case KEY_DOWN:  m_currentBuffer->moveCursor(0, 1);  break;
+                    case KEY_UP:    m_currentBuffer->moveCursor(0, -1); break;
+                    case KEY_LEFT:  m_currentBuffer->moveCursor(-1, 0); break;
+                    case KEY_RIGHT: m_currentBuffer->moveCursor(1, 0);  break;
+                    case KEY_PPAGE: m_currentBuffer->pageUp();          break;
+                    case KEY_NPAGE: m_currentBuffer->pageDown();        break;
+                    case KEY_HOME:  m_currentBuffer->moveCursorToLineBegin();   break;
+                    case KEY_END:   m_currentBuffer->moveCursorToLineEnd();     break;
 
                     // TODO : enter command mode (eventually)
                     case CTRL('x'):
@@ -132,6 +126,12 @@ void Synio::mainLoop()
                     // test insert string in line
                     case CTRL('v'):
                         m_currentBuffer->insertStrAtCursor((char *)debug_insert_str, strlen(debug_insert_str));
+                        break;
+
+                    case CTRL('d'):
+                        LOG_INFO("current line: '%s' (%zu)", 
+                                 m_currentBuffer->currentLine()->__debug_str(),
+                                 m_currentBuffer->currentLine()->len);
                         break;
 
                     case KEY_DC:

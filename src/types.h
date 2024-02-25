@@ -6,6 +6,17 @@
 #include <string>
 
 #include "utils/log.h"
+
+// scroll-related
+#define X_AXIS 1
+#define Y_AXIS 2
+
+#define FORWARD   1
+#define BACKWARD -1
+
+#define NEXT  1
+#define PREV -1
+
 //
 typedef void* API_WINDOW_PTR;
 

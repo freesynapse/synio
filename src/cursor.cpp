@@ -1,5 +1,6 @@
 
 #include "cursor.h"
+#include "types.h"
 #include "window/window.h"
 #include "event_handler.h"
 
@@ -75,59 +76,14 @@ void Cursor::update()
                    m_rpos.y,
                    m_parent->m_frame.v1.x,
                    m_parent->m_frame.v1.y);
-    
-    //if (api->moveCursor(m_parent->m_apiWindowPtr, m_cpos.x, m_cpos.y) == ERR)
-    //    LOG_WARNING("%s : m_pos (%d, %d), window lim (%d, %d)",
-    //                __func__,
-    //                m_cpos.x,
-    //                m_cpos.y,
-    //                m_parent->m_frame.v1.x,
-    //                m_parent->m_frame.v1.y);
 
     m_dx = 0;
     m_dy = 0;
 
+    m_scrolled_x = false;
+    m_scrolled_y = false;
+
 }
-
-//---------------------------------------------------------------------------------------
-// void Cursor::calc_rposx_from_cposx_()
-// {
-//     m_rpos.y = m_cpos.y;
-//     line_t *line = m_parent->m_currentLine;
-
-//     int r = 0;
-//     int c = 0;
-//     for (c = 0; c < m_cpos.x; c++)
-//     {
-//         if ((line->content[c] & A_CHARTEXT) == '\t')
-//             r = (r + (Config::TAB_SIZE - (r % Config::TAB_SIZE)));
-//         else
-//             r++;
-//     }
-
-//     m_rpos.x = r;
-    
-// }
-
-// //---------------------------------------------------------------------------------------
-// void Cursor::calc_cpos_from_rpos_()
-// {
-//     m_cpos.y = m_rpos.y;
-//     line_t *line = m_parent->m_currentLine;
-
-//     int c = 0;
-//     int r = 0;
-//     for (r = 0; r < m_rpos.x; c++)
-//     {
-//         if ((line->content[c] & A_CHARTEXT) == '\t')
-//             r = (r + (Config::TAB_SIZE - (r % Config::TAB_SIZE)));
-//         else
-//             r++;
-//     }
-    
-//     m_cpos.x = c;
-
-// }
 
 //---------------------------------------------------------------------------------------
 void Cursor::move(int _dx, int _dy)
@@ -142,22 +98,10 @@ void Cursor::move(int _dx, int _dy)
 
     // y scrolling
     if (m_cpos.y < 0)
-    {
-        EventHandler::push_event(new BufferScrollEvent(
-                                        Y_AXIS,
-                                        m_dy,
-                                        abs(m_cpos.y),
-                                        m_parent));
-        // keep cursor inside window
-    }
+        m_parent->scroll_(Y_AXIS, BACKWARD, abs(m_cpos.y), true);
+
     else if (m_cpos.y > m_parent->m_frame.nrows - 1)
-    {
-        EventHandler::push_event(new BufferScrollEvent(
-                                        Y_AXIS,
-                                        m_dy,
-                                        abs(m_cpos.y - (m_parent->m_frame.nrows - 1)),
-                                        m_parent));
-    }
+        m_parent->scroll_(Y_AXIS, FORWARD, abs(m_cpos.y - (m_parent->m_frame.nrows - 1)), true);
 
     clamp_to_frame_();
 
