@@ -1,5 +1,6 @@
 
 #include <assert.h>
+#include <cmath>
 
 #include "window.h"
 #include "../platform/ncurses_colors.h"
@@ -450,8 +451,6 @@ void Buffer::readFromFile(const std::string &_filename)
     }
     #endif
 
-    LOG_INFO("last line: %s", m_lineBuffer.m_tail->__debug_str());
-    
     // line pointers
     m_currentLine = m_lineBuffer.m_head;
     m_pageFirstLine = m_lineBuffer.m_head;
@@ -461,24 +460,39 @@ void Buffer::readFromFile(const std::string &_filename)
     // initialize line numbers window
     if (m_filename != "" && Config::SHOW_LINE_NUMBERS)
     {
+        int width = (int)std::round(std::log10((float)m_lineBuffer.m_lineCount) + 1) + 1;
+        // also leave 2 blank spaces left and 1 before the divider
+        width += 3;        
+        m_lineNumbers->setWidth(width);
+        resize(m_frame, width);
         // TODO : resize the width of LineNumbers window based on number of lines in 
         // file. 
         // --> ~ int width = round(std::log10((float)m_lineBuffer.size()));
         // --> also account for the vertical line (in the LineNubmers window)
+
     }
 
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::resize(frame_t _new_frame)
+void Buffer::resize(frame_t _new_frame, int _left_reserved)
 {
+    // the _left_reserved argument is used to reserve space of the LineNumbers window
+    // (eg when called from Buffer::readFromFile when we know the max number of lines in 
+    // the file).
+    //
+
     m_frame = _new_frame;
+    if (_left_reserved != -1 && m_frame.v0.x != _left_reserved)
+    {
+        m_frame.v0.x = _left_reserved;
+        m_frame.update_dims();
+    }
 
     api->clearWindow(m_apiWindowPtr);
     api->deleteWindow(m_apiWindowPtr);
-    m_apiWindowPtr = api->newWindow(&m_frame);
-    // resfresh called by api->newWindow()
-
+    m_apiWindowPtr = api->newWindow(&m_frame);  // resfresh called by api->newWindow()
+    
     if (m_apiBorderWindowPtr)
     {
         api->clearWindow(m_apiBorderWindowPtr);
@@ -486,8 +500,9 @@ void Buffer::resize(frame_t _new_frame)
         m_apiBorderWindowPtr = api->newBorderWindow(&m_frame);
     }
 
-    frame_t line_numbers_rect(ivec2_t(0, m_frame.v0.y), ivec2_t(m_frame.v0.x - 2, m_frame.v1.y));
-    m_lineNumbers->resize(line_numbers_rect);
+    // frame_t line_numbers_rect(ivec2_t(0, m_frame.v0.y), ivec2_t(m_frame.v0.x - 2, m_frame.v1.y));
+    // m_lineNumbers->resize(line_numbers_rect);
+    m_lineNumbers->resize(m_frame);
 
 }
 

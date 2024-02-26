@@ -1,11 +1,11 @@
 
-#include <assert.h>
-
 #include "synio.h"
 #include "utils/log.h"
-// #include "file_io.h"
 #include "event_handler.h"
 #include "core.h"
+
+// DEBUG
+#include "platform/ncurses_colors.h"
 
 //
 Synio::Synio(const std::string &_filename)
@@ -38,7 +38,7 @@ Synio::~Synio()
 void Synio::initialize()
 {
     api->getRenderSize(&m_screenSize);
-    frame_t buffer_window_rect(ivec2_t(8, 1), ivec2_t(m_screenSize.x, m_screenSize.y - 3));
+    frame_t buffer_window_rect(ivec2_t(8, 0), ivec2_t(m_screenSize.x, m_screenSize.y - 2));
     m_bufferWindow = new Buffer(buffer_window_rect, "buffer_window", false);
     m_bufferWindow->readFromFile(m_filename);
     m_currentBuffer = m_bufferWindow;
@@ -52,12 +52,10 @@ void Synio::mainLoop()
     {
         // --- BEGIN DRAWING
         //
-        
         m_currentBuffer->clear();    // very good, clear() clears the borders...
         // ---> https://stackoverflow.com/questions/33986047/ncurses-is-it-possible-to-refresh-a-window-without-removing-its-borders
         // -- Changed in the Window class so that all extra 'border' windows can be drawn.
         m_currentBuffer->redraw();
-        // m_currentBuffer->updateCursor(); // called in redraw
         m_currentBuffer->refresh();
         
         //
@@ -80,7 +78,7 @@ void Synio::mainLoop()
         //
         if (m_commandMode)
         {
-
+            
         }
         // interactive (editing) mode
         //

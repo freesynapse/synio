@@ -72,12 +72,24 @@ void Window::__debug_print(int _x, int _y, const char *_fmt, ...)
 
 //---------------------------------------------------------------------------------------
 // LineNumber functions
+//
+void LineNumbers::resize(frame_t _buffer_frame)
+{
+    // use parent buffer and width to deduce frame
+    frame_t new_frame = frame_t(ivec2_t(0, 0), 
+                                ivec2_t(m_width, _buffer_frame.v1.y));
+
+    Window::resize(new_frame);
+
+}
+
+//---------------------------------------------------------------------------------------
 void LineNumbers::redraw()
 {
     if (!m_isWindowVisible)
         return;
 
-    int width = m_frame.v1.x - 2;
+    // int width = m_frame.v1.x - 2;
 
     int y = 0;
     int line_no = m_associatedBuffer->m_scrollPos.y + 1;
@@ -85,7 +97,7 @@ void LineNumbers::redraw()
 
     while (y < m_frame.nrows && curr_line != NULL)
     {
-        api->wprint(m_apiWindowPtr, 0, y++, "%*d", width, line_no++);
+        api->wprint(m_apiWindowPtr, 0, y++, "%*d", m_width-3, line_no++);
         curr_line = curr_line->next;
     }
 

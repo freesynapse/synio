@@ -96,14 +96,21 @@ class LineNumbers : public Window
 public:
     using Window::Window;
 
+    //
+    virtual void resize(frame_t _new_frame) override;
+
     // virtual compulsory functions
     virtual void redraw() override;
-
+    
     // set associated buffer
     void setBuffer(Buffer *_buffer) { m_associatedBuffer = _buffer; }
 
+    //
+    void setWidth(int _w) { m_width = _w; }
+
 private:
     Buffer *m_associatedBuffer = NULL;
+    int m_width = Config::LINE_NUMBERS_MIN_WIDTH;
 
 };
 
@@ -156,7 +163,7 @@ public:
 
     // draw the buffer within window bounds using the BufferFormatter. Also draw Window
     // border (if any)
-    virtual void resize(frame_t _new_frame) override;
+    virtual void resize(frame_t _new_frame, int _left_reserved=-1);
     virtual void redraw() override;
     virtual void clear() override;
     virtual void refresh() override;

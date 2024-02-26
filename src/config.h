@@ -21,6 +21,9 @@ public:
 
     static TabsOrSpaces USE_TABS_OR_SPACES;
     
+    static int LINE_NUMBERS_MIN_WIDTH;
+
+    //
     static void readConfigFile(const std::string &_filename="");
 
 };

@@ -27,7 +27,6 @@ public:
     void mainLoop();
 
 
-
 private:
     // flags
     bool m_shouldClose = false;
