@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <cmath>
 
-#include "window.h"
+#include "buffer_window.h"
 #include "../platform/ncurses_colors.h"
 
 //
@@ -462,13 +462,9 @@ void Buffer::readFromFile(const std::string &_filename)
     {
         int width = (int)std::round(std::log10((float)m_lineBuffer.m_lineCount) + 1) + 1;
         // also leave 2 blank spaces left and 1 before the divider
-        width += 3;        
+        width += 4;
         m_lineNumbers->setWidth(width);
         resize(m_frame, width);
-        // TODO : resize the width of LineNumbers window based on number of lines in 
-        // file. 
-        // --> ~ int width = round(std::log10((float)m_lineBuffer.size()));
-        // --> also account for the vertical line (in the LineNubmers window)
 
     }
 
@@ -500,8 +496,6 @@ void Buffer::resize(frame_t _new_frame, int _left_reserved)
         m_apiBorderWindowPtr = api->newBorderWindow(&m_frame);
     }
 
-    // frame_t line_numbers_rect(ivec2_t(0, m_frame.v0.y), ivec2_t(m_frame.v0.x - 2, m_frame.v1.y));
-    // m_lineNumbers->resize(line_numbers_rect);
     m_lineNumbers->resize(m_frame);
 
 }

@@ -27,6 +27,8 @@ void init_colors(API_WINDOW_PTR _w)
     // background colors
     init_color(SYNIO_COLOR_BKGD,             0,    0,    0);
     init_color(SYNIO_COLOR_SELECTED_BKGD,  300,  300,  300);
+    init_color(SYNIO_COLOR_STATUS_BKGD,    900,  900,  900);
+
     // foreground colors
     init_color(SYNIO_COLOR_TEXT_FGD,      1000, 1000, 1000);
     init_color(SYNIO_COLOR_KEYWORD_FGD,   1000, 1000,    0);
@@ -34,14 +36,17 @@ void init_colors(API_WINDOW_PTR _w)
     init_color(SYNIO_COLOR_NUMBER_FGD,    1000,  360,    0);
     init_color(SYNIO_COLOR_DELIM_FGD,      700,  100,  700);
     init_color(SYNIO_COLOR_COMMENT_FGD,    600,  360,    0);
+    init_color(SYNIO_COLOR_BLACK,            0,    0,    0);
+    
 
     // regular color pairs
-    init_pair(SYNIO_COLOR_TEXT,    SYNIO_COLOR_TEXT_FGD,    SYNIO_COLOR_BKGD);    // 'standard' color scheme
-    init_pair(SYNIO_COLOR_KEYWORD, SYNIO_COLOR_KEYWORD_FGD, SYNIO_COLOR_BKGD);
-    init_pair(SYNIO_COLOR_STRING,  SYNIO_COLOR_STRING_FGD,  SYNIO_COLOR_BKGD);
-    init_pair(SYNIO_COLOR_NUMBER,  SYNIO_COLOR_NUMBER_FGD,  SYNIO_COLOR_BKGD);
-    init_pair(SYNIO_COLOR_DELIM,   SYNIO_COLOR_DELIM_FGD,   SYNIO_COLOR_BKGD);
-    init_pair(SYNIO_COLOR_COMMENT, SYNIO_COLOR_COMMENT_FGD, SYNIO_COLOR_BKGD);
+    init_pair(SYNIO_COLOR_TEXT,    SYNIO_COLOR_TEXT_FGD,    SYNIO_COLOR_BKGD       );    // 'standard' color scheme
+    init_pair(SYNIO_COLOR_KEYWORD, SYNIO_COLOR_KEYWORD_FGD, SYNIO_COLOR_BKGD       );
+    init_pair(SYNIO_COLOR_STRING,  SYNIO_COLOR_STRING_FGD,  SYNIO_COLOR_BKGD       );
+    init_pair(SYNIO_COLOR_NUMBER,  SYNIO_COLOR_NUMBER_FGD,  SYNIO_COLOR_BKGD       );
+    init_pair(SYNIO_COLOR_DELIM,   SYNIO_COLOR_DELIM_FGD,   SYNIO_COLOR_BKGD       );
+    init_pair(SYNIO_COLOR_COMMENT, SYNIO_COLOR_COMMENT_FGD, SYNIO_COLOR_BKGD       );
+    init_pair(SYNIO_COLOR_STATUS,  SYNIO_COLOR_BLACK,       SYNIO_COLOR_STATUS_BKGD);
 
     // selection color pairs
     init_pair(SYNIO_COLOR_SELECTED_TEXT,    SYNIO_COLOR_TEXT_FGD,    SYNIO_COLOR_SELECTED_BKGD);

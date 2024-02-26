@@ -1,7 +1,7 @@
 
 #include "cursor.h"
 #include "types.h"
-#include "window/window.h"
+#include "window/buffer_window.h"
 #include "event_handler.h"
 
 //

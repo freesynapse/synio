@@ -7,6 +7,8 @@
 
 #include "utils/utils.h"
 #include "window/window.h"
+#include "window/buffer_window.h"
+#include "window/command_window.h"
 #include "line_buffer.h"
 #include "buffer_formatter.h"
 #include "cursor.h"
@@ -33,16 +35,15 @@ private:
     bool m_commandMode = false;
     
     // windows
-    Buffer *m_bufferWindow = NULL;    // to become an undordered map of windows?
-    Buffer *m_currentBuffer = NULL;
+    Buffer *m_bufferWindow = NULL;      // TODO : to become an undordered map of windows?
+    CommandWindow *m_commandWindow = NULL;
 
-    // TODO : vertical bar implementation
-    // VerticalBar *bar = NULL;
+    Buffer *m_currentBuffer = NULL;     // indicating use of multiple buffers...
 
     //
     ivec2_t m_screenSize;
 
-    // TODO : remove and read command line args properly
+    //
     std::string m_filename = "";
     
 };

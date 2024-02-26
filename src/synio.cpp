@@ -38,10 +38,14 @@ Synio::~Synio()
 void Synio::initialize()
 {
     api->getRenderSize(&m_screenSize);
-    frame_t buffer_window_rect(ivec2_t(8, 0), ivec2_t(m_screenSize.x, m_screenSize.y - 2));
+    frame_t buffer_window_rect(ivec2_t(8, 0), ivec2_t(m_screenSize.x, m_screenSize.y - 4));
     m_bufferWindow = new Buffer(buffer_window_rect, "buffer_window", false);
     m_bufferWindow->readFromFile(m_filename);
     m_currentBuffer = m_bufferWindow;
+
+    //
+    frame_t command_frame(ivec2_t(0, m_screenSize.y - 5), ivec2_t(m_screenSize.x, m_screenSize.y));
+    m_commandWindow = new CommandWindow(command_frame, "command_window", false);
 
 }
 
@@ -50,8 +54,14 @@ void Synio::mainLoop()
 {
     while (!m_shouldClose)
     {
-        // --- BEGIN DRAWING
+        // --- BEGIN DRAWING : order matters!
         //
+
+        m_commandWindow->clear();
+        m_commandWindow->redraw();
+        m_commandWindow->refresh();
+
+        // 
         m_currentBuffer->clear();    // very good, clear() clears the borders...
         // ---> https://stackoverflow.com/questions/33986047/ncurses-is-it-possible-to-refresh-a-window-without-removing-its-borders
         // -- Changed in the Window class so that all extra 'border' windows can be drawn.

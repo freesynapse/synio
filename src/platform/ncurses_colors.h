@@ -10,7 +10,7 @@
 // individual color ids
 #define SYNIO_COLOR_BKGD                -1  // assumes use_default_colors() is called
 #define SYNIO_COLOR_SELECTED_BKGD        1
-#define SYNIO_COLOR_MENU_BKGD            2  // TODO : implement!
+#define SYNIO_COLOR_MENU_BKGD            2  // TODO : implement me...
 #define SYNIO_COLOR_STATUS_BKGD          3
 #define SYNIO_COLOR_TEXT_FGD             4
 #define SYNIO_COLOR_KEYWORD_FGD          5
@@ -18,8 +18,9 @@
 #define SYNIO_COLOR_NUMBER_FGD           7
 #define SYNIO_COLOR_DELIM_FGD            8
 #define SYNIO_COLOR_COMMENT_FGD          9
+#define SYNIO_COLOR_BLACK               10
 
-#define SYNIO_COLOR_COUNT               10
+#define SYNIO_COLOR_COUNT               11
 
 // color pair ids
 #define SYNIO_COLOR_TEXT                 0
@@ -28,8 +29,9 @@
 #define SYNIO_COLOR_NUMBER               3
 #define SYNIO_COLOR_DELIM                4
 #define SYNIO_COLOR_COMMENT              5
+#define SYNIO_COLOR_STATUS               6
 
-#define SYNIO_COLOR_PAIR_COUNT           6
+#define SYNIO_COLOR_PAIR_COUNT           7
 
 // selection color pair ids
 #define SELECTION_OFFSET                (256 - SYNIO_COLOR_PAIR_COUNT)
