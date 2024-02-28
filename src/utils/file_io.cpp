@@ -9,7 +9,7 @@ std::string FileIO::s_lastReadFile = "";
 std::string FileIO::s_lastWrittenFile = "";
 
 //---------------------------------------------------------------------------------------
-int FileIO::readFileIntoBuffer(const std::string &_filename, MultiLineBuffer *_buffer)
+int FileIO::readFileIntoBuffer(const std::string &_filename, LineBuffer *_buffer)
 {
     _buffer->clear();
 

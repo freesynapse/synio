@@ -11,26 +11,13 @@
 #define INSERT_AFTER    0x10
 
 
-class LineBufferBase
-{
-public:
-    LineBufferBase() {}
-    ~LineBufferBase() = default;
-
-    //
-
-protected:
-
-};
-
-
 // Multi-line buffer, obviously more functionality thatn single line buffer
 //
-class MultiLineBuffer
+class LineBuffer
 {
 public:
-    MultiLineBuffer() {}
-    ~MultiLineBuffer() { clear(); }
+    LineBuffer() {}
+    ~LineBuffer() { clear(); }
 
     void push_front(line_t *_new_line);
     void push_back(line_t *_new_line);
@@ -48,7 +35,7 @@ public:
     void deleteAfterIdx(int _index)         { deleteAtPtr(ptrFromIdx(_index + 1));  }
     line_t *appendThisToPrev(line_t *_line);   // as when <BACKSPACE> is pressed at start of line
     void appendNextToThis(line_t *_line);      // as when <DEL> is pressed at end of line
-    void clear();   // deletes all lines
+    void clear();
 
     //
     #ifdef DEBUG
@@ -59,10 +46,14 @@ public:
     // accessors
     line_t *ptrFromIdx(int _index);
     const int lineCount() const { return m_lineCount; }
-    
+
+
+public:
+
     line_t *m_head  = NULL;
     line_t *m_tail  = NULL;
     int m_lineCount = 0;
+
 
 };
 

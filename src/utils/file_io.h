@@ -10,7 +10,7 @@
 class FileIO
 {
 public:
-    static int readFileIntoBuffer(const std::string &_filename, MultiLineBuffer *_line_buffer);
+    static int readFileIntoBuffer(const std::string &_filename, LineBuffer *_line_buffer);
 
     // accessors
     const char *lastReadFile() { return s_lastReadFile.c_str(); }

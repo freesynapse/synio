@@ -5,7 +5,6 @@
 #include "types.h"
 
 // could also be platform agnostic, requires more work though. For now ncurses ftw.
-class Window;
 class BufferFormatter
 {
 public:

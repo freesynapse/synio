@@ -42,8 +42,12 @@ public:
     // update window cursor (called during rendering and after keypress)
     virtual void updateCursor() {};
 
-
-
+protected:
+    bool is_delimiter_(const char *_delim, CHTYPE _c);    
+    bool is_row_empty_(line_t *_line);    
+    int find_indentation_level_(line_t *_line);    
+    int find_first_non_empty_char_(line_t *_line);
+    
 protected:
     line_t *m_currentLine = NULL;
 

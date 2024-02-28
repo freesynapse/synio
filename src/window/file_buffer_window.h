@@ -11,7 +11,6 @@ class FileBufferWindow : public BufferWindowBase
 {
 public:
     friend class LineNumbers;
-    friend class Cursor;
 
 public:
 
@@ -51,7 +50,7 @@ public:
     void readFromFile(const std::string &_filename);
 
     //
-    virtual void resize(frame_t _new_frame, int _left_reserved=-1);// <-- override?
+    virtual void resize(frame_t _new_frame, int _left_reserved=-1);
     virtual void redraw() override;
     virtual void clear() override;
     virtual void refresh() override;
@@ -61,22 +60,18 @@ public:
     line_t *currentLine() { return m_currentLine; }
 
 private:
-    bool is_delimiter_(const char *_delim, CHTYPE _c);
-    bool is_row_empty_(line_t *_line);
     __always_inline void update_lines_after_y_(int _y)
     {
         for (int i = _y; i < m_frame.nrows; i++)
             m_linesUpdateList.insert(i);
     }
-    int find_indentation_level_(line_t *_line);
-    int find_first_non_empty_char_(line_t *_line);
     
 
 protected:
     std::string m_filename = "";
 
     //
-    MultiLineBuffer m_lineBuffer;
+    LineBuffer m_lineBuffer;
     //m_currentLine in BufferWindowBase
     line_t *m_pageFirstLine = NULL;
     
