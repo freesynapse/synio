@@ -10,7 +10,7 @@
 #include "../utils/log.h"
 #include "../utils/file_io.h"
 #include "../buffer_formatter.h"
-#include "../line_buffer.h"
+#include "../buffer/line_buffer.h"
 #include "../platform/platform.h"
 #include "../events.h"
 #include "../config.h"

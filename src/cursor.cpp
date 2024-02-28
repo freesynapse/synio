@@ -1,7 +1,7 @@
 
 #include "cursor.h"
 #include "types.h"
-#include "window/buffer_window.h"
+#include "window/file_buffer_window.h"
 #include "event_handler.h"
 
 //
@@ -54,7 +54,7 @@ void Cursor::update()
         // calculate cpos x position from rpos
         m_cpos.x = calc_cposx_from_rposx_();
         // correct in relation to line len
-        if (m_cpos.x >m_parent-> m_currentLine->len)
+        if (m_cpos.x > m_parent->m_currentLine->len)
            m_cpos.x = (int)(m_parent->m_currentLine->len);
     }
     

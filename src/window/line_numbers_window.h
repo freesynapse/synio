@@ -4,7 +4,7 @@
 #include "window.h"
 
 //
-class Buffer;
+class FileBufferWindow;
 class LineNumbers : public Window
 {
 public:
@@ -17,13 +17,13 @@ public:
     virtual void redraw() override;
 
     // set associated buffer
-    void setBuffer(Buffer *_buffer) { m_associatedBuffer = _buffer; }
+    void setBuffer(FileBufferWindow *_buffer) { m_associatedBuffer = _buffer; }
 
     //
     void setWidth(int _w) { m_width = _w; }
 
 private:
-    Buffer *m_associatedBuffer = NULL;
+    FileBufferWindow *m_associatedBuffer = NULL;
     int m_width = Config::LINE_NUMBERS_MIN_WIDTH;
 
 };

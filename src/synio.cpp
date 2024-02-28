@@ -38,14 +38,10 @@ Synio::~Synio()
 void Synio::initialize()
 {
     api->getRenderSize(&m_screenSize);
-    frame_t buffer_window_rect(ivec2_t(8, 0), ivec2_t(m_screenSize.x, m_screenSize.y - 4));
-    m_bufferWindow = new Buffer(buffer_window_rect, "buffer_window", false);
+    frame_t buffer_window_rect(ivec2_t(8, 0), ivec2_t(m_screenSize.x, m_screenSize.y));
+    m_bufferWindow = new FileBufferWindow(buffer_window_rect, "buffer_window", false);
     m_bufferWindow->readFromFile(m_filename);
     m_currentBuffer = m_bufferWindow;
-
-    //
-    frame_t command_frame(ivec2_t(0, m_screenSize.y - 5), ivec2_t(m_screenSize.x, m_screenSize.y));
-    m_commandWindow = new CommandWindow(command_frame, "command_window", false);
 
 }
 
@@ -56,10 +52,6 @@ void Synio::mainLoop()
     {
         // --- BEGIN DRAWING : order matters!
         //
-
-        m_commandWindow->clear();
-        m_commandWindow->redraw();
-        m_commandWindow->refresh();
 
         // 
         m_currentBuffer->clear();    // very good, clear() clears the borders...
@@ -117,8 +109,8 @@ void Synio::mainLoop()
                     case KEY_UP:    m_currentBuffer->moveCursor(0, -1); break;
                     case KEY_LEFT:  m_currentBuffer->moveCursor(-1, 0); break;
                     case KEY_RIGHT: m_currentBuffer->moveCursor(1, 0);  break;
-                    case KEY_PPAGE: m_currentBuffer->pageUp();          break;
-                    case KEY_NPAGE: m_currentBuffer->pageDown();        break;
+                    case KEY_PPAGE: m_currentBuffer->movePageUp();      break;
+                    case KEY_NPAGE: m_currentBuffer->movePageDown();    break;
                     case KEY_HOME:  m_currentBuffer->moveCursorToLineBegin();   break;
                     case KEY_END:   m_currentBuffer->moveCursorToLineEnd();     break;
 
@@ -167,33 +159,6 @@ void Synio::mainLoop()
         EventHandler::process_events();
 
     }
-
-}
-
-//=======================================================================================
-int main(int argc, char *argv[])
-{
-    // std::string filename = "test.cpp";
-    std::string filename = "tabbed_file.txt";
-
-    if (argc > 1)
-        filename = std::string(argv[1]);
-
-    //
-    Log::open();
-
-    set_backend();
-    api->initialize();
-
-    {
-        Synio synio(filename);
-    }
-
-    api->shutdown();
-
-    Log::close();
-
-    return 0;
 
 }
 

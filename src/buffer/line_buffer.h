@@ -4,19 +4,33 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "types.h"  // for line_t 
+#include "../types.h"  // for line_t 
 
 // insert flags
 #define INSERT_BEFORE   0x01
 #define INSERT_AFTER    0x10
 
-//
-// TODO : make templated for _content type?
-class LineBuffer
+
+class LineBufferBase
 {
 public:
-    LineBuffer() {}
-    ~LineBuffer() { clear(); }
+    LineBufferBase() {}
+    ~LineBufferBase() = default;
+
+    //
+
+protected:
+
+};
+
+
+// Multi-line buffer, obviously more functionality thatn single line buffer
+//
+class MultiLineBuffer
+{
+public:
+    MultiLineBuffer() {}
+    ~MultiLineBuffer() { clear(); }
 
     void push_front(line_t *_new_line);
     void push_back(line_t *_new_line);

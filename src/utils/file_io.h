@@ -4,13 +4,13 @@
 #include <stdio.h>
 #include <string>
 
-#include "../line_buffer.h"
+#include "../buffer/line_buffer.h"
 
 //
 class FileIO
 {
 public:
-    static int readFileIntoBuffer(const std::string &_filename, LineBuffer *_line_buffer);
+    static int readFileIntoBuffer(const std::string &_filename, MultiLineBuffer *_line_buffer);
 
     // accessors
     const char *lastReadFile() { return s_lastReadFile.c_str(); }

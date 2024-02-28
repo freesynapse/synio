@@ -1,7 +1,7 @@
 #ifndef __FORMATTER_H
 #define __FORMATTER_H
 
-#include "line_buffer.h"
+#include "buffer/line_buffer.h"
 #include "types.h"
 
 // could also be platform agnostic, requires more work though. For now ncurses ftw.

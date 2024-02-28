@@ -1,6 +1,6 @@
 
 #include "line_numbers_window.h"
-#include "buffer_window.h"
+#include "file_buffer_window.h"
 
 
 //

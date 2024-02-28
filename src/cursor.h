@@ -5,14 +5,14 @@
 #include "utils/utils.h"
 
 // forward decl
-class Buffer;
+class BufferWindowBase;
 
 //
 class Cursor
 {
 public:
     Cursor() {}
-    Cursor(Buffer *_parent) : m_parent(_parent) {}
+    Cursor(BufferWindowBase *_parent) : m_parent(_parent) {}
     ~Cursor() = default;
 
     //
@@ -62,7 +62,7 @@ private:
     bool m_scrolled_x = false;
     bool m_scrolled_y = false;
 
-    Buffer *m_parent = NULL;
+    BufferWindowBase *m_parent = NULL;
 
 };
 

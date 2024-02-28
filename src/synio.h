@@ -7,9 +7,8 @@
 
 #include "utils/utils.h"
 #include "window/window.h"
-#include "window/buffer_window.h"
-#include "window/command_window.h"
-#include "line_buffer.h"
+#include "window/file_buffer_window.h"
+#include "buffer/line_buffer.h"
 #include "buffer_formatter.h"
 #include "cursor.h"
 #include "events.h"
@@ -35,10 +34,9 @@ private:
     bool m_commandMode = false;
     
     // windows
-    Buffer *m_bufferWindow = NULL;      // TODO : to become an undordered map of windows?
-    CommandWindow *m_commandWindow = NULL;
+    FileBufferWindow *m_bufferWindow = NULL;      // TODO : to become an undordered map of windows?
 
-    Buffer *m_currentBuffer = NULL;     // indicating use of multiple buffers...
+    FileBufferWindow *m_currentBuffer = NULL;     // indicating use of multiple buffers...
 
     //
     ivec2_t m_screenSize;
@@ -47,15 +45,6 @@ private:
     std::string m_filename = "";
     
 };
-
-
-// entry point and command line interface
-int main(int argc, char *argv[]);
-
-
-
-
-
 
 
 #endif // __SYNIO_H

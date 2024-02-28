@@ -2,34 +2,42 @@
 #include <assert.h>
 #include <cmath>
 
-#include "buffer_window.h"
+#include "file_buffer_window.h"
 #include "../platform/ncurses_colors.h"
 
 //
-Buffer::Buffer(const frame_t &_frame, const std::string &_id, bool _border) :
-    Window(_frame, _id, _border)
+FileBufferWindow::FileBufferWindow(const frame_t &_frame,
+                                   const std::string &_id,
+                                   bool _border) :
+    BufferWindowBase(_frame, _id, _border)
 {
     m_formatter = BufferFormatter(&m_frame);
     m_cursor = Cursor(this);
     
-    // create a line numbers subwindow
-    // TODO : auto-deduct width
+    // Create a line numbers subwindow. In case of reading buffer from file, the width 
+    // of the LineNumbers are deduced at runtime
     frame_t line_numbers_rect(ivec2_t(0, m_frame.v0.y), ivec2_t(m_frame.v0.x, m_frame.v1.y));
     m_lineNumbers = new LineNumbers(line_numbers_rect, _id, _border);
     m_lineNumbers->setBuffer(this);
+
+    int width = 5;
+    m_lineNumbers->setWidth(width);
+    resize(m_frame, width);
+
     if (!Config::SHOW_LINE_NUMBERS)
         m_lineNumbers->setVisibility(false);
+
 }
 
 //---------------------------------------------------------------------------------------
-Buffer::~Buffer()
+FileBufferWindow::~FileBufferWindow()
 {
     delete m_lineNumbers;
 
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::scroll_(int _axis, int _dir, int _steps, bool _update_current_line)
+void FileBufferWindow::scroll_(int _axis, int _dir, int _steps, bool _update_current_line)
 {
     ivec2_t scroll = { 0, 0 };
     switch (_axis)
@@ -83,7 +91,7 @@ void Buffer::scroll_(int _axis, int _dir, int _steps, bool _update_current_line)
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::moveCursor(int _dx, int _dy)
+void FileBufferWindow::moveCursor(int _dx, int _dy)
 {
     int dx = _dx;
     int dy = _dy;
@@ -127,7 +135,7 @@ void Buffer::moveCursor(int _dx, int _dy)
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::moveCursorToLineBegin()
+void FileBufferWindow::moveCursorToLineBegin()
 {
     // find first character (not tabs/spaces)
     int first_ch = 0;
@@ -143,14 +151,14 @@ void Buffer::moveCursorToLineBegin()
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::moveCursorToLineEnd()
+void FileBufferWindow::moveCursorToLineEnd()
 {
     moveCursor(m_currentLine->len - m_cursor.cx(), 0);
 
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::moveCursorToColDelim(int _dir)
+void FileBufferWindow::moveCursorToColDelim(int _dir)
 {
     if (_dir > 0 && m_cursor.cx() == m_currentLine->len - 1)    { moveCursor(1, 0); return; }
     else if (_dir > 0 && m_cursor.cx() == m_currentLine->len)   { moveCursor(1, 0); return; }
@@ -214,7 +222,7 @@ void Buffer::moveCursorToColDelim(int _dir)
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::moveCursorToRowDelim(int _dir)
+void FileBufferWindow::moveCursorToRowDelim(int _dir)
 {
     assert(_dir == -1 || _dir == 1);
     line_t *line = m_currentLine;
@@ -239,14 +247,14 @@ void Buffer::moveCursorToRowDelim(int _dir)
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::pageUp()
+void FileBufferWindow::movePageUp()
 {
     moveCursor(0, -Config::PAGE_SIZE);
 
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::pageDown()
+void FileBufferWindow::movePageDown()
 {
     int steps = Config::PAGE_SIZE;
     if (m_bufferCursorPos.y + Config::PAGE_SIZE > m_lineBuffer.lineCount() - 1)
@@ -256,14 +264,14 @@ void Buffer::pageDown()
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::moveHome()
+void FileBufferWindow::moveHome()
 {
     moveCursor(-m_cursor.cx(), -m_bufferCursorPos.y);
 
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::moveEnd()
+void FileBufferWindow::moveEnd()
 {
     int steps = m_lineBuffer.lineCount() - 1 - m_bufferCursorPos.y;
     moveCursor(m_lineBuffer.m_tail->len - m_cursor.cx(), steps);
@@ -271,7 +279,7 @@ void Buffer::moveEnd()
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::insertCharAtCursor(char _c)
+void FileBufferWindow::insertCharAtCursor(char _c)
 {
     m_currentLine->insert_char(_c, m_cursor.cx());
     moveCursor(1, 0);
@@ -284,7 +292,7 @@ void Buffer::insertCharAtCursor(char _c)
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::insertStrAtCursor(char *_str, size_t _len)
+void FileBufferWindow::insertStrAtCursor(char *_str, size_t _len)
 {
     m_currentLine->insert_str(_str, _len, m_cursor.cpos().x);
     moveCursor(_len, 0);
@@ -304,7 +312,7 @@ void Buffer::insertStrAtCursor(char *_str, size_t _len)
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::insertNewLine()
+void FileBufferWindow::insertNewLine()
 {
     // split line at cursor pos.x
     line_t *new_line = m_currentLine->split_at_pos(m_cursor.cpos().x);
@@ -329,7 +337,7 @@ void Buffer::insertNewLine()
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::deleteCharAtCursor()
+void FileBufferWindow::deleteCharAtCursor()
 {
     // <DEL>
 
@@ -353,7 +361,7 @@ void Buffer::deleteCharAtCursor()
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::deleteCharBeforeCursor()
+void FileBufferWindow::deleteCharBeforeCursor()
 {
     // <BACKSPACE>
     
@@ -371,7 +379,6 @@ void Buffer::deleteCharBeforeCursor()
         size_t prev_len = m_currentLine->prev->len;
         m_currentLine = m_lineBuffer.appendThisToPrev(m_currentLine);
         m_cursor.set_cpos(prev_len, m_cursor.cy() - 1);
-        // m_cursor.move(prev_len, -1);
 
         // redraw lines
         update_lines_after_y_(m_cursor.cy());
@@ -390,20 +397,17 @@ void Buffer::deleteCharBeforeCursor()
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::updateCursor()
+void FileBufferWindow::updateCursor()
 {
     static ivec2_t prev_pos = m_cursor.cpos();
 
     // actually move the cursor
     m_cursor.update();
 
-    // // retain last x position
-    // if (m_cursor.dy() != 0)
-    //     move_cursor_to_last_x_();
-
+    //
     updateBufferCursorPos();
 
-
+    //
     if (prev_pos != m_cursor.cpos())
     {
         refresh_next_frame_();
@@ -413,14 +417,14 @@ void Buffer::updateCursor()
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::updateBufferCursorPos()
+void FileBufferWindow::updateBufferCursorPos()
 {
     m_bufferCursorPos = m_scrollPos + m_cursor.cpos();
 
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::updateCurrentLinePtr(int _dy)
+void FileBufferWindow::updateCurrentLinePtr(int _dy)
 {
     // if the cursor moved, update current line in buffer
     if (_dy > 0)
@@ -437,7 +441,7 @@ void Buffer::updateCurrentLinePtr(int _dy)
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::readFromFile(const std::string &_filename)
+void FileBufferWindow::readFromFile(const std::string &_filename)
 {
     FileIO::readFileIntoBuffer(_filename, &m_lineBuffer);
     
@@ -471,10 +475,10 @@ void Buffer::readFromFile(const std::string &_filename)
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::resize(frame_t _new_frame, int _left_reserved)
+void FileBufferWindow::resize(frame_t _new_frame, int _left_reserved)
 {
     // the _left_reserved argument is used to reserve space of the LineNumbers window
-    // (eg when called from Buffer::readFromFile when we know the max number of lines in 
+    // (eg when called from FileBufferWindow::readFromFile when we know the max number of lines in 
     // the file).
     //
 
@@ -501,7 +505,7 @@ void Buffer::resize(frame_t _new_frame, int _left_reserved)
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::redraw()
+void FileBufferWindow::redraw()
 {
     // order matters here
     m_lineNumbers->redraw();
@@ -544,7 +548,7 @@ void Buffer::redraw()
 }
 
 //---------------------------------------------------------------------------------------
-void Buffer::clear()
+void FileBufferWindow::clear()
 {
     m_lineNumbers->clear();
 
@@ -556,7 +560,7 @@ void Buffer::clear()
 
 }
 //---------------------------------------------------------------------------------------
-void Buffer::refresh()
+void FileBufferWindow::refresh()
 {
     m_lineNumbers->refresh();   // called first to move the cursor to the buffer window
                                 // on updateCursor()
@@ -574,7 +578,7 @@ void Buffer::refresh()
 }
 
 //---------------------------------------------------------------------------------------
-bool Buffer::is_delimiter_(const char *_delim, CHTYPE _c)
+bool FileBufferWindow::is_delimiter_(const char *_delim, CHTYPE _c)
 {
     for (size_t i = 0; i < strlen(_delim); i++)
         if ((_c & CHTYPE_CHAR_MASK) == _delim[i])
@@ -584,7 +588,7 @@ bool Buffer::is_delimiter_(const char *_delim, CHTYPE _c)
 }
 
 //---------------------------------------------------------------------------------------
-bool Buffer::is_row_empty_(line_t *_line)
+bool FileBufferWindow::is_row_empty_(line_t *_line)
 {
     CHTYPE_PTR p = _line->content;
     while ((*p & CHTYPE_CHAR_MASK) != '\0')
@@ -600,7 +604,7 @@ bool Buffer::is_row_empty_(line_t *_line)
 }
 
 //---------------------------------------------------------------------------------------
-int Buffer::find_indentation_level_(line_t *_line)
+int FileBufferWindow::find_indentation_level_(line_t *_line)
 {
     int first_char_idx = find_first_non_empty_char_(_line);
     
@@ -612,7 +616,7 @@ int Buffer::find_indentation_level_(line_t *_line)
 }
 
 //---------------------------------------------------------------------------------------
-int Buffer::find_first_non_empty_char_(line_t *_line)
+int FileBufferWindow::find_first_non_empty_char_(line_t *_line)
 {
     CHTYPE_PTR p = _line->content;
     int x = 0;

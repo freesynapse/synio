@@ -186,16 +186,30 @@ enum class CtrlKeyAction
 #ifdef DEBUG
 const char *ctrlActionStr(CtrlKeyAction _action);
 #endif
+
 //
-struct ctrl_keycode_t
+struct keycode_t
 {
-    std::string id;             // e..g "kLFT5" for <ctrl> + <left arrow>
+    std::string id;         // e..g "kLFT5" for <ctrl> + <left arrow>
+
+    keycode_t() {}
+    keycode_t(const std::string &_id) :
+        id(_id)
+    {}
+
+};
+//
+struct ctrl_keycode_t : keycode_t
+{
+    std::string ctrl_id;         // e..g "kLFT5" for <ctrl> + <left arrow>
     CtrlKeyAction action;   // corresponding enum
     
     ctrl_keycode_t() {}
     ctrl_keycode_t(const std::string &_id, CtrlKeyAction _action) :
-        id(_id), action(_action)
-    {}
+        action(_action)
+    {
+        id = _id;
+    }
 
 };
 

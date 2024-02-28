@@ -267,4 +267,3 @@ void Ncurses_Impl::setCtrlKeycodes()
     }
 
 }
-

@@ -4,11 +4,11 @@
 #include <stdio.h>
 
 #include "line_buffer.h"
-#include "types.h"
-#include "utils/log.h"
+#include "../types.h"
+#include "../utils/log.h"
 
 //
-void LineBuffer::push_front(line_t *_new_line)
+void MultiLineBuffer::push_front(line_t *_new_line)
 {
     if (m_head == NULL)
     {
@@ -29,7 +29,7 @@ void LineBuffer::push_front(line_t *_new_line)
 }
 
 //---------------------------------------------------------------------------------------
-void LineBuffer::push_back(line_t *_new_line)
+void MultiLineBuffer::push_back(line_t *_new_line)
 {
     if (m_head == NULL)
     {
@@ -49,7 +49,7 @@ void LineBuffer::push_back(line_t *_new_line)
 }
 
 //---------------------------------------------------------------------------------------
-void LineBuffer::insertAtPtr(line_t *_at_line, int _insert_flag, line_t *_new_line)
+void MultiLineBuffer::insertAtPtr(line_t *_at_line, int _insert_flag, line_t *_new_line)
 {
     // _insert_flag is either INSERT_BEFORE or INSERT_AFTER
 
@@ -102,7 +102,7 @@ void LineBuffer::insertAtPtr(line_t *_at_line, int _insert_flag, line_t *_new_li
 }
 
 //---------------------------------------------------------------------------------------
-void LineBuffer::deleteAtPtr(line_t *_line)
+void MultiLineBuffer::deleteAtPtr(line_t *_line)
 {
     // empty
     if (m_head == NULL || _line == NULL)
@@ -148,7 +148,7 @@ void LineBuffer::deleteAtPtr(line_t *_line)
 }
 
 //---------------------------------------------------------------------------------------
-line_t *LineBuffer::appendThisToPrev(line_t *_line)
+line_t *MultiLineBuffer::appendThisToPrev(line_t *_line)
 {
     if (_line->prev == NULL)
         return _line;
@@ -176,7 +176,7 @@ line_t *LineBuffer::appendThisToPrev(line_t *_line)
 }
 
 //---------------------------------------------------------------------------------------
-void LineBuffer::appendNextToThis(line_t *_line)
+void MultiLineBuffer::appendNextToThis(line_t *_line)
 {
     if (_line->next == NULL)
         return;
@@ -201,7 +201,7 @@ void LineBuffer::appendNextToThis(line_t *_line)
 }
 
 //---------------------------------------------------------------------------------------
-line_t *LineBuffer::ptrFromIdx(int _index)
+line_t *MultiLineBuffer::ptrFromIdx(int _index)
 {
     /* TODO (?):
      * Could chunk this every eg 500 lines, so that we start the search either forwards 
@@ -263,7 +263,7 @@ line_t *LineBuffer::ptrFromIdx(int _index)
 }
 
 //---------------------------------------------------------------------------------------
-void LineBuffer::clear()
+void MultiLineBuffer::clear()
 {
     if (m_head == NULL)
         return;
@@ -297,7 +297,7 @@ void LineBuffer::clear()
 
 //---------------------------------------------------------------------------------------
 #ifdef DEBUG
-void LineBuffer::__debug_inspect()
+void MultiLineBuffer::__debug_inspect()
 {
     printf("== __DEBUG_DUMP() =========================\n");
     LOG_INFO("%d line(s)", m_lineCount);
@@ -324,7 +324,7 @@ void LineBuffer::__debug_inspect()
 
 //---------------------------------------------------------------------------------------
 #ifdef DEBUG
-void LineBuffer::__debug_print()
+void MultiLineBuffer::__debug_print()
 {
     line_t *p = m_head;
     while (p != NULL)
