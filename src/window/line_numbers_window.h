@@ -14,6 +14,7 @@ public:
     virtual void resize(frame_t _new_frame) override;
 
     // virtual compulsory functions
+    virtual void handleInput(int, CtrlKeyAction) override {}
     virtual void redraw() override;
 
     // set associated buffer

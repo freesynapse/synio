@@ -41,10 +41,6 @@ typedef void* API_WINDOW_PTR;
 #define CHTYPE_SIZE sizeof(CHTYPE)
 #define CHTYPE_PTR_SIZE sizeof(CHTYPE_PTR)
 
-// something to write in for conversions
-//#define buf0_sz 1024
-//static char buf0[buf0_sz];
-
 //
 struct line_t
 {
@@ -150,8 +146,10 @@ struct irect_t
 
     void update_dims()
     {
-        ncols = (v1.x - 1) - v0.x;
-        nrows = (v1.y - 1) - v0.y;
+        // ncols = (v1.x - 1) - v0.x;
+        // nrows = (v1.y - 1) - v0.y;
+        ncols = (v1.x) - v0.x;
+        nrows = (v1.y) - v0.y;        
     }
     
     #ifdef DEBUG

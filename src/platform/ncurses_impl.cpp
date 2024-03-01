@@ -176,6 +176,16 @@ int Ncurses_Impl::clearBufferLine(API_WINDOW_PTR _w, int _cy, int _win_maxx)
 }
 
 //---------------------------------------------------------------------------------------
+int Ncurses_Impl::clearBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, int _win_maxx)
+{
+    int n = _win_maxx - _cx;
+    memset(m_clearBuffer, ' ', n);
+    m_clearBuffer[n] = 0;
+    return mvwaddnstr((WINDOW *)_w, _cy, _cx, m_clearBuffer, n);
+
+}
+
+//---------------------------------------------------------------------------------------
 int Ncurses_Impl::printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _line, size_t _len)
 {
     // since mvwaddchstr can't handle '\t', let's implement our own...

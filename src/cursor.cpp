@@ -5,6 +5,14 @@
 #include "event_handler.h"
 
 //
+Cursor::Cursor(BufferWindowBase *_parent) : 
+    m_parent(_parent) 
+{
+    m_frame = m_parent->m_frame;
+
+}
+
+//---------------------------------------------------------------------------------------
 void Cursor::set_cpos(int _x, int _y)
 {
     m_cpos.x = _x;
@@ -70,12 +78,12 @@ void Cursor::update()
 
     
     if (api->moveCursor(m_parent->m_apiWindowPtr, m_rpos.x, m_rpos.y) == ERR)
-       LOG_WARNING("%s : m_pos (%d, %d), window lim (%d, %d)",
+       LOG_WARNING("%s : m_rpos (%d, %d), window lim (%d, %d)",
                    __func__,
                    m_rpos.x,
                    m_rpos.y,
-                   m_parent->m_frame.v1.x,
-                   m_parent->m_frame.v1.y);
+                   m_frame.v1.x,
+                   m_frame.v1.y);
 
     m_dx = 0;
     m_dy = 0;
@@ -100,8 +108,8 @@ void Cursor::move(int _dx, int _dy)
     if (m_cpos.y < 0)
         m_parent->scroll_(Y_AXIS, BACKWARD, abs(m_cpos.y), true);
 
-    else if (m_cpos.y > m_parent->m_frame.nrows - 1)
-        m_parent->scroll_(Y_AXIS, FORWARD, abs(m_cpos.y - (m_parent->m_frame.nrows - 1)), true);
+    else if (m_cpos.y > m_frame.nrows - 1)
+        m_parent->scroll_(Y_AXIS, FORWARD, abs(m_cpos.y - (m_frame.nrows - 1)), true);
 
     clamp_to_frame_();
 
@@ -110,8 +118,8 @@ void Cursor::move(int _dx, int _dy)
 //---------------------------------------------------------------------------------------
 void Cursor::clamp_to_frame_()
 {
-    m_cpos.x = CLAMP(m_cpos.x, 0, m_parent->m_frame.ncols - 1);
-    m_cpos.y = CLAMP(m_cpos.y, 0, m_parent->m_frame.nrows - 1);
+    m_cpos.x = CLAMP(m_cpos.x, 0, m_frame.ncols - 1);
+    m_cpos.y = CLAMP(m_cpos.y, 0, m_frame.nrows - 1);
 
 }
 

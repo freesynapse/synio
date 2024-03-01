@@ -37,6 +37,59 @@ FileBufferWindow::~FileBufferWindow()
 }
 
 //---------------------------------------------------------------------------------------
+void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
+{
+    if (_ctrl_action != CtrlKeyAction::NONE)
+    {
+        switch (_ctrl_action)
+        {
+            case CtrlKeyAction::CTRL_LEFT:  moveCursorToColDelim(-1);   break;
+            case CtrlKeyAction::CTRL_RIGHT: moveCursorToColDelim(1);    break;
+            case CtrlKeyAction::CTRL_UP:    moveCursorToRowDelim(-1);   break;
+            case CtrlKeyAction::CTRL_DOWN:  moveCursorToRowDelim(1);    break;
+            case CtrlKeyAction::CTRL_HOME:  moveFileBegin();            break;
+            case CtrlKeyAction::CTRL_END:   moveFileEnd();              break;
+            default: break;
+            // default: LOG_INFO("ctrl keycode %d : %s", _c, ctrlActionStr(_ctrl_action)); break;
+
+        }
+    }
+    else
+    {
+        switch (_c)
+        {
+            // cursor movement
+            case KEY_DOWN:  moveCursor(0, 1);           break;
+            case KEY_UP:    moveCursor(0, -1);          break;
+            case KEY_LEFT:  moveCursor(-1, 0);          break;
+            case KEY_RIGHT: moveCursor(1, 0);           break;
+            case KEY_PPAGE: movePageUp();               break;
+            case KEY_NPAGE: movePageDown();             break;
+            case KEY_HOME:  moveCursorToLineBegin();    break;
+            case KEY_END:   moveCursorToLineEnd();      break;
+
+            case KEY_DC:
+                deleteCharAtCursor();
+                break;
+
+            case KEY_BACKSPACE:
+                deleteCharBeforeCursor();
+                break;
+            
+            case 10:    // <ENTER>
+                insertNewLine();
+                break;
+
+            default:
+                insertCharAtCursor((char)_c);
+                break;
+
+        }
+    }
+
+}
+
+//---------------------------------------------------------------------------------------
 void FileBufferWindow::scroll_(int _axis, int _dir, int _steps, bool _update_current_line)
 {
     ivec2_t scroll = { 0, 0 };
@@ -264,14 +317,14 @@ void FileBufferWindow::movePageDown()
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::moveHome()
+void FileBufferWindow::moveFileBegin()
 {
     moveCursor(-m_cursor.cx(), -m_bufferCursorPos.y);
 
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::moveEnd()
+void FileBufferWindow::moveFileEnd()
 {
     int steps = m_lineBuffer.lineCount() - 1 - m_bufferCursorPos.y;
     moveCursor(m_lineBuffer.m_tail->len - m_cursor.cx(), steps);
@@ -501,6 +554,8 @@ void FileBufferWindow::resize(frame_t _new_frame, int _left_reserved)
     }
 
     m_lineNumbers->resize(m_frame);
+
+    m_cursor.set_frame(m_frame);
 
 }
 

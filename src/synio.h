@@ -8,6 +8,7 @@
 #include "utils/utils.h"
 #include "window/window.h"
 #include "window/file_buffer_window.h"
+#include "window/line_buffer_window.h"
 #include "buffer/line_buffer.h"
 #include "buffer_formatter.h"
 #include "cursor.h"
@@ -36,7 +37,9 @@ private:
     // windows
     FileBufferWindow *m_bufferWindow = NULL;      // TODO : to become an undordered map of windows?
 
-    FileBufferWindow *m_currentBuffer = NULL;     // indicating use of multiple buffers...
+    BufferWindowBase *m_currentWindow = NULL;     // indicating use of multiple buffers...
+    LineBufferWindow *m_dialog = NULL;
+    
 
     //
     ivec2_t m_screenSize;

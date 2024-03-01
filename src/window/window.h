@@ -31,6 +31,9 @@ public:
     // creates a border around the drawable area
     virtual void enableBorder();
 
+    // input for windows where this is relevant
+    virtual void handleInput(int _c, CtrlKeyAction _ctrl_action) = 0;
+
     // Platform interactions
     virtual void resize(frame_t _new_frame);
     virtual void redraw() = 0;
