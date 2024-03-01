@@ -48,7 +48,7 @@ void Synio::initialize()
     m_bufferWindow->redraw();
     m_bufferWindow->refresh();
 
-    // -- DEBUG
+    // -- DEBUG -- working
     frame_t f = frame_t(ivec2_t(0, m_screenSize.y - 1), m_screenSize);
     m_dialog = new LineBufferWindow(f, "test_dialog");
     m_dialog->setQuery("test query: ", ivec2_t(0, 0));

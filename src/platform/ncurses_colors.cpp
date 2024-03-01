@@ -3,16 +3,18 @@
 
 #include <assert.h>
 
+#include "../types.h"
 #include "../utils/log.h"
 
 
 //
-void init_colors(API_WINDOW_PTR _w)
+void ncurses_init_colors(API_WINDOW_PTR _w)
 {
     if (!has_colors())
-        LOG_CRITICAL_ERROR("No terminal color support. Please use Nano instead.");
+        LOG_CRITICAL_ERROR("No terminal color support. Please use nano instead.");
 
     start_color();
+    
     // terminal default colors, background better be black...
     // Update: no, it doesn't have to be, index -1 signifies terminal background color
     //         (as seen in ncurses_color.h; #define SYNIO_COLOR_BKGD -1).
@@ -58,25 +60,28 @@ void init_colors(API_WINDOW_PTR _w)
 
     bkgd(COLOR_PAIR(SYNIO_COLOR_TEXT));   // set background color of window (stdscr?)
     
-
 }
 
 //---------------------------------------------------------------------------------------
-void select_substr(line_t *_line, size_t _start, size_t _end)
+void ncurses_select_deselect_substr(line_t *_line,
+                                    size_t _start,
+                                    size_t _end,
+                                    bool _select)
 {
-    assert(_start > 0 && _end <= _line->len);
+    int idx_offset = (_select == true ? SELECTION_OFFSET : -SELECTION_OFFSET);
     for (size_t i = _start; i < _end; i++)
     {
-        // A_COLOR = 0x0000ff00 (masking bit 9..16)
-        int16_t cp_idx = (_line->content[i] & A_COLOR) >> 8;
-        _line->content[i] = (_line->content[i] | COLOR_PAIR(cp_idx + SELECTION_OFFSET));
+        // A_COLOR : 0x0000ff00 (masking bit 9..16)
+        int16_t cp_idx = (_line->content[i] & CHTYPE_COLOR_MASK) >> 8;
+        // need to clear the CHTYPE_COLOR_MASK first, since OR is applied
+        _line->content[i] = ((_line->content[i] & ~CHTYPE_COLOR_MASK) | COLOR_PAIR(cp_idx + idx_offset));
         
     }
 
 }
 
 //---------------------------------------------------------------------------------------
-void color_substr(line_t *_line, size_t _start, size_t _end, short _pair_index)
+void ncurses_color_substr(line_t *_line, size_t _start, size_t _end, short _pair_index)
 {
     assert(_start >= 0 && _end <= _line->len);
     for (size_t i = _start; i < _end; i++)

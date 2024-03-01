@@ -15,9 +15,24 @@ public:
     ~Selection() = default;
 
     // TODO : update pointers and offsets based on which is first? Possible w linked list?
-    void update_end_line(line_t *_line) { m_endLine = _line; select_sequence_(); }
-    void update_end_line(line_t *_line, size_t _offset) { m_endLine = _line; m_endOffset = _offset; select_sequence_(); }
-    void update_end_offset(size_t _offset) { m_endOffset = _offset; select_sequence_(); }
+    void update_end_line(line_t *_line)
+    { 
+        m_endLine = _line; 
+        select_deselect_sequence_();
+    }
+    
+    void update_end_line(line_t *_line, size_t _offset)
+    { 
+        m_endLine = _line; 
+        m_endOffset = _offset; 
+        select_deselect_sequence_();
+    }
+    
+    void update_end_offset(size_t _offset)
+    { 
+        m_endOffset = _offset; 
+        select_deselect_sequence_();
+    }
 
     //void clear_sequence() -- TODO : clear a certain sequence from selection
     // clears all characters in the selection from being selected
@@ -40,9 +55,7 @@ public:
 // private:
     // updates a sequence to being selected.
     // TODO : only update new characters
-    void select_sequence_();
-
-    void select_substr_(line_t *_line, size_t _start, size_t _end);
+    void select_deselect_sequence_(bool _selecting=true);
 
 
 // private:

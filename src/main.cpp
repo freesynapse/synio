@@ -6,8 +6,8 @@
 //
 int main(int argc, char *argv[])
 {
-    // std::string filename = "test.cpp";
-    std::string filename = "tabbed_file.txt";
+    std::string filename = "test.cpp";
+    // std::string filename = "tabbed_file.txt";
 
     if (argc > 1)
         filename = std::string(argv[1]);

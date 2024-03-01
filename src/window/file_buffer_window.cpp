@@ -17,7 +17,7 @@ FileBufferWindow::FileBufferWindow(const frame_t &_frame,
     // Create a line numbers subwindow. In case of reading buffer from file, the width 
     // of the LineNumbers are deduced at runtime
     frame_t line_numbers_rect(ivec2_t(0, m_frame.v0.y), ivec2_t(m_frame.v0.x, m_frame.v1.y));
-    m_lineNumbers = new LineNumbers(line_numbers_rect, _id, _border);
+    m_lineNumbers = new LineNumbers(line_numbers_rect, _id+"_line_numbers", _border);
     m_lineNumbers->setBuffer(this);
 
     int width = 5;
@@ -83,23 +83,27 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case 'q':
                 if (!m_isSelecting)
                 {
+                    LOG_INFO("selecting");
                     m_isSelecting = true;
                     m_selection = new Selection(m_currentLine, m_cursor.cx());
                     // -- DEBUG
                     m_selection->m_startLine = m_currentLine;
                     m_selection->m_startOffset = 0;
-                    m_selection->m_endLine = m_currentLine->next;
-                    m_selection->m_endOffset = m_currentLine->next->len;
-                    m_selection->select_sequence_();
+                    m_selection->m_endLine = m_currentLine;
+                    m_selection->m_endOffset = m_currentLine->len;
+                    m_selection->select_deselect_sequence_(true);
                     m_selection->__debug_selection();
                 }
                 else
                 {
+                    LOG_INFO("clearing");
                     m_isSelecting = false;
+                    assert(m_selection != NULL);
                     m_selection->clear_all();
                     delete m_selection;
                     m_selection = NULL;
                 }
+                refresh_next_frame_();
                 break;
 
             default:
@@ -525,7 +529,9 @@ void FileBufferWindow::readFromFile(const std::string &_filename)
     line_t *line = m_lineBuffer.m_head;
     while (line != NULL)
     {
-        color_substr(line, 0, line->len, SYNIO_COLOR_KEYWORD);
+        #ifdef NCURSES_IMPL
+        ncurses_color_substr(line, 0, line->len, SYNIO_COLOR_KEYWORD);
+        #endif
         line = line->next;
     }
     #endif

@@ -15,7 +15,7 @@ int Ncurses_Impl::initialize()
 
     m_screenPtr = initscr();
 
-    init_colors(m_screenPtr);
+    ncurses_init_colors(m_screenPtr);
 
     TABSIZE = Config::TAB_SIZE;
 
