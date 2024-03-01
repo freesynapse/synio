@@ -40,7 +40,7 @@ public:
     virtual CtrlKeyAction getCtrlKeyAction(int _key) override;
     virtual int moveCursor(API_WINDOW_PTR _w, int _x, int _y) override;
     virtual int clearBufferLine(API_WINDOW_PTR _w, int _cy, int _win_maxx) override;
-    virtual int clearBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, int _win_maxx) override;
+    virtual int clearSpace(API_WINDOW_PTR _w, int _cx, int _cy, int _n) override;
     virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _line, size_t _len) override;
     // TODO : safe to remove?
     // virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, char* _line) override;

@@ -14,6 +14,18 @@ LineBufferWindow::LineBufferWindow(const frame_t &_frame,
 }
 
 //---------------------------------------------------------------------------------------
+LineBufferWindow::LineBufferWindow(const frame_t &_frame,
+                                   const std::string &_id,
+                                   const std::string &_query,
+                                   const ivec2_t &_query_pos,
+                                   bool _border) :
+    BufferWindowBase(_frame, _id, _border)
+{
+    setQuery(_query, _query_pos);
+    m_currentLine = create_line("");
+}
+
+//---------------------------------------------------------------------------------------
 LineBufferWindow::~LineBufferWindow()
 { 
     delete m_currentLine;
@@ -39,8 +51,9 @@ void LineBufferWindow::setQuery(const std::string &_query, const ivec2_t &_pos)
     }
     m_query[m_queryLen] = 0;
 
-    m_cursor.set_cx((int)m_queryLen);
-    m_cursor.set_cy(m_queryPos.y);
+    m_cursor.set_offset(ivec2_t(m_queryLen, 0));
+    //m_cursor.set_cx((int)m_queryLen);
+    //m_cursor.set_cy(m_queryPos.y);
 
 }
 
@@ -100,8 +113,8 @@ void LineBufferWindow::moveCursor(int _dx, int _dy)
     int dx = _dx;
     int cx = m_cursor.cx();
     
-    if (cx == m_queryLen && dx < 0) dx = 0;
-    else if (cx == m_queryLen + m_currentLine->len && dx > 0) dx = 0;
+    if (cx == 0 && dx < 0) dx = 0;
+    else if (cx == m_currentLine->len && dx > 0) dx = 0;
 
     // move the cursor (if possible)
     m_cursor.move(dx, 0);
@@ -127,7 +140,64 @@ void LineBufferWindow::moveCursorToLineEnd()
 //---------------------------------------------------------------------------------------
 void LineBufferWindow::moveCursorToColDelim(int _dir)
 {
+    if (_dir > 0 && m_cursor.cx() == m_currentLine->len - 1)    { moveCursor(1, 0); return;  }
+    else if (_dir > 0 && m_cursor.cx() == m_currentLine->len)   { moveCursor(1, 0); return;  }
+    else if (_dir < 0 && m_cursor.cx() == 1)                    { moveCursor(-1, 0); return; }
+    else if (_dir < 0 && m_cursor.cx() == 0)                    { moveCursor(-1, 0); return; }
 
+    CHTYPE_PTR p = m_currentLine->content + m_cursor.cx();
+    size_t line_len = m_currentLine->len;
+    int x = (_dir < 0 ? m_cursor.cx() : 0);
+    bool on_delimiter = is_delimiter_(Config::COL_DELIMITERS, *p);
+    bool do_continue = (_dir < 0 ? x > 0 : (*p & CHTYPE_CHAR_MASK) != 0);
+
+    //
+    while (do_continue)
+    {
+        x += _dir;
+        p += _dir;
+
+        // -- DEBUG
+        char c = (*p & CHTYPE_CHAR_MASK);
+        char c2 = (*(p + _dir) & CHTYPE_CHAR_MASK);
+
+        // if starting on a delimiter,<>=!,,, we search for non-delimiters
+        if (on_delimiter && is_delimiter_(Config::COL_DELIMITERS, *p))
+        {
+            while (is_delimiter_(Config::COL_DELIMITERS, *p) && do_continue)
+            {
+                x += _dir;
+                p += _dir;
+
+                do_continue = (_dir < 0 ? x > 0 : (*p & CHTYPE_CHAR_MASK) != 0);
+            }
+            x -= 1;
+            break;
+        }
+        else if (on_delimiter && !is_delimiter_(Config::COL_DELIMITERS, *p))
+        {
+            // ex: 'char *p = ...'
+            // find next delimiter
+            while (!is_delimiter_(Config::COL_DELIMITERS, *p) && do_continue)
+            {
+                x += _dir;
+                p += _dir;
+
+                do_continue = (_dir < 0 ? x > 0 : (*p & CHTYPE_CHAR_MASK) != 0);
+            }
+            break;
+        }
+        else // not starting on delimiter
+        {
+            if (is_delimiter_(Config::COL_DELIMITERS, *p))
+                break;
+        }
+
+        do_continue = (_dir < 0 ? x > 0 : (*p & CHTYPE_CHAR_MASK) != 0);
+    }
+
+    int dx = (_dir < 0 ? -(m_cursor.cx() - x) : x);
+    moveCursor(dx);
 
 }
 
@@ -204,15 +274,21 @@ void LineBufferWindow::updateCursor()
 }
 
 //---------------------------------------------------------------------------------------
+void LineBufferWindow::dispatchEvent()
+{
+    LOG_INFO("pressed enter. hiding window.");
+    m_isWindowVisible = false;
+}
+
+//---------------------------------------------------------------------------------------
 void LineBufferWindow::redraw()
 {
-    if (m_isWindowVisible)
-    {
-        api->printBufferLine(m_apiWindowPtr, m_queryPos.x, m_queryPos.y, m_query, m_queryLen);
-        api->clearBufferLine(m_apiWindowPtr, m_cursor.frame_v0_x(), m_queryPos.y, m_frame.ncols - 1);
-        api->printBufferLine(m_apiWindowPtr, m_cursor.frame_v0_x(), m_queryPos.y, m_currentLine->content, m_currentLine->len);
+    if (!m_isWindowVisible)
+        return;
 
-    }
+    api->printBufferLine(m_apiWindowPtr, m_queryPos.x, m_queryPos.y, m_query, m_queryLen);
+    api->clearSpace(m_apiWindowPtr, m_cursor.offset_x(), m_queryPos.y, m_frame.ncols - 1 - m_cursor.cx());
+    api->printBufferLine(m_apiWindowPtr, m_cursor.offset_x(), m_queryPos.y, m_currentLine->content, m_currentLine->len);
 
     updateCursor();
 

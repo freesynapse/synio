@@ -72,6 +72,9 @@ void Cursor::update()
     m_rpos.y = m_cpos.y;
     m_rpos.x = calc_rposx_from_cposx_();
 
+    // offset
+    m_rpos += m_offset_pos;
+
     // update last pos if needed
     if (m_dx != 0)
         m_last_rx = m_rpos.x;

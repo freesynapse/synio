@@ -10,7 +10,14 @@
 class LineBufferWindow : public BufferWindowBase
 {
 public:
-    LineBufferWindow(const frame_t &_frame, const std::string &_id, bool _border=false);
+    LineBufferWindow(const frame_t &_frame,
+                     const std::string &_id,
+                     bool _border=false);
+    LineBufferWindow(const frame_t &_frame,
+                     const std::string &_id,
+                     const std::string &_query,
+                     const ivec2_t &_query_pos,
+                     bool _border=false);
     ~LineBufferWindow();
 
     // sets query string before editable line begins
@@ -33,7 +40,7 @@ public:
     virtual void updateCursor() override;
 
     // dispatch event based on what kind of window this is, called on <ENTER>
-    virtual void dispatchEvent() { /* IMPLEMENT! */};
+    virtual void dispatchEvent();
 
     // (Window overrides)
     virtual void redraw() override;

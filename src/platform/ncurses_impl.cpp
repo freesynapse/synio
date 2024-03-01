@@ -176,12 +176,11 @@ int Ncurses_Impl::clearBufferLine(API_WINDOW_PTR _w, int _cy, int _win_maxx)
 }
 
 //---------------------------------------------------------------------------------------
-int Ncurses_Impl::clearBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, int _win_maxx)
+int Ncurses_Impl::clearSpace(API_WINDOW_PTR _w, int _cx, int _cy, int _n)
 {
-    int n = _win_maxx - _cx;
-    memset(m_clearBuffer, ' ', n);
-    m_clearBuffer[n] = 0;
-    return mvwaddnstr((WINDOW *)_w, _cy, _cx, m_clearBuffer, n);
+    memset(m_clearBuffer, ' ', _n);
+    m_clearBuffer[_n] = 0;
+    return mvwaddnstr((WINDOW *)_w, _cy, _cx, m_clearBuffer, _n);
 
 }
 

@@ -12,7 +12,7 @@
 //
 enum class EventType
 {
-    BUFFER_SCROLL,
+    BUFFER_SCROLL, SEARCH_QUERY, 
 
 };
 
@@ -37,10 +37,10 @@ public:
         m_axis(_axis), m_dir(_dir), m_steps(_steps), m_windowPtr(_window_ptr)
     {}
 
-    inline const int axis() const { return m_axis; }
-    inline const int dir() const { return m_dir; }
-    inline const int steps() const { return m_steps; }
-    inline const Window *windowPtr() const { return m_windowPtr; }
+    __always_inline const int axis() const { return m_axis; }
+    __always_inline const int dir() const { return m_dir; }
+    __always_inline const int steps() const { return m_steps; }
+    __always_inline const Window *windowPtr() const { return m_windowPtr; }
 
     EVENT_TYPE(BUFFER_SCROLL)
 
@@ -52,6 +52,22 @@ private:
     
 };
 
+//
+class BufferSearchQuery : public Event
+{
+public:
+    BufferSearchQuery(const std::string &_query) :
+        m_query(_query)
+    {}
+
+    __always_inline const std::string &query() const { return m_query; }
+
+    EVENT_TYPE(BUFFER_SCROLL)
+
+private:
+    std::string m_query;
+    
+};
 
 
 #endif // __EVENTS_H

@@ -4,6 +4,7 @@
 #include "buffer_window_base.h"
 #include "line_numbers_window.h"
 #include "../cursor.h"
+#include "../buffer/selection.h"
 
 
 //
@@ -64,7 +65,6 @@ private:
         for (int i = _y; i < m_frame.nrows; i++)
             m_linesUpdateList.insert(i);
     }
-    
 
 protected:
     std::string m_filename = "";
@@ -81,6 +81,10 @@ protected:
 
     //
     BufferFormatter m_formatter;
+
+    // selections; one (1) for now
+    Selection *m_selection = NULL;
+    bool m_isSelecting = false;
 
     //
     LineNumbers *m_lineNumbers = NULL;

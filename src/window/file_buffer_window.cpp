@@ -80,6 +80,28 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                 insertNewLine();
                 break;
 
+            case 'q':
+                if (!m_isSelecting)
+                {
+                    m_isSelecting = true;
+                    m_selection = new Selection(m_currentLine, m_cursor.cx());
+                    // -- DEBUG
+                    m_selection->m_startLine = m_currentLine;
+                    m_selection->m_startOffset = 0;
+                    m_selection->m_endLine = m_currentLine->next;
+                    m_selection->m_endOffset = m_currentLine->next->len;
+                    m_selection->select_sequence_();
+                    m_selection->__debug_selection();
+                }
+                else
+                {
+                    m_isSelecting = false;
+                    m_selection->clear_all();
+                    delete m_selection;
+                    m_selection = NULL;
+                }
+                break;
+
             default:
                 insertCharAtCursor((char)_c);
                 break;
@@ -585,6 +607,9 @@ void FileBufferWindow::redraw()
     y++;
     if (m_pageFirstLine != NULL)    __debug_print(x, y++, "page[ 0]: '%s'", m_pageFirstLine->__debug_str());
     else                            __debug_print(x, y++, "page[ 0]: NULL");
+
+    y++;
+    __debug_print(x, y++, "selecting: %s", m_isSelecting ? "true" : "false");
     #endif
     
     if (m_isWindowVisible)

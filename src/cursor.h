@@ -44,16 +44,21 @@ public:
     int frame_v0_y() { return m_frame.v0.y; }
     int frame_v1_x() { return m_frame.v1.x; }
     int frame_v1_y() { return m_frame.v1.y; }
+    int offset_x() { return m_offset_pos.x; }
+    int offset_y() { return m_offset_pos.y; }
 
     void set_scrolled_x() { m_scrolled_x = true; }
     void set_scrolled_y() { m_scrolled_y = true; }
     bool was_scrolled_x() { return m_scrolled_x; }
     bool was_scrolled_y() { return m_scrolled_y; }
     void set_frame(const irect_t &_frame) { m_frame = _frame; }
-    void set_frame_v0_x(int _x) { m_frame.v0.x = _x; m_frame.update_dims(); }
-    void set_frame_v0_y(int _y) { m_frame.v0.y = _y; m_frame.update_dims(); }
-    void set_frame_v1_x(int _x) { m_frame.v1.x = _x; m_frame.update_dims(); }
-    void set_frame_v1_y(int _y) { m_frame.v1.y = _y; m_frame.update_dims(); }
+    // void set_frame_v0_x(int _x) { m_frame.v0.x = _x; m_frame.update_dims(); }
+    // void set_frame_v0_y(int _y) { m_frame.v0.y = _y; m_frame.update_dims(); }
+    // void set_frame_v1_x(int _x) { m_frame.v1.x = _x; m_frame.update_dims(); }
+    // void set_frame_v1_y(int _y) { m_frame.v1.y = _y; m_frame.update_dims(); }
+    void set_offset(const ivec2_t &_v) { m_offset_pos = _v; }
+    void set_offset_x(int _x) { m_offset_pos.x = _x; }
+    void set_offset_y(int _y) { m_offset_pos.y = _y; }
 
 private:
     void clamp_to_frame_();
@@ -65,6 +70,7 @@ private:
     int m_dy = 0;
     ivec2_t m_cpos = ivec2_t(0);
     ivec2_t m_rpos = ivec2_t(0);
+    ivec2_t m_offset_pos = ivec2_t(0);    // added to render position
     
     int m_last_rx = 0;
 
