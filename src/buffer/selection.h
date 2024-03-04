@@ -34,6 +34,7 @@ public:
     void clear();
 
     void add(line_t *_start_line, int _offset, int _n);
+    void addRegion(line_t *_start_line, int _start_offset, line_t *_end_line, int _end_offset);
     // void remove? how to step through? linear search or hash map?
 
 

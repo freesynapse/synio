@@ -87,6 +87,7 @@ protected:
     //
     Cursor m_cursor;
     ivec2_t m_bufferCursorPos;
+    ivec2_t m_prevBufferCursorPos;
     ivec2_t m_scrollPos;
 
     //

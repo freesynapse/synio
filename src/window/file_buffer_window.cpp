@@ -85,13 +85,13 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                 {
                     m_isSelecting = true;
                     m_selection = new Selection;
-                    m_selection->add(m_currentLine, m_cursor.cx(), m_currentLine->len - m_cursor.cx());
-                    line_t *p = m_currentLine->next;
-                    for (int i = 0; i < 2 && p->next!=NULL; i++, p=p->next)
-                    {
-                        selection_entry_t entry(p, 0, p->len);
-                        m_selection->add(p, 0, p->len);
-                    }
+                    // m_selection->add(m_currentLine, m_cursor.cx(), m_currentLine->len - m_cursor.cx());
+                    // line_t *p = m_currentLine->next;
+                    // for (int i = 0; i < 2 && p->next!=NULL; i++, p=p->next)
+                    // {
+                    //     selection_entry_t entry(p, 0, p->len);
+                    //     m_selection->add(p, 0, p->len);
+                    // }
 
                 }
                 else
@@ -171,8 +171,8 @@ void FileBufferWindow::scroll_(int _axis, int _dir, int _steps, bool _update_cur
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::moveCursor(int _dx, int _dy)
 {
-    if (m_isSelecting)
-        clear_selection_();
+    //if (m_isSelecting)
+    //    clear_selection_();
 
     int dx = _dx;
     int dy = _dy;
@@ -500,7 +500,34 @@ void FileBufferWindow::updateCursor()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::updateBufferCursorPos()
 {
+    m_prevBufferCursorPos = m_bufferCursorPos;
     m_bufferCursorPos = m_scrollPos + m_cursor.cpos();
+    
+    // cursor moved in buffer, and in selection mode, add selection
+    if (m_prevBufferCursorPos != m_bufferCursorPos && m_isSelecting)
+    {
+        ivec2_t prev = m_prevBufferCursorPos;
+        ivec2_t curr = m_bufferCursorPos;
+        
+        if (prev.y > curr.y)
+            std::swap(prev, curr);
+
+        line_t *start_line = m_lineBuffer.ptrFromIdx(prev.y);
+        line_t *p = start_line;
+        // add first line
+        m_selection->add(p, prev.x, p->len - prev.x);
+        p = p->next;
+        // loop
+        while (p != m_currentLine)
+        {
+            m_selection->add(p, 0, p->len);
+            p = p->next;
+        }
+        // add end line
+        m_selection->add(m_currentLine, 0, m_cursor.cx());
+
+        refresh_next_frame_();
+    }
 
 }
 
@@ -599,9 +626,10 @@ void FileBufferWindow::redraw()
     updateCursor();
     int x = 110;
     int y = 0;
-    __debug_print(x, y++, "bpos = (%d, %d)", m_bufferCursorPos.x, m_bufferCursorPos.y);
-    __debug_print(x, y++, "cpos = (%d, %d)", m_cursor.cx(), m_cursor.cy());
-    __debug_print(x, y++, "rpos = (%d, %d)", m_cursor.rx(), m_cursor.ry());
+    __debug_print(x, y++, "bpos  = (%d, %d)", m_bufferCursorPos.x, m_bufferCursorPos.y);
+    __debug_print(x, y++, "pbpos = (%d, %d)", m_prevBufferCursorPos.x, m_prevBufferCursorPos.y);
+    __debug_print(x, y++, "cpos  = (%d, %d)", m_cursor.cx(), m_cursor.cy());
+    __debug_print(x, y++, "rpos  = (%d, %d)", m_cursor.rx(), m_cursor.ry());
     y++;
     __debug_print(x, y++, "last_rx = %d", m_cursor.last_rx());
     __debug_print(x, y++, "spos = (%d, %d)", m_scrollPos.x , m_scrollPos.y);
