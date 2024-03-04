@@ -80,26 +80,25 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                 insertNewLine();
                 break;
 
-            case 'q':
+            case CTRL('d'):
                 if (!m_isSelecting)
                 {
-                    LOG_INFO("selecting");
                     m_isSelecting = true;
-                    m_selection = new Selection(m_currentLine, m_cursor.cx());
-                    // -- DEBUG
-                    m_selection->m_startLine = m_currentLine;
-                    m_selection->m_startOffset = 0;
-                    m_selection->m_endLine = m_currentLine;
-                    m_selection->m_endOffset = m_currentLine->len;
-                    m_selection->select_deselect_sequence_(true);
-                    m_selection->__debug_selection();
+                    m_selection = new Selection;
+                    m_selection->add(m_currentLine, m_cursor.cx(), m_currentLine->len - m_cursor.cx());
+                    line_t *p = m_currentLine->next;
+                    for (int i = 0; i < 2 && p->next!=NULL; i++, p=p->next)
+                    {
+                        selection_entry_t entry(p, 0, p->len);
+                        m_selection->add(p, 0, p->len);
+                    }
+
                 }
                 else
                 {
-                    LOG_INFO("clearing");
                     m_isSelecting = false;
                     assert(m_selection != NULL);
-                    m_selection->clear_all();
+                    m_selection->clear();
                     delete m_selection;
                     m_selection = NULL;
                 }
@@ -172,6 +171,9 @@ void FileBufferWindow::scroll_(int _axis, int _dir, int _steps, bool _update_cur
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::moveCursor(int _dx, int _dy)
 {
+    if (m_isSelecting)
+        clear_selection_();
+
     int dx = _dx;
     int dy = _dy;
     
@@ -616,6 +618,11 @@ void FileBufferWindow::redraw()
 
     y++;
     __debug_print(x, y++, "selecting: %s", m_isSelecting ? "true" : "false");
+    //if (m_selection != NULL)
+    //{
+    //    __debug_print(x, y++, "start : idx %d, offset %zu", m_selection->m_startLineIdx, m_selection->m_startOffset);
+    //    __debug_print(x, y++, "end   : idx %d, offset %zu", m_selection->m_endLineIdx, m_selection->m_endOffset);
+    //}
     #endif
     
     if (m_isWindowVisible)

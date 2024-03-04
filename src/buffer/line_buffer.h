@@ -45,6 +45,7 @@ public:
 
     // accessors
     line_t *ptrFromIdx(int _index);
+    int idxFromPtr(line_t *_line);
     const int lineCount() const { return m_lineCount; }
 
 

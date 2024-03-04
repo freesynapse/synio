@@ -12,6 +12,7 @@ class FileBufferWindow : public BufferWindowBase
 {
 public:
     friend class LineNumbers;
+    friend class Selection; 
 
 public:
 
@@ -64,6 +65,15 @@ private:
     {
         for (int i = _y; i < m_frame.nrows; i++)
             m_linesUpdateList.insert(i);
+    }
+    __always_inline void clear_selection_()
+    {
+        if (m_selection)
+        {
+            m_selection->clear();
+            delete m_selection;
+            m_isSelecting = false;
+        }
     }
 
 protected:

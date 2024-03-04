@@ -66,9 +66,9 @@ void ncurses_init_colors(API_WINDOW_PTR _w)
 void ncurses_select_deselect_substr(line_t *_line,
                                     size_t _start,
                                     size_t _end,
-                                    bool _select)
+                                    int _select)    // SELECT = 1, DESELECT = 0
 {
-    int idx_offset = (_select == true ? SELECTION_OFFSET : -SELECTION_OFFSET);
+    int idx_offset = (_select == SELECT ? SELECTION_OFFSET : -SELECTION_OFFSET);
     for (size_t i = _start; i < _end; i++)
     {
         // A_COLOR : 0x0000ff00 (masking bit 9..16)

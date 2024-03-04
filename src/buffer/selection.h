@@ -1,70 +1,49 @@
 #ifndef __SELECTION_H
 #define __SELECTION_H
 
+// TODO : choose one or the other!
+#include <unordered_map>
+#include <vector>
+
 #include "../types.h"
 
 
 //
+struct selection_entry_t
+{
+    line_t *line = NULL;
+    int offset = 0;
+    int nchars = 0;
+
+    selection_entry_t() {}
+    selection_entry_t(line_t *_line, int _offset, int _n) :
+        line(_line), offset(_offset), nchars(_n)
+    {}
+
+};
+
+//
+class FileBufferWindow;
 class Selection
 {
 public:
     Selection() {}
-    Selection(line_t *_start_line, size_t _offset) :
-        m_startLine(_start_line), m_endLine(_start_line), m_startOffset(_offset)
-    {}
     ~Selection() = default;
 
-    // TODO : update pointers and offsets based on which is first? Possible w linked list?
-    void update_end_line(line_t *_line)
-    { 
-        m_endLine = _line; 
-        select_deselect_sequence_();
-    }
-    
-    void update_end_line(line_t *_line, size_t _offset)
-    { 
-        m_endLine = _line; 
-        m_endOffset = _offset; 
-        select_deselect_sequence_();
-    }
-    
-    void update_end_offset(size_t _offset)
-    { 
-        m_endOffset = _offset; 
-        select_deselect_sequence_();
-    }
-
-    //void clear_sequence() -- TODO : clear a certain sequence from selection
     // clears all characters in the selection from being selected
-    void clear_all();
+    void clear();
 
-
-    //
-    #ifdef DEBUG
-    void __debug_selection()
-    {
-        LOG_INFO("selection: line %p (%zu) -> %p (%zu)",
-                 m_startLine,
-                 m_startOffset,
-                 m_endLine,
-                 m_endOffset);
-    };
-    #endif
+    void add(line_t *_start_line, int _offset, int _n);
+    // void remove? how to step through? linear search or hash map?
 
 
 // private:
-    // updates a sequence to being selected.
-    // TODO : only update new characters
-    void select_deselect_sequence_(bool _selecting=true);
-
+    void select_deselect_(selection_entry_t *_entry, int _selecting);
 
 // private:
-    // member variables
-    line_t *m_startLine = NULL;
-    size_t m_startOffset = 0;
-    
-    line_t *m_endLine = NULL;
-    size_t m_endOffset = 0;
+    // key = line ptr addr + offset
+    // std::unordered_map<int, selection_entry_t> m_entries;
+    std::vector<selection_entry_t> m_entries;
 
 };
 

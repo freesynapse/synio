@@ -44,7 +44,7 @@
 
 //
 extern void ncurses_init_colors(API_WINDOW_PTR _w);
-extern void ncurses_select_deselect_substr(line_t *_line, size_t _start, size_t _end, bool _select);
+extern void ncurses_select_deselect_substr(line_t *_line, size_t _start, size_t _end, int _select);
 extern void ncurses_color_substr(line_t *_line, size_t _start, size_t _end, short _pair_index);
 
 

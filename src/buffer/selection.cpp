@@ -7,48 +7,35 @@
 
 
 //
-void Selection::clear_all()
+void Selection::clear()
 {
-    select_deselect_sequence_(false);
+    for (auto &entry : m_entries)
+    {
+        // auto entry = sel.second;
+        // select_deselect_(entry.line, entry.offset, entry.nchars, DESELECT);
+        select_deselect_(&entry, DESELECT);
+    }
+    
+    m_entries.clear();
 
 }
 
 //---------------------------------------------------------------------------------------
-void Selection::select_deselect_sequence_(bool _selecting)
+void Selection::add(line_t *_start_line, int _offset, int _n)
 {
-    line_t *line = m_startLine;
-    while (line->next != NULL)
-    {
-        // last line of selection
-        if (line == m_endLine)
-        {
-            #ifdef NCURSES_IMPL
-            ncurses_select_deselect_substr(line, 0, m_endOffset, _selecting);
-            #endif
+    selection_entry_t entry(_start_line, _offset, _n);
+    m_entries.push_back(entry);
+    select_deselect_(&entry, SELECT);
 
-            break;
-        }
-        // first line of selection, account for offset into line
-        else if (line == m_startLine)
-        {
-            #ifdef NCURSES_IMPL
-            ncurses_select_deselect_substr(line, m_startOffset, line->len, _selecting);
-            #endif
-        }
-        // in the middle of multi-line selection, select the whole line
-        else if (line != m_startLine && line != m_endLine)
-        {
-            #ifdef NCURSES_IMPL
-            ncurses_select_deselect_substr(line, 0, line->len, _selecting);
-            #endif
-        }
-        // ?
-        else
-        {
-            LOG_INFO("how did we get here?!");
-        }
-
-        line = line->next;
-    }
 }
 
+//---------------------------------------------------------------------------------------
+void Selection::select_deselect_(selection_entry_t *_entry, int _selecting)
+{
+    #ifdef NCURSES_IMPL
+    ncurses_select_deselect_substr(_entry->line, 
+                                   _entry->offset,
+                                   _entry->offset + _entry->nchars, 
+                                   _selecting);
+    #endif
+}

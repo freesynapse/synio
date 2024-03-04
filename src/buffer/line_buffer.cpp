@@ -263,6 +263,33 @@ line_t *LineBuffer::ptrFromIdx(int _index)
 }
 
 //---------------------------------------------------------------------------------------
+int LineBuffer::idxFromPtr(line_t *_line)
+{
+    if (m_head == NULL)
+        return -1;
+
+    // have to do linear search, unfortunately
+    line_t *p = m_head;
+    int idx = -1;
+    int i = 0;
+    while (p->next != NULL)
+    {
+        if (p == _line)
+        {
+            idx = i;
+            break;
+        }
+        
+        i++;
+        p = p->next;
+
+    }
+
+    return idx;
+
+}
+
+//---------------------------------------------------------------------------------------
 void LineBuffer::clear()
 {
     if (m_head == NULL)

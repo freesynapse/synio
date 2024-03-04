@@ -17,6 +17,10 @@
 #define NEXT  1
 #define PREV -1
 
+// selections
+#define SELECT      1
+#define DESELECT    0
+
 //
 typedef void* API_WINDOW_PTR;
 
