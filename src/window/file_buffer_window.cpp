@@ -4,6 +4,7 @@
 
 #include "file_buffer_window.h"
 #include "../platform/ncurses_colors.h"
+#include "../utils/timer.h"
 
 //
 FileBufferWindow::FileBufferWindow(const frame_t &_frame,
@@ -85,14 +86,7 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                 {
                     m_isSelecting = true;
                     m_selection = new Selection;
-                    // m_selection->add(m_currentLine, m_cursor.cx(), m_currentLine->len - m_cursor.cx());
-                    // line_t *p = m_currentLine->next;
-                    // for (int i = 0; i < 2 && p->next!=NULL; i++, p=p->next)
-                    // {
-                    //     selection_entry_t entry(p, 0, p->len);
-                    //     m_selection->add(p, 0, p->len);
-                    // }
-
+                  
                 }
                 else
                 {
@@ -160,9 +154,8 @@ void FileBufferWindow::scroll_(int _axis, int _dir, int _steps, bool _update_cur
     if (_update_current_line)
         updateCurrentLinePtr(scroll.y);
 
-    // update scroll position and update cursor
+    // update scroll position (cursor updated in )
     m_scrollPos += scroll;
-    updateBufferCursorPos();
     
     clear_next_frame_();
 
@@ -369,6 +362,7 @@ void FileBufferWindow::insertCharAtCursor(char _c)
         m_linesUpdateList.insert(m_cursor.cy());
     
     refresh_next_frame_();
+    buffer_changed_();
 
 }
 
@@ -389,7 +383,8 @@ void FileBufferWindow::insertStrAtCursor(char *_str, size_t _len)
     }
 
     refresh_next_frame_();
-
+    buffer_changed_();
+    
 }
 
 //---------------------------------------------------------------------------------------
@@ -414,6 +409,7 @@ void FileBufferWindow::insertNewLine()
     // redraw lines
     update_lines_after_y_(m_cursor.cy() - 1);
     refresh_next_frame_();
+    buffer_changed_();
 
 }
 
@@ -438,6 +434,7 @@ void FileBufferWindow::deleteCharAtCursor()
     }
 
     refresh_next_frame_();
+    buffer_changed_();
 
 }
 
@@ -474,6 +471,7 @@ void FileBufferWindow::deleteCharBeforeCursor()
     }
 
     refresh_next_frame_();
+    buffer_changed_();
 
 }
 
@@ -506,29 +504,58 @@ void FileBufferWindow::updateBufferCursorPos()
     // cursor moved in buffer, and in selection mode, add selection
     if (m_prevBufferCursorPos != m_bufferCursorPos && m_isSelecting)
     {
+        Timer t(__func__, true);
+
+        assert(m_selection != NULL);
+
         ivec2_t prev = m_prevBufferCursorPos;
         ivec2_t curr = m_bufferCursorPos;
-        
+        // 
         if (prev.y > curr.y)
             std::swap(prev, curr);
 
-        line_t *start_line = m_lineBuffer.ptrFromIdx(prev.y);
-        line_t *p = start_line;
-        // add first line
-        m_selection->add(p, prev.x, p->len - prev.x);
-        p = p->next;
-        // loop
-        while (p != m_currentLine)
+        // find number of chars between current and previous position
+        //
+        int n = 0;
+        line_t *prev_ptr = m_lineBuffer.ptrFromIdx(prev.y);
+        line_t *curr_ptr;
+
+        // same line
+        if (prev.y == curr.y)
+            n = curr.x - prev.x;
+
+        // different lines
+        else
         {
-            m_selection->add(p, 0, p->len);
+            curr_ptr = m_lineBuffer.ptrFromIdx(curr.y);
+            line_t *p = prev_ptr;
+            n = p->len - prev.x; // x offset in first (prev)
             p = p->next;
+            while (p != NULL)
+            {
+                // last line
+                if (p == curr_ptr)
+                {
+                    n += curr.x;
+                    break;
+                }
+                //
+                else
+                    n += p->len;
+
+                p = p->next;
+            }
         }
-        // add end line
-        m_selection->add(m_currentLine, 0, m_cursor.cx());
 
+        //
+        if (n > 0)
+            m_selection->selectChars(prev_ptr, prev.x, n);
+
+        //
         refresh_next_frame_();
-    }
 
+    }
+// 
 }
 
 //---------------------------------------------------------------------------------------
@@ -582,6 +609,8 @@ void FileBufferWindow::readFromFile(const std::string &_filename)
 
     }
 
+    m_isDirty = false;
+    
 }
 
 //---------------------------------------------------------------------------------------

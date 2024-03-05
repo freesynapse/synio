@@ -68,13 +68,47 @@ void ncurses_select_deselect_substr(line_t *_line,
                                     size_t _end,
                                     int _select)    // SELECT = 1, DESELECT = 0
 {
-    int idx_offset = (_select == SELECT ? SELECTION_OFFSET : -SELECTION_OFFSET);
+    if (_select == SELECT)
+        ncurses_select_substr(_line, _start, _end);
+    else
+        ncurses_deselect_substr(_line, _start, _end);
+    // int idx_offset = (_select == SELECT ? SELECTION_OFFSET : -SELECTION_OFFSET);
+    //for (size_t i = _start; i < _end; i++)
+    //{
+    //    // A_COLOR : 0x0000ff00 (masking bit 9..16)
+    //    int16_t cp_idx = (_line->content[i] & CHTYPE_COLOR_MASK) >> 8;
+    //    // need to clear the CHTYPE_COLOR_MASK first, since OR is applied
+    //    _line->content[i] = ((_line->content[i] & ~CHTYPE_COLOR_MASK) | COLOR_PAIR(cp_idx + idx_offset));
+    //    
+    //}
+
+}
+
+//---------------------------------------------------------------------------------------
+void ncurses_select_substr(line_t *_line, size_t _start, size_t _end)
+{
     for (size_t i = _start; i < _end; i++)
     {
         // A_COLOR : 0x0000ff00 (masking bit 9..16)
         int16_t cp_idx = (_line->content[i] & CHTYPE_COLOR_MASK) >> 8;
         // need to clear the CHTYPE_COLOR_MASK first, since OR is applied
-        _line->content[i] = ((_line->content[i] & ~CHTYPE_COLOR_MASK) | COLOR_PAIR(cp_idx + idx_offset));
+        if (cp_idx <= SELECTION_OFFSET)
+            _line->content[i] = ((_line->content[i] & ~CHTYPE_COLOR_MASK) | COLOR_PAIR(cp_idx + SELECTION_OFFSET));
+        
+    }
+
+}
+
+//----------------s-----------------------------------------------------------------------
+void ncurses_deselect_substr(line_t *_line, size_t _start, size_t _end)
+{
+    for (size_t i = _start; i < _end; i++)
+    {
+        // A_COLOR : 0x0000ff00 (masking bit 9..16)
+        int16_t cp_idx = (_line->content[i] & CHTYPE_COLOR_MASK) >> 8;
+        // need to clear the CHTYPE_COLOR_MASK first, since OR is applied
+        if (cp_idx >= SELECTION_OFFSET)
+            _line->content[i] = ((_line->content[i] & ~CHTYPE_COLOR_MASK) | COLOR_PAIR(cp_idx - SELECTION_OFFSET));
         
     }
 

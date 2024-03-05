@@ -75,9 +75,11 @@ private:
             m_isSelecting = false;
         }
     }
+    __always_inline void buffer_changed_() { m_isDirty = true; }
 
 protected:
     std::string m_filename = "";
+    bool m_isDirty = false;
 
     //
     LineBuffer m_lineBuffer;
@@ -93,11 +95,11 @@ protected:
     //
     BufferFormatter m_formatter;
 
-    // selections; one (1) for now
+    // selections; one (1) for now, could be array later? Or put in Selection class (probably)
     Selection *m_selection = NULL;
     bool m_isSelecting = false;
 
-    //
+    // Line numbers window accompanying this one
     LineNumbers *m_lineNumbers = NULL;
 
 };

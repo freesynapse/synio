@@ -30,16 +30,22 @@ public:
     Selection() {}
     ~Selection() = default;
 
-    // clears all characters in the selection from being selected
+    // clears all characters in the entry from being selected
     void clear();
 
     void add(line_t *_start_line, int _offset, int _n);
-    void addRegion(line_t *_start_line, int _start_offset, line_t *_end_line, int _end_offset);
-    // void remove? how to step through? linear search or hash map?
+
+    //Borde vara att selection_entry_t endast är en offset och n tecken, så får man göra allt
+    //on the fly, både select och deselect.
+    void selectChars(line_t *_start_line, int _offset, int _n);
+    // void remove? how to step through? linear search or hash map? maybe clear() and add()?
 
 
 // private:
-    void select_deselect_(selection_entry_t *_entry, int _selecting);
+    void select_deselect_(const selection_entry_t &_entry, int _selecting);
+    // overload
+    void select_deselect_(line_t *_line, int _offset, int _n, int _selecting)
+    { select_deselect_(selection_entry_t(_line, _offset, _n), _selecting); }
 
 // private:
     // key = line ptr addr + offset

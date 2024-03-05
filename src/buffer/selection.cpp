@@ -13,7 +13,7 @@ void Selection::clear()
     {
         // auto entry = sel.second;
         // select_deselect_(entry.line, entry.offset, entry.nchars, DESELECT);
-        select_deselect_(&entry, DESELECT);
+        select_deselect_(entry, DESELECT);
     }
     
     m_entries.clear();
@@ -40,38 +40,61 @@ void Selection::add(line_t *_start_line, int _offset, int _n)
         }
         selection_entry_t entry(_start_line, _offset, _n);
         m_entries.push_back(entry);
-        select_deselect_(&entry, SELECT);
+        select_deselect_(entry, SELECT);
     }
 }
 
 //---------------------------------------------------------------------------------------
-void Selection::addRegion(line_t *_start_line,
-                          int _start_offset,
-                          line_t *_end_line,
-                          int _end_offset)
+void Selection::selectChars(line_t *_start_line, int _offset, int _n)
 {
-    line_t *p = _start_line;
-    // add first line
-    add(p, _start_offset, p->len - _start_offset);
-    p = p->next;
-    // loop
-    while (p != _end_line)
-    {
-        add(p, 0, p->len);
-        p = p->next;
-    }
-    // add end line
-    add(p, 0, _end_offset);
+    // selects n characters from startline, even if _n > _start_line->len
     
+    // only selecting in the first line?
+    if (_n <= _start_line->len - _offset)
+        select_deselect_(selection_entry_t(_start_line, _offset, _n), SELECT);
+    
+    // text from more than one line is selected
+    else
+    {
+        line_t *p = _start_line;
+        int n = _n;
+        // first select the first line (get rid of the offset)
+        select_deselect_(p, _offset, p->len - _offset, SELECT);
+        n -= (p->len - _offset);
+        p = p->next;
+
+        // now do the rest of the characters
+        while (n > 0 && p != NULL)
+        {
+            if (n > p->len)
+            {
+                select_deselect_(p, 0, p->len, SELECT);
+                n -= p->len;
+            }
+            // last line of selection
+            else
+            {
+                select_deselect_(p, 0, n, SELECT);
+                n = 0;
+            }
+
+            p = p->next;
+
+        }
+    }
+
 }
 
 //---------------------------------------------------------------------------------------
-void Selection::select_deselect_(selection_entry_t *_entry, int _selecting)
+void Selection::select_deselect_(const selection_entry_t &_sel, int _selecting)
 {
+    m_entries.push_back(_sel);
+
     #ifdef NCURSES_IMPL
-    ncurses_select_deselect_substr(_entry->line, 
-                                   _entry->offset,
-                                   _entry->offset + _entry->nchars, 
+    ncurses_select_deselect_substr(_sel.line,
+                                   _sel.offset,
+                                   _sel.offset + _sel.nchars,
                                    _selecting);
     #endif
+
 }
