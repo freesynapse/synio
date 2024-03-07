@@ -8,42 +8,56 @@
 #include "utils/log.h"
 
 // scroll-related
-#define X_AXIS 1
-#define Y_AXIS 2
+#define X_AXIS    1
+#define Y_AXIS    2
 
 #define FORWARD   1
 #define BACKWARD -1
 
-#define NEXT  1
-#define PREV -1
+#define NEXT      1
+#define PREV     -1
 
 // selections
-#define SELECT      1
-#define DESELECT    0
+#define SELECT    1
+#define DESELECT  0
 
 //
 typedef void* API_WINDOW_PTR;
 
-#define CHTYPE_CHAR_MASK 0x000000ff
-
 // the basic char type
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmacro-redefined"
+#define NCURSES_IMPL
+#pragma clang diagnostic pop
+
 #if defined NCURSES_IMPL
 #include <ncurses.h>
-#define CHTYPE chtype
-#define CHTYPE_PTR chtype *
+// #define CHTYPE chtype
+// #define CHTYPE_PTR chtype *
+#define CHTYPE uint64_t
+#define CHTYPE_PTR uint64_t *
+#define CHTYPE_CHAR_MASK  0x00000000000000ff
+#define CHTYPE_COLOR_MASK 0x000000000000ff00
+#define CHTYPE_ATTR_MASK  0x00000000ffff0000
+#define CHTYPE_SELECTION_BIT 32
+// #elif defined (GLFW_IMPL)
+#else
+#define CHTYPE uint32_t
+#define CHTYPE_PTR uint32_t *
 #define CHTYPE_CHAR_MASK  0x000000ff
 #define CHTYPE_COLOR_MASK 0x0000ff00
 #define CHTYPE_ATTR_MASK  0xffff0000
-// #elif defined (GLFW_IMPL)
-#else
-#define CHTYPE char
-#define CHTYPE_PTR char *
-#define CHTYPE_CHAR_MASK  0xffffffff
-#define CHTYPE_COLOR_MASK 0xffffffff
-#define CHTYPE_ATTR_MASK  0xffffffff
+#define CHTYPE_SELECTION_BIT 31
 #endif
 #define CHTYPE_SIZE sizeof(CHTYPE)
 #define CHTYPE_PTR_SIZE sizeof(CHTYPE_PTR)
+
+// bit manipulation used by CHTYPE
+#define SET_BIT(x,nbit)     ((x) |=  ((CHTYPE)1<<(nbit)))
+#define ZERO_BIT(x,nbit)    ((x) &= ~((CHTYPE)1<<(nbit)))
+#define FLIP_BIT(x,nbit)    ((x) ^=  ((CHTYPE)1<<(nbit)))
+#define CHECK_BIT(x,nbit)   ((x) &   ((CHTYPE)1<<(nbit)))
 
 //
 struct line_t

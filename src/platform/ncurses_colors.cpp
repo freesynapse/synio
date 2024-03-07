@@ -91,9 +91,13 @@ void ncurses_select_substr(line_t *_line, size_t _start, size_t _end)
     {
         // A_COLOR : 0x0000ff00 (masking bit 9..16)
         int16_t cp_idx = (_line->content[i] & CHTYPE_COLOR_MASK) >> 8;
-        // need to clear the CHTYPE_COLOR_MASK first, since OR is applied
-        if (cp_idx <= SELECTION_OFFSET)
+        if (!CHECK_BIT(_line->content[i], CHTYPE_SELECTION_BIT))
+        // if (cp_idx <= SELECTION_OFFSET)
+        {
+            // need to clear the CHTYPE_COLOR_MASK first, since OR is applied
             _line->content[i] = ((_line->content[i] & ~CHTYPE_COLOR_MASK) | COLOR_PAIR(cp_idx + SELECTION_OFFSET));
+            SET_BIT(_line->content[i], CHTYPE_SELECTION_BIT);
+        }
         
     }
 
@@ -106,9 +110,13 @@ void ncurses_deselect_substr(line_t *_line, size_t _start, size_t _end)
     {
         // A_COLOR : 0x0000ff00 (masking bit 9..16)
         int16_t cp_idx = (_line->content[i] & CHTYPE_COLOR_MASK) >> 8;
-        // need to clear the CHTYPE_COLOR_MASK first, since OR is applied
-        if (cp_idx >= SELECTION_OFFSET)
+        if (CHECK_BIT(_line->content[i], CHTYPE_SELECTION_BIT))
+        {
+        //if (cp_idx >= SELECTION_OFFSET)
+            // need to clear the CHTYPE_COLOR_MASK first, since OR is applied
             _line->content[i] = ((_line->content[i] & ~CHTYPE_COLOR_MASK) | COLOR_PAIR(cp_idx - SELECTION_OFFSET));
+            ZERO_BIT(_line->content[i], CHTYPE_SELECTION_BIT);
+        }
         
     }
 

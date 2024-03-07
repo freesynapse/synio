@@ -9,11 +9,11 @@
 //
 void Selection::clear()
 {
-    for (auto &entry : m_entries)
+    for (auto &sel : m_entries)
     {
-        // auto entry = sel.second;
-        // select_deselect_(entry.line, entry.offset, entry.nchars, DESELECT);
-        select_deselect_(entry, DESELECT);
+        auto entry = sel.second;
+        select_deselect_(entry.line, entry.offset, entry.nchars, DESELECT);
+        // select_deselect_(entry, DESELECT);
     }
     
     m_entries.clear();
@@ -38,9 +38,8 @@ void Selection::add(line_t *_start_line, int _offset, int _n)
 
             }
         }
-        selection_entry_t entry(_start_line, _offset, _n);
-        m_entries.push_back(entry);
-        select_deselect_(entry, SELECT);
+        select_deselect_(selection_entry_t(_start_line, _offset, _n), SELECT);
+
     }
 }
 
@@ -51,7 +50,7 @@ void Selection::selectChars(line_t *_start_line, int _offset, int _n)
     
     // only selecting in the first line?
     if (_n <= _start_line->len - _offset)
-        select_deselect_(selection_entry_t(_start_line, _offset, _n), SELECT);
+        select_deselect_(_start_line, _offset, _n, SELECT);
     
     // text from more than one line is selected
     else
@@ -86,15 +85,17 @@ void Selection::selectChars(line_t *_start_line, int _offset, int _n)
 }
 
 //---------------------------------------------------------------------------------------
-void Selection::select_deselect_(const selection_entry_t &_sel, int _selecting)
+void Selection::select_deselect_(const selection_entry_t &_entry, int _selecting)
 {
-    m_entries.push_back(_sel);
+    save_selection_entry_(_entry);
 
     #ifdef NCURSES_IMPL
-    ncurses_select_deselect_substr(_sel.line,
-                                   _sel.offset,
-                                   _sel.offset + _sel.nchars,
+    ncurses_select_deselect_substr(_entry.line,
+                                   _entry.offset,
+                                   _entry.offset + _entry.nchars,
                                    _selecting);
+    #else
+    assert(0 == 1 && "implement me!");
     #endif
 
 }

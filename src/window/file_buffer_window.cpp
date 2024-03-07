@@ -518,16 +518,21 @@ void FileBufferWindow::updateBufferCursorPos()
         //
         int n = 0;
         line_t *prev_ptr = m_lineBuffer.ptrFromIdx(prev.y);
-        line_t *curr_ptr;
+        line_t *curr_ptr = m_currentLine;
 
         // same line
         if (prev.y == curr.y)
+        {
+            // off by 1?
+            if (curr.x < prev.x)
+                std::swap(prev, curr);
             n = curr.x - prev.x;
+        }
 
         // different lines
         else
         {
-            curr_ptr = m_lineBuffer.ptrFromIdx(curr.y);
+            // curr_ptr = m_lineBuffer.ptrFromIdx(curr.y);
             line_t *p = prev_ptr;
             n = p->len - prev.x; // x offset in first (prev)
             p = p->next;
@@ -610,7 +615,7 @@ void FileBufferWindow::readFromFile(const std::string &_filename)
     }
 
     m_isDirty = false;
-    
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -675,11 +680,10 @@ void FileBufferWindow::redraw()
 
     y++;
     __debug_print(x, y++, "selecting: %s", m_isSelecting ? "true" : "false");
-    //if (m_selection != NULL)
-    //{
-    //    __debug_print(x, y++, "start : idx %d, offset %zu", m_selection->m_startLineIdx, m_selection->m_startOffset);
-    //    __debug_print(x, y++, "end   : idx %d, offset %zu", m_selection->m_endLineIdx, m_selection->m_endOffset);
-    //}
+    if (m_selection != NULL)
+    {
+       __debug_print(x, y++, "selection count = %zu", m_selection->selectionCount());
+    }
     #endif
     
     if (m_isWindowVisible)

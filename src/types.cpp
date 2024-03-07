@@ -155,7 +155,8 @@ void __debug_addchstr(API_WINDOW_PTR _w, const char *_fmt, ...)
     CHTYPE_PTR print_buffer = (CHTYPE_PTR)malloc(CHTYPE_SIZE * (n + 1));
     for (size_t i = 0; i < n; i++)
         print_buffer[i] = buffer0[i];
-    addchstr(print_buffer);
+    
+    // addchstr(print_buffer);
 
     move(y+1, x);
 
@@ -171,7 +172,7 @@ void __debug_addchstr(API_WINDOW_PTR _w, CHTYPE_PTR _str)
     int x, y;
     getyx((WINDOW *)_w, y, x);
 
-    addchstr(_str);
+    // addchstr(_str);
 
     move(y+1, x);
 
@@ -184,7 +185,7 @@ void __debug_mvaddchstr(API_WINDOW_PTR _w, int _y, int _x, CHTYPE_PTR _str)
 {
     int x, y;
     getyx((WINDOW *)_w, y, x);
-    mvaddchstr(_y, _x, _str);
+    // mvaddchstr(_y, _x, _str);
 
     move(y, x);
 
