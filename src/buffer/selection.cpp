@@ -9,10 +9,11 @@
 //
 void Selection::clear()
 {
-    for (auto &sel : m_entries)
+    // TODO : thread this for large files?
+    for (line_t *entry : m_entries)
     {
-        auto entry = sel.second;
-        select_deselect_(entry.line, entry.offset, entry.nchars, DESELECT);
+        // auto entry = sel.second;
+        select_deselect_(entry, 0, entry->len, DESELECT);
         // select_deselect_(entry, DESELECT);
     }
     
@@ -38,7 +39,7 @@ void Selection::add(line_t *_start_line, int _offset, int _n)
 
             }
         }
-        select_deselect_(selection_entry_t(_start_line, _offset, _n), SELECT);
+        select_deselect_(_start_line, _offset, _n, SELECT);
 
     }
 }
@@ -85,17 +86,18 @@ void Selection::selectChars(line_t *_start_line, int _offset, int _n)
 }
 
 //---------------------------------------------------------------------------------------
-void Selection::select_deselect_(const selection_entry_t &_entry, int _selecting)
+void Selection::select_deselect_(line_t *_line, int _offset, int _n, int _selecting)
 {
-    save_selection_entry_(_entry);
+    // save_selection_entry_(_entry);
+    m_entries.insert(_line);
 
     #ifdef NCURSES_IMPL
-    ncurses_select_deselect_substr(_entry.line,
-                                   _entry.offset,
-                                   _entry.offset + _entry.nchars,
+    ncurses_select_deselect_substr(_line,
+                                   _offset,
+                                   _offset + _n,
                                    _selecting);
     #else
-    assert(0 == 1 && "implement me!");
+    assert(0 && "implement me!");
     #endif
 
 }

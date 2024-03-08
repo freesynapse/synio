@@ -28,6 +28,9 @@ FileBufferWindow::FileBufferWindow(const frame_t &_frame,
     if (!Config::SHOW_LINE_NUMBERS)
         m_lineNumbers->setVisibility(false);
 
+    // selection instance
+    m_selection = new Selection();
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -44,12 +47,21 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
     {
         switch (_ctrl_action)
         {
-            case CtrlKeyAction::CTRL_LEFT:  moveCursorToColDelim(-1);   break;
-            case CtrlKeyAction::CTRL_RIGHT: moveCursorToColDelim(1);    break;
-            case CtrlKeyAction::CTRL_UP:    moveCursorToRowDelim(-1);   break;
-            case CtrlKeyAction::CTRL_DOWN:  moveCursorToRowDelim(1);    break;
-            case CtrlKeyAction::CTRL_HOME:  moveFileBegin();            break;
-            case CtrlKeyAction::CTRL_END:   moveFileEnd();              break;
+            case CtrlKeyAction::CTRL_LEFT:  deselect_(); moveCursorToColDelim(-1);  break;
+            case CtrlKeyAction::CTRL_RIGHT: deselect_(); moveCursorToColDelim( 1);  break;
+            case CtrlKeyAction::CTRL_UP:    deselect_(); moveCursorToRowDelim(-1);  break;
+            case CtrlKeyAction::CTRL_DOWN:  deselect_(); moveCursorToRowDelim( 1);  break;
+            case CtrlKeyAction::CTRL_HOME:  deselect_(); moveFileBegin();           break;
+            case CtrlKeyAction::CTRL_END:   deselect_(); moveFileEnd();             break;
+            
+            // selections
+            case CtrlKeyAction::SHIFT_UP:           select_(); moveCursor(0, -1);           break;
+            case CtrlKeyAction::SHIFT_DOWN:         select_(); moveCursor(0,  1);           break;
+            case CtrlKeyAction::SHIFT_CTRL_LEFT:    select_(); moveCursorToColDelim(-1);    break;
+            case CtrlKeyAction::SHIFT_CTRL_RIGHT:   select_(); moveCursorToColDelim( 1);    break;
+            case CtrlKeyAction::SHIFT_CTRL_UP:      select_(); moveCursorToRowDelim(-1);    break;
+            case CtrlKeyAction::SHIFT_CTRL_DOWN:    select_(); moveCursorToRowDelim( 1);    break;
+
             default: break;
             // default: LOG_INFO("ctrl keycode %d : %s", _c, ctrlActionStr(_ctrl_action)); break;
 
@@ -60,26 +72,21 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
         switch (_c)
         {
             // cursor movement
-            case KEY_DOWN:  moveCursor(0, 1);           break;
-            case KEY_UP:    moveCursor(0, -1);          break;
-            case KEY_LEFT:  moveCursor(-1, 0);          break;
-            case KEY_RIGHT: moveCursor(1, 0);           break;
-            case KEY_PPAGE: movePageUp();               break;
-            case KEY_NPAGE: movePageDown();             break;
-            case KEY_HOME:  moveCursorToLineBegin();    break;
-            case KEY_END:   moveCursorToLineEnd();      break;
+            case KEY_DOWN:      deselect_(); moveCursor( 0,  1);        break;
+            case KEY_UP:        deselect_(); moveCursor( 0, -1);        break;
+            case KEY_LEFT:      deselect_(); moveCursor(-1,  0);        break;
+            case KEY_RIGHT:     deselect_(); moveCursor( 1,  0);        break;
+            case KEY_PPAGE:     deselect_(); movePageUp();              break;
+            case KEY_NPAGE:     deselect_(); movePageDown();            break;
+            case KEY_HOME:      deselect_(); moveCursorToLineBegin();   break;
+            case KEY_END:       deselect_(); moveCursorToLineEnd();     break;
+            case KEY_DC:        deselect_(); deleteCharAtCursor();      break;
+            case KEY_BACKSPACE: deselect_(); deleteCharBeforeCursor();  break;
+            case 10:            deselect_(); insertNewLine();           break;
 
-            case KEY_DC:
-                deleteCharAtCursor();
-                break;
-
-            case KEY_BACKSPACE:
-                deleteCharBeforeCursor();
-                break;
-            
-            case 10:    // <ENTER>
-                insertNewLine();
-                break;
+            // selections
+            case KEY_SLEFT:     select_(); moveCursor(-1, 0);   break;
+            case KEY_SRIGHT:    select_(); moveCursor( 1, 0);   break;
 
             case CTRL('d'):
                 if (!m_isSelecting)
@@ -348,7 +355,10 @@ void FileBufferWindow::moveFileBegin()
 void FileBufferWindow::moveFileEnd()
 {
     int steps = m_lineBuffer.lineCount() - 1 - m_bufferCursorPos.y;
-    moveCursor(m_lineBuffer.m_tail->len - m_cursor.cx(), steps);
+    // two moves are needed since the x move causes the cursor to use 'last char in line'
+    // behaviour and set dy to 1... well, well..
+    moveCursor(0, steps);
+    moveCursor(m_lineBuffer.m_tail->len - m_cursor.cx(), 0);
 
 }
 
@@ -681,9 +691,8 @@ void FileBufferWindow::redraw()
     y++;
     __debug_print(x, y++, "selecting: %s", m_isSelecting ? "true" : "false");
     if (m_selection != NULL)
-    {
        __debug_print(x, y++, "selection count = %zu", m_selection->selectionCount());
-    }
+
     #endif
     
     if (m_isWindowVisible)

@@ -189,6 +189,8 @@ struct irect_t
 typedef irect_t frame_t;
 
 // related to ncruses strange capture of control keys (ctrl, shift, alt)
+// Note: for some/all of these to work, some terminals with custom, non-conformant 
+//       terminfo will not work, including kitty and terminator (unfortunately)..
 enum class CtrlKeyAction
 {
     CTRL_LEFT, CTRL_RIGHT, CTRL_UP, CTRL_DOWN, CTRL_HOME, CTRL_END, CTRL_DELETE, 

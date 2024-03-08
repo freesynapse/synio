@@ -76,6 +76,8 @@ private:
         }
     }
     __always_inline void buffer_changed_() { m_isDirty = true; }
+    __always_inline void select_()   { m_isSelecting = true;  }
+    __always_inline void deselect_() { m_isSelecting = false; }
 
 protected:
     std::string m_filename = "";
