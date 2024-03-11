@@ -1,8 +1,8 @@
 
 #include "buffer_formatter.h"
-#include "core.h"
-#include "config.h"
-#include "utils/log.h"
+#include "../core.h"
+#include "../config.h"
+#include "../utils/log.h"
 
 //
 void BufferFormatter::render(API_WINDOW_PTR _api_window, 

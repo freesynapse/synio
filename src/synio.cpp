@@ -1,11 +1,9 @@
 
 #include "synio.h"
+
 #include "utils/log.h"
 #include "event_handler.h"
-#include "core.h"
 
-// DEBUG
-#include "platform/ncurses_colors.h"
 
 //
 Synio::Synio(const std::string &_filename)

@@ -18,6 +18,7 @@ void Selection::clear()
     }
     
     m_entries.clear();
+    m_startingBufferPos = ivec2_t(-1);
 
 }
 
@@ -81,6 +82,38 @@ void Selection::selectChars(line_t *_start_line, int _offset, int _n)
             p = p->next;
 
         }
+    }
+
+}
+
+//---------------------------------------------------------------------------------------
+void Selection::selectLineChars(line_t *_line, int _offset, int _n)
+{
+    assert(_offset + _n <= _line->len);
+    select_deselect_(_line, _offset, _n, SELECT);
+    
+}
+
+//---------------------------------------------------------------------------------------
+void Selection::selectLines(line_t *_start_line,
+                            int _start_offset,
+                            line_t *_end_line,
+                            int _end_offset)
+{
+    line_t *p = _start_line;
+    select_deselect_(p, _start_offset, p->len - _start_offset, SELECT);
+    while (p != NULL)
+    {
+        if (p == _end_line)
+        {
+            select_deselect_(p, 0, _end_offset, SELECT);
+            break;
+        }
+        else
+            select_deselect_(p, 0, p->len, SELECT);
+
+        p = p->next;
+
     }
 
 }

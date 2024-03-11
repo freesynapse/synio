@@ -47,12 +47,12 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
     {
         switch (_ctrl_action)
         {
-            case CtrlKeyAction::CTRL_LEFT:  deselect_(); moveCursorToColDelim(-1);  break;
-            case CtrlKeyAction::CTRL_RIGHT: deselect_(); moveCursorToColDelim( 1);  break;
-            case CtrlKeyAction::CTRL_UP:    deselect_(); moveCursorToRowDelim(-1);  break;
-            case CtrlKeyAction::CTRL_DOWN:  deselect_(); moveCursorToRowDelim( 1);  break;
-            case CtrlKeyAction::CTRL_HOME:  deselect_(); moveFileBegin();           break;
-            case CtrlKeyAction::CTRL_END:   deselect_(); moveFileEnd();             break;
+            case CtrlKeyAction::CTRL_LEFT:  deselect_(1); moveCursorToColDelim(-1); break;
+            case CtrlKeyAction::CTRL_RIGHT: deselect_(0); moveCursorToColDelim( 1); break;
+            case CtrlKeyAction::CTRL_UP:    deselect_(1); moveCursorToRowDelim(-1); break;
+            case CtrlKeyAction::CTRL_DOWN:  deselect_(0); moveCursorToRowDelim( 1); break;
+            case CtrlKeyAction::CTRL_HOME:  deselect_(1); moveFileBegin();          break;
+            case CtrlKeyAction::CTRL_END:   deselect_(0); moveFileEnd();            break;
             
             // selections
             case CtrlKeyAction::SHIFT_UP:           select_(); moveCursor(0, -1);           break;
@@ -61,6 +61,8 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case CtrlKeyAction::SHIFT_CTRL_RIGHT:   select_(); moveCursorToColDelim( 1);    break;
             case CtrlKeyAction::SHIFT_CTRL_UP:      select_(); moveCursorToRowDelim(-1);    break;
             case CtrlKeyAction::SHIFT_CTRL_DOWN:    select_(); moveCursorToRowDelim( 1);    break;
+            case CtrlKeyAction::SHIFT_CTRL_HOME:    select_(); moveFileBegin();             break;
+            case CtrlKeyAction::SHIFT_CTRL_END:     select_(); moveFileEnd();               break;
 
             default: break;
             // default: LOG_INFO("ctrl keycode %d : %s", _c, ctrlActionStr(_ctrl_action)); break;
@@ -69,43 +71,32 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
     }
     else
     {
+        bool esc_pressed = false; int c;
         switch (_c)
         {
             // cursor movement
-            case KEY_DOWN:      deselect_(); moveCursor( 0,  1);        break;
-            case KEY_UP:        deselect_(); moveCursor( 0, -1);        break;
-            case KEY_LEFT:      deselect_(); moveCursor(-1,  0);        break;
-            case KEY_RIGHT:     deselect_(); moveCursor( 1,  0);        break;
-            case KEY_PPAGE:     deselect_(); movePageUp();              break;
-            case KEY_NPAGE:     deselect_(); movePageDown();            break;
-            case KEY_HOME:      deselect_(); moveCursorToLineBegin();   break;
-            case KEY_END:       deselect_(); moveCursorToLineEnd();     break;
-            case KEY_DC:        deselect_(); deleteCharAtCursor();      break;
-            case KEY_BACKSPACE: deselect_(); deleteCharBeforeCursor();  break;
+            case KEY_DOWN:      deselect_(0); moveCursor( 0,  1);       break;
+            case KEY_UP:        deselect_(1); moveCursor( 0, -1);       break;
+            case KEY_LEFT:      deselect_(1); moveCursor(-1,  0);       break;
+            case KEY_RIGHT:     deselect_(0); moveCursor( 1,  0);       break;
+            case KEY_PPAGE:     deselect_(1); movePageUp();             break;
+            case KEY_NPAGE:     deselect_(0); movePageDown();           break;
+            case KEY_HOME:      deselect_(1); moveCursorToLineBegin();  break;
+            case KEY_END:       deselect_(0); moveCursorToLineEnd();    break;
+            case KEY_DC:        deselect_(1); deleteCharAtCursor();     break;
+            case KEY_BACKSPACE: deselect_(1); deleteCharBeforeCursor(); break;
+            case KEY_ENTER:
             case 10:            deselect_(); insertNewLine();           break;
 
             // selections
-            case KEY_SLEFT:     select_(); moveCursor(-1, 0);   break;
-            case KEY_SRIGHT:    select_(); moveCursor( 1, 0);   break;
+            case KEY_SLEFT:     select_(); moveCursor(-1, 0);           break;
+            case KEY_SRIGHT:    select_(); moveCursor( 1, 0);           break;
+            case KEY_SHOME:     select_(); moveCursorToLineBegin();     break;
+            case KEY_SEND:      select_(); moveCursorToLineEnd();       break;
+            case KEY_SPREVIOUS: select_(); movePageUp();                break;
+            case KEY_SNEXT:     select_(); movePageDown();              break;
 
-            case CTRL('d'):
-                if (!m_isSelecting)
-                {
-                    m_isSelecting = true;
-                    m_selection = new Selection;
-                  
-                }
-                else
-                {
-                    m_isSelecting = false;
-                    assert(m_selection != NULL);
-                    m_selection->clear();
-                    delete m_selection;
-                    m_selection = NULL;
-                }
-                refresh_next_frame_();
-                break;
-
+            //
             default:
                 insertCharAtCursor((char)_c);
                 break;
@@ -171,11 +162,9 @@ void FileBufferWindow::scroll_(int _axis, int _dir, int _steps, bool _update_cur
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::moveCursor(int _dx, int _dy)
 {
-    //if (m_isSelecting)
-    //    clear_selection_();
-
     int dx = _dx;
     int dy = _dy;
+    m_prevLine = m_currentLine;
     
     // cursor position
     int cx = m_cursor.cx();
@@ -357,9 +346,11 @@ void FileBufferWindow::moveFileEnd()
     int steps = m_lineBuffer.lineCount() - 1 - m_bufferCursorPos.y;
     // two moves are needed since the x move causes the cursor to use 'last char in line'
     // behaviour and set dy to 1... well, well..
+    // another hack is needed to prevent the x move to overwrite the prev line ptr
+    line_t *p = m_currentLine;
     moveCursor(0, steps);
     moveCursor(m_lineBuffer.m_tail->len - m_cursor.cx(), 0);
-
+    m_prevLine = p;
 }
 
 //---------------------------------------------------------------------------------------
@@ -506,69 +497,80 @@ void FileBufferWindow::updateCursor()
 }
 
 //---------------------------------------------------------------------------------------
+void FileBufferWindow::gotoBufferCursorPos(const ivec2_t &_pos)
+{
+//    int steps = m_lineBuffer.lineCount() - 1 - m_bufferCursorPos.y;
+//    // two moves are needed since the x move causes the cursor to use 'last char in line'
+//    // behaviour and set dy to 1... well, well..
+//    // another hack is needed to prevent the x move to overwrite the prev line ptr
+//    line_t *p = m_currentLine;
+//    moveCursor(0, steps);
+//    moveCursor(m_lineBuffer.m_tail->len - m_cursor.cx(), 0);
+//    m_prevLine = p;
+//
+    int dx = _pos.x - m_bufferCursorPos.x;
+    int dy = _pos.y - m_bufferCursorPos.y;
+    moveCursor(dx, dy);
+
+}
+
+//---------------------------------------------------------------------------------------
 void FileBufferWindow::updateBufferCursorPos()
 {
     m_prevBufferCursorPos = m_bufferCursorPos;
     m_bufferCursorPos = m_scrollPos + m_cursor.cpos();
     
+
+    // TODO : shift+down followed by shift+up selects the whole file
+
+
     // cursor moved in buffer, and in selection mode, add selection
     if (m_prevBufferCursorPos != m_bufferCursorPos && m_isSelecting)
     {
-        Timer t(__func__, true);
+        Timer t(__func__, false);
 
         assert(m_selection != NULL);
 
         ivec2_t prev = m_prevBufferCursorPos;
         ivec2_t curr = m_bufferCursorPos;
-        // 
-        if (prev.y > curr.y)
-            std::swap(prev, curr);
 
         // find number of chars between current and previous position
         //
         int n = 0;
-        line_t *prev_ptr = m_lineBuffer.ptrFromIdx(prev.y);
+        line_t *prev_ptr = m_prevLine;
         line_t *curr_ptr = m_currentLine;
 
         // same line
         if (prev.y == curr.y)
         {
-            // off by 1?
             if (curr.x < prev.x)
                 std::swap(prev, curr);
             n = curr.x - prev.x;
+            if (n > 0)
+                m_selection->selectLineChars(prev_ptr, prev.x, n);
         }
 
-        // different lines
+        // different lines -- here we need the offset into the first and last selected
+        // line and the starting and ending line pointers
         else
         {
-            // curr_ptr = m_lineBuffer.ptrFromIdx(curr.y);
-            line_t *p = prev_ptr;
-            n = p->len - prev.x; // x offset in first (prev)
-            p = p->next;
-            while (p != NULL)
+            if (prev.y > curr.y)
             {
-                // last line
-                if (p == curr_ptr)
-                {
-                    n += curr.x;
-                    break;
-                }
-                //
-                else
-                    n += p->len;
-
-                p = p->next;
+                std::swap(prev, curr);
+                std::swap(prev_ptr, curr_ptr);
             }
+
+            m_selection->selectLines(prev_ptr, prev_ptr->len - prev.x, curr_ptr, curr.x);
         }
 
         //
-        if (n > 0)
-            m_selection->selectChars(prev_ptr, prev.x, n);
+        // if (n > 0)
+            // m_selection->selectChars(prev_ptr, prev.x, n);
 
         //
         refresh_next_frame_();
 
+        // LOG_INFO("selection in %f ms.", t.getDeltaTimeMs());
     }
 // 
 }
@@ -576,6 +578,8 @@ void FileBufferWindow::updateBufferCursorPos()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::updateCurrentLinePtr(int _dy)
 {
+    // m_prevLine = m_currentLine;
+
     // if the cursor moved, update current line in buffer
     if (_dy > 0)
     {
@@ -682,7 +686,11 @@ void FileBufferWindow::redraw()
     {
         __debug_print(x, y++, "this line: '%s'", m_currentLine->__debug_str());
         __debug_print(x, y++, "this len:  %zu", m_currentLine->len);
-
+    }
+    if (m_prevLine != NULL)
+    {
+        __debug_print(x, y++, "prev line: '%s'", m_prevLine->__debug_str());
+        __debug_print(x, y++, "prev len:  %zu", m_prevLine->len);
     }
     y++;
     if (m_pageFirstLine != NULL)    __debug_print(x, y++, "page[ 0]: '%s'", m_pageFirstLine->__debug_str());

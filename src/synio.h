@@ -1,19 +1,9 @@
 #ifndef __SYNIO_H
 #define __SYNIO_H
 
-// define backend
-#include "core.h"
-#include "types.h"
-
 #include "utils/utils.h"
-#include "window/window.h"
 #include "window/file_buffer_window.h"
 #include "window/line_buffer_window.h"
-#include "buffer/line_buffer.h"
-#include "buffer_formatter.h"
-#include "cursor.h"
-#include "events.h"
-#include "config.h"
 
 //
 class Synio

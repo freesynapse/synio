@@ -40,6 +40,9 @@ public:
     virtual void deleteCharBeforeCursor() override;
     //
     virtual void updateCursor() override;
+    //
+    void gotoBufferCursorPos(const ivec2_t &_pos);
+
 
     // calculate the position of the cursor in the buffer
     void updateBufferCursorPos();
@@ -61,23 +64,30 @@ public:
     line_t *currentLine() { return m_currentLine; }
 
 private:
+    //
     __always_inline void update_lines_after_y_(int _y)
     {
         for (int i = _y; i < m_frame.nrows; i++)
             m_linesUpdateList.insert(i);
     }
-    __always_inline void clear_selection_()
-    {
-        if (m_selection)
-        {
-            m_selection->clear();
-            delete m_selection;
-            m_isSelecting = false;
-        }
-    }
+    //
     __always_inline void buffer_changed_() { m_isDirty = true; }
-    __always_inline void select_()   { m_isSelecting = true;  }
-    __always_inline void deselect_() { m_isSelecting = false; }
+    //
+    __always_inline void select_()
+    {
+        if (!m_isSelecting)
+            m_selection->setStartingBufferPos(m_bufferCursorPos);
+        m_isSelecting = true;
+    }
+    //
+    // keys NOT restoring pos : arrow down, arrow right and derivatives threrof (ctrl+ etc)
+    __always_inline void deselect_(bool _restore_pos=true)
+    {
+        if (m_isSelecting && _restore_pos)
+            gotoBufferCursorPos(m_selection->startingBufferPos());
+        m_selection->clear();
+        m_isSelecting = false; 
+    }
 
 protected:
     std::string m_filename = "";
@@ -86,6 +96,7 @@ protected:
     //
     LineBuffer m_lineBuffer;
     //m_currentLine in BufferWindowBase
+    line_t *m_prevLine = NULL;
     line_t *m_pageFirstLine = NULL;
     
     //
