@@ -40,10 +40,14 @@ public:
     virtual void deleteCharBeforeCursor() override;
     //
     virtual void updateCursor() override;
-    //
+
+    // TODO : make these part of the main class? probably, but start here
+    void cut();
+    void copy();
+    void paste();
+
+    // for restoring cursor position after selections/cutting
     void gotoBufferCursorPos(const ivec2_t &_pos);
-
-
     // calculate the position of the cursor in the buffer
     void updateBufferCursorPos();
     // update the current line in the buffer based on cursor y movement
@@ -80,7 +84,7 @@ private:
         m_isSelecting = true;
     }
     //
-    // do not restore pos if next action in direction of selection
+    // do not restore pos if action is aligned with direction of selection
     __always_inline void deselect_(int _move_direction)
     {
         if (m_isSelecting && m_dirOfSelection != _move_direction)

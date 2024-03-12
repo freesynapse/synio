@@ -71,7 +71,6 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
     }
     else
     {
-        bool esc_pressed = false; int c;
         switch (_c)
         {
             // cursor movement
@@ -95,6 +94,12 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case KEY_SEND:      select_(); moveCursorToLineEnd();       break;
             case KEY_SPREVIOUS: select_(); movePageUp();                break;
             case KEY_SNEXT:     select_(); movePageDown();              break;
+
+            // cut-n-paste
+            case CTRL('c'):
+                LOG_INFO("copy command!");
+                copy();
+                break;
 
             //
             default:
@@ -497,17 +502,49 @@ void FileBufferWindow::updateCursor()
 }
 
 //---------------------------------------------------------------------------------------
+void FileBufferWindow::cut()
+{
+    
+}
+
+//---------------------------------------------------------------------------------------
+void FileBufferWindow::copy()
+{
+    if (!m_selection->lineCount())
+        return;
+
+    ivec2_t bpos = m_bufferCursorPos;
+    ivec2_t spos = m_selection->startingBufferPos();
+
+    // single line
+    if (bpos.y == spos.y && bpos.x < spos.x)    std::swap(bpos, spos);
+    else if (bpos.y < spos.y)                   std::swap(bpos, spos);
+
+    line_t *line_ptr = m_lineBuffer.ptrFromIdx(spos.y);
+    size_t y = 0;
+    while (y < m_selection->lineCount())
+    {
+        char b[256];
+        memset(b, 0, 256);
+        memcpy(b, line_ptr->__debug_content_str+line_ptr->sel_start, line_ptr->sel_end - line_ptr->sel_start);
+        LOG_INFO("%s", b);
+
+        y++;
+        line_ptr = line_ptr->next;
+
+    }
+
+}
+
+//---------------------------------------------------------------------------------------
+void FileBufferWindow::paste()
+{
+
+}
+
+//---------------------------------------------------------------------------------------
 void FileBufferWindow::gotoBufferCursorPos(const ivec2_t &_pos)
 {
-//    int steps = m_lineBuffer.lineCount() - 1 - m_bufferCursorPos.y;
-//    // two moves are needed since the x move causes the cursor to use 'last char in line'
-//    // behaviour and set dy to 1... well, well..
-//    // another hack is needed to prevent the x move to overwrite the prev line ptr
-//    line_t *p = m_currentLine;
-//    moveCursor(0, steps);
-//    moveCursor(m_lineBuffer.m_tail->len - m_cursor.cx(), 0);
-//    m_prevLine = p;
-//
     int dx = _pos.x - m_bufferCursorPos.x;
     int dy = _pos.y - m_bufferCursorPos.y;
     moveCursor(dx, dy);
@@ -517,13 +554,10 @@ void FileBufferWindow::gotoBufferCursorPos(const ivec2_t &_pos)
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::updateBufferCursorPos()
 {
+    //
     m_prevBufferCursorPos = m_bufferCursorPos;
     m_bufferCursorPos = m_scrollPos + m_cursor.cpos();
     
-
-    // TODO : shift+down followed by shift+up selects the whole file
-
-
     // cursor moved in buffer, and in selection mode, add selection
     if (m_prevBufferCursorPos != m_bufferCursorPos && m_isSelecting)
     {
@@ -536,9 +570,6 @@ void FileBufferWindow::updateBufferCursorPos()
 
         m_dirOfSelection = FORWARD;
 
-        // find number of chars between current and previous position
-        //
-        int n = 0;
         line_t *prev_ptr = m_prevLine;
         line_t *curr_ptr = m_currentLine;
 
@@ -550,9 +581,9 @@ void FileBufferWindow::updateBufferCursorPos()
                 std::swap(prev, curr);
                 m_dirOfSelection = BACKWARD;
             }
-            n = curr.x - prev.x;
-            if (n > 0)
-                m_selection->selectLineChars(prev_ptr, prev.x, n);
+
+            if (curr.x > 0)
+                m_selection->selectChars(prev_ptr, prev.x, curr.x);
         }
 
         // different lines -- here we need the offset into the first and last selected
@@ -566,19 +597,13 @@ void FileBufferWindow::updateBufferCursorPos()
                 m_dirOfSelection = BACKWARD;
             }
 
-            m_selection->selectLines(prev_ptr, prev_ptr->len - prev.x, curr_ptr, curr.x);
+            m_selection->selectLines(prev_ptr, prev.x, curr_ptr, curr.x);
         }
-
-        //
-        // if (n > 0)
-            // m_selection->selectChars(prev_ptr, prev.x, n);
 
         //
         refresh_next_frame_();
 
-        // LOG_INFO("selection in %f ms.", t.getDeltaTimeMs());
     }
-// 
 }
 
 //---------------------------------------------------------------------------------------
@@ -705,7 +730,7 @@ void FileBufferWindow::redraw()
     y++;
     __debug_print(x, y++, "selecting: %s", m_isSelecting ? "true" : "false");
     if (m_selection != NULL)
-       __debug_print(x, y++, "selection count = %zu", m_selection->selectionCount());
+       __debug_print(x, y++, "selected line count = %zu", m_selection->lineCount());
 
     #endif
     

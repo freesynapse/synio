@@ -19,7 +19,8 @@ int Ncurses_Impl::initialize()
 
     TABSIZE = Config::TAB_SIZE;
 
-	cbreak();
+	// cbreak();
+    raw();
 	keypad(stdscr, TRUE);
 	noecho();
 	clear();

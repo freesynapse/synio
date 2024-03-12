@@ -67,6 +67,8 @@ struct line_t
     CHTYPE_PTR content  = NULL;
     size_t len          = 0;
     size_t rlen         = 0;    // rendered len, including tabs etc
+    size_t sel_start    = 0;
+    size_t sel_end      = 0;
     #ifdef DEBUG
     char __debug_content_str[1024];
     #endif

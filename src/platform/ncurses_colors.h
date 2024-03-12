@@ -45,9 +45,9 @@
 //
 extern void ncurses_init_colors(API_WINDOW_PTR _w);
 
-extern __always_inline void ncurses_select_substr(line_t *_line, size_t _start, size_t _end);
-extern __always_inline void ncurses_deselect_substr(line_t *_line, size_t _start, size_t _end);
-extern  void ncurses_select_deselect_substr(line_t *_line, size_t _start, size_t _end, int _select);
+extern void ncurses_find_selected_offsets(line_t *_line, size_t *start, size_t *end);
+extern void ncurses_deselect_substr(line_t *_line, size_t _start, size_t _end);
+extern void ncurses_toggle_selection_substr(line_t *_line, size_t _start, size_t _end);
 
 extern void ncurses_color_substr(line_t *_line, size_t _start, size_t _end, short _pair_index);
 
