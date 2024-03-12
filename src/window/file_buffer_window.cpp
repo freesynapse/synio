@@ -47,12 +47,12 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
     {
         switch (_ctrl_action)
         {
-            case CtrlKeyAction::CTRL_LEFT:  deselect_(1); moveCursorToColDelim(-1); break;
-            case CtrlKeyAction::CTRL_RIGHT: deselect_(0); moveCursorToColDelim( 1); break;
-            case CtrlKeyAction::CTRL_UP:    deselect_(1); moveCursorToRowDelim(-1); break;
-            case CtrlKeyAction::CTRL_DOWN:  deselect_(0); moveCursorToRowDelim( 1); break;
-            case CtrlKeyAction::CTRL_HOME:  deselect_(1); moveFileBegin();          break;
-            case CtrlKeyAction::CTRL_END:   deselect_(0); moveFileEnd();            break;
+            case CtrlKeyAction::CTRL_LEFT:  deselect_(BACKWARD); moveCursorToColDelim(-1);  break;
+            case CtrlKeyAction::CTRL_RIGHT: deselect_(FORWARD);  moveCursorToColDelim( 1);  break;
+            case CtrlKeyAction::CTRL_UP:    deselect_(BACKWARD); moveCursorToRowDelim(-1);  break;
+            case CtrlKeyAction::CTRL_DOWN:  deselect_(FORWARD);  moveCursorToRowDelim( 1);  break;
+            case CtrlKeyAction::CTRL_HOME:  deselect_(BACKWARD); moveFileBegin();           break;
+            case CtrlKeyAction::CTRL_END:   deselect_(FORWARD);  moveFileEnd();             break;
             
             // selections
             case CtrlKeyAction::SHIFT_UP:           select_(); moveCursor(0, -1);           break;
@@ -75,18 +75,18 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
         switch (_c)
         {
             // cursor movement
-            case KEY_DOWN:      deselect_(0); moveCursor( 0,  1);       break;
-            case KEY_UP:        deselect_(1); moveCursor( 0, -1);       break;
-            case KEY_LEFT:      deselect_(1); moveCursor(-1,  0);       break;
-            case KEY_RIGHT:     deselect_(0); moveCursor( 1,  0);       break;
-            case KEY_PPAGE:     deselect_(1); movePageUp();             break;
-            case KEY_NPAGE:     deselect_(0); movePageDown();           break;
-            case KEY_HOME:      deselect_(1); moveCursorToLineBegin();  break;
-            case KEY_END:       deselect_(0); moveCursorToLineEnd();    break;
-            case KEY_DC:        deselect_(1); deleteCharAtCursor();     break;
-            case KEY_BACKSPACE: deselect_(1); deleteCharBeforeCursor(); break;
+            case KEY_DOWN:      deselect_(FORWARD);  moveCursor( 0,  1);        break;
+            case KEY_UP:        deselect_(BACKWARD); moveCursor( 0, -1);        break;
+            case KEY_LEFT:      deselect_(BACKWARD); moveCursor(-1,  0);        break;
+            case KEY_RIGHT:     deselect_(FORWARD);  moveCursor( 1,  0);        break;
+            case KEY_PPAGE:     deselect_(BACKWARD); movePageUp();              break;
+            case KEY_NPAGE:     deselect_(FORWARD);  movePageDown();            break;
+            case KEY_HOME:      deselect_(BACKWARD); moveCursorToLineBegin();   break;
+            case KEY_END:       deselect_(FORWARD);  moveCursorToLineEnd();     break;
+            case KEY_DC:        deselect_(BACKWARD); deleteCharAtCursor();      break;
+            case KEY_BACKSPACE: deselect_(BACKWARD); deleteCharBeforeCursor();  break;
             case KEY_ENTER:
-            case 10:            deselect_(); insertNewLine();           break;
+            case 10:            deselect_(FORWARD);  insertNewLine();           break;
 
             // selections
             case KEY_SLEFT:     select_(); moveCursor(-1, 0);           break;
@@ -534,6 +534,8 @@ void FileBufferWindow::updateBufferCursorPos()
         ivec2_t prev = m_prevBufferCursorPos;
         ivec2_t curr = m_bufferCursorPos;
 
+        m_dirOfSelection = FORWARD;
+
         // find number of chars between current and previous position
         //
         int n = 0;
@@ -544,7 +546,10 @@ void FileBufferWindow::updateBufferCursorPos()
         if (prev.y == curr.y)
         {
             if (curr.x < prev.x)
+            {
                 std::swap(prev, curr);
+                m_dirOfSelection = BACKWARD;
+            }
             n = curr.x - prev.x;
             if (n > 0)
                 m_selection->selectLineChars(prev_ptr, prev.x, n);
@@ -558,6 +563,7 @@ void FileBufferWindow::updateBufferCursorPos()
             {
                 std::swap(prev, curr);
                 std::swap(prev_ptr, curr_ptr);
+                m_dirOfSelection = BACKWARD;
             }
 
             m_selection->selectLines(prev_ptr, prev_ptr->len - prev.x, curr_ptr, curr.x);

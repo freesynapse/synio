@@ -80,10 +80,10 @@ private:
         m_isSelecting = true;
     }
     //
-    // keys NOT restoring pos : arrow down, arrow right and derivatives threrof (ctrl+ etc)
-    __always_inline void deselect_(bool _restore_pos=true)
+    // do not restore pos if next action in direction of selection
+    __always_inline void deselect_(int _move_direction)
     {
-        if (m_isSelecting && _restore_pos)
+        if (m_isSelecting && m_dirOfSelection != _move_direction)
             gotoBufferCursorPos(m_selection->startingBufferPos());
         m_selection->clear();
         m_isSelecting = false; 
@@ -111,6 +111,7 @@ protected:
     // selections; one (1) for now, could be array later? Or put in Selection class (probably)
     Selection *m_selection = NULL;
     bool m_isSelecting = false;
+    int m_dirOfSelection = FORWARD;
 
     // Line numbers window accompanying this one
     LineNumbers *m_lineNumbers = NULL;
