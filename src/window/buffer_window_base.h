@@ -34,6 +34,7 @@ public:
     virtual void moveCursorToColDelim(int _dir) {}
     virtual void insertCharAtCursor(char _c) {}
     virtual void insertStrAtCursor(char *_str, size_t _len) {}
+    virtual void insertStrAtCursor(CHTYPE_PTR _str, size_t _len) {}
     virtual void deleteCharAtCursor() {}
     virtual void deleteCharBeforeCursor() {}
 
@@ -47,6 +48,11 @@ public:
 
     // update cursor (called during rendering and after keypress)
     virtual void updateCursor() {};
+
+    //
+    virtual void cut() {}
+    virtual void copy() {}
+    virtual void paste() {}
 
 protected:
     //

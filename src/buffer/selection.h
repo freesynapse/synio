@@ -26,13 +26,17 @@ public:
     size_t lineCount() { return m_entries.size(); }
     void setStartingBufferPos(const ivec2_t &_start_pos) { m_startingBufferPos = _start_pos; }
     const ivec2_t &startingBufferPos() { return m_startingBufferPos; }
+    const bool copyNewline() { return m_copyNewline; }
+    bool isLineEntry(line_t *_line) { return (m_entries.find(_line) != m_entries.end()); }
+    std::unordered_set<line_t *> getSelectedLines() { return m_entries; }
 
-// private:
+private:
     void select_(line_t *_line, size_t _start, size_t _end);
 
-// private:
+private:
     ivec2_t m_startingBufferPos;
     std::unordered_set<line_t *> m_entries;
+    bool m_copyNewline = false;
     
 
 };

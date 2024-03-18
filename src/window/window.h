@@ -2,7 +2,7 @@
 #define __WINDOW_H
 
 #include <string>
-#include <set>
+#include <unordered_set>
 
 #include "../core.h"
 #include "../types.h"
@@ -84,7 +84,7 @@ protected:
     // vector of lines (in cursor corrdinates) in need of update (and thus clearing and 
     // re-rendering) to avoid using clear
     #ifdef NCURSES_IMPL
-    std::set<int> m_linesUpdateList;
+    std::unordered_set<int> m_linesUpdateList;
     #endif
 
 };

@@ -41,6 +41,15 @@ FileBufferWindow::~FileBufferWindow()
 }
 
 //---------------------------------------------------------------------------------------
+#ifdef DEBUG
+void FileBufferWindow::__debug_fnc()
+{
+    m_currentLine->delete_n_at(m_cursor.cx(), 3);
+    refresh_next_frame_();
+    
+}
+#endif
+//---------------------------------------------------------------------------------------
 void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
 {
     if (_ctrl_action != CtrlKeyAction::NONE)
@@ -95,11 +104,30 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case KEY_SPREVIOUS: select_(); movePageUp();                break;
             case KEY_SNEXT:     select_(); movePageDown();              break;
 
-            // cut-n-paste
+            // cut-n-paste (and copy)
             case CTRL('c'):
-                LOG_INFO("copy command!");
                 copy();
+                deselect_(FORWARD);
+                refresh_next_frame_();
                 break;
+
+            case CTRL('v'):
+                paste();
+                deselect_(FORWARD);
+                refresh_next_frame_();
+                break;
+
+            case CTRL('x'):
+                cut();
+                refresh_next_frame_();
+                break;
+
+            #ifdef DEBUG
+            case CTRL('d'):
+                __debug_fnc();
+                refresh_next_frame_();
+                break;
+            #endif
 
             //
             default:
@@ -240,6 +268,8 @@ void FileBufferWindow::moveCursorToColDelim(int _dir)
     else if (_dir < 0 && m_cursor.cx() == 1)                    { moveCursor(-1, 0); return; }
     else if (_dir < 0 && m_cursor.cx() == 0)                    { moveCursor(-1, 0); return; }
 
+    // IDEA : is cursor at delim? if so use goto next non-delim. No? then goto next delim. For both directions obv.
+
     CHTYPE_PTR p = m_currentLine->content + m_cursor.cx();
     size_t line_len = m_currentLine->len;
     int x = (_dir < 0 ? m_cursor.cx() : 0);
@@ -375,7 +405,20 @@ void FileBufferWindow::insertCharAtCursor(char _c)
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::insertStrAtCursor(char *_str, size_t _len)
 {
-    m_currentLine->insert_str(_str, _len, m_cursor.cpos().x);
+    CHTYPE_PTR str_ = (CHTYPE_PTR)malloc(CHTYPE_SIZE * _len);
+    for (size_t i = 0; i < _len; i++)
+        str_[i] = _str[i];
+
+    insertStrAtCursor(str_, _len);
+
+    free(str_);
+
+}
+
+//---------------------------------------------------------------------------------------
+void FileBufferWindow::insertStrAtCursor(CHTYPE_PTR _str, size_t _len)
+{
+    m_currentLine->insert_str(_str, _len, m_cursor.cx());
     moveCursor(_len, 0);
 
     // if tabs or spaces needs update
@@ -390,14 +433,14 @@ void FileBufferWindow::insertStrAtCursor(char *_str, size_t _len)
 
     refresh_next_frame_();
     buffer_changed_();
-    
+
 }
 
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::insertNewLine()
 {
     // split line at cursor pos.x
-    line_t *new_line = m_currentLine->split_at_pos(m_cursor.cpos().x);
+    line_t *new_line = m_currentLine->split_at_pos(m_cursor.cx());
     m_lineBuffer.insertAtPtr(m_currentLine, INSERT_AFTER, new_line);
 
     // find correct indentation -- use spaces, not tabs
@@ -424,12 +467,12 @@ void FileBufferWindow::deleteCharAtCursor()
 {
     // <DEL>
 
-    if (m_cursor.cpos().x == m_currentLine->len && m_currentLine->next == NULL)
+    if (m_cursor.cx() == m_currentLine->len && m_currentLine->next == NULL)
         return;
 
-    if (m_cursor.cpos().x < m_currentLine->len)
+    if (m_cursor.cx() < m_currentLine->len)
     {
-        m_currentLine->delete_at(m_cursor.cpos().x);
+        m_currentLine->delete_at(m_cursor.cx());
         m_linesUpdateList.insert(m_cursor.cy());
     }
     else
@@ -502,17 +545,19 @@ void FileBufferWindow::updateCursor()
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::cut()
-{
-    
-}
-
-//---------------------------------------------------------------------------------------
 void FileBufferWindow::copy()
 {
-    if (!m_selection->lineCount())
-        return;
+    m_copyBuffer.clear();
 
+    // no selection, so copy the current line
+    if (!m_selection->lineCount())
+    {
+        // here a deep copy of at least the content is needed
+        m_copyBuffer.push_back(copy_line_t(m_currentLine, m_selection->copyNewline()));
+        return;
+    }
+        
+    //
     ivec2_t bpos = m_bufferCursorPos;
     ivec2_t spos = m_selection->startingBufferPos();
 
@@ -522,12 +567,12 @@ void FileBufferWindow::copy()
 
     line_t *line_ptr = m_lineBuffer.ptrFromIdx(spos.y);
     size_t y = 0;
-    while (y < m_selection->lineCount())
+    //
+    int nlines = bpos.y - spos.y;
+    while (y <= nlines && line_ptr != NULL)
     {
-        char b[256];
-        memset(b, 0, 256);
-        memcpy(b, line_ptr->__debug_content_str+line_ptr->sel_start, line_ptr->sel_end - line_ptr->sel_start);
-        LOG_INFO("%s", b);
+        if (m_selection->isLineEntry(line_ptr))
+            m_copyBuffer.push_back(copy_line_t(line_ptr, m_selection->copyNewline()));
 
         y++;
         line_ptr = line_ptr->next;
@@ -537,8 +582,92 @@ void FileBufferWindow::copy()
 }
 
 //---------------------------------------------------------------------------------------
+void FileBufferWindow::cut()
+{
+    // TODO : refactor, merge with copy (with a cut flag perhaps). Low prio.
+    //
+    
+    copy();
+
+    ivec2_t start = m_selection->startingBufferPos();
+    ivec2_t end = m_bufferCursorPos;
+    
+    if ((end.y == start.y && end.x < start.x) ||
+        (end.y < start.y))
+        std::swap(end, start);
+
+    // 'manual' deselect_()
+    gotoBufferCursorPos(start);
+    m_selection->clear();
+    m_isSelecting = false;
+
+    //
+    // remove selected text
+    line_t *line_ptr = m_lineBuffer.ptrFromIdx(start.y);
+
+    int nlines = end.y - start.y;
+    int y = 0;
+    //
+    while (y <= nlines && line_ptr != NULL)
+    {
+        size_t sel_len = line_ptr->sel_end - line_ptr->sel_start;
+        line_t *lnext = line_ptr->next;
+        // delete entire line
+        if (sel_len == line_ptr->len)
+            m_lineBuffer.deleteAtPtr(line_ptr);
+        // delete part of line
+        else
+            line_ptr->delete_n_at(line_ptr->sel_start, sel_len);
+        
+        y++;
+        line_ptr = lnext;
+
+    }
+    // update line ptrs
+    m_currentLine = m_lineBuffer.ptrFromIdx(start.y);
+    m_pageFirstLine = m_lineBuffer.ptrFromIdx(m_scrollPos.y);
+
+    // after cut, all lines after the paste needs to be updated
+    for (int i = 0; i < m_frame.nrows; i++)
+        m_linesUpdateList.insert(i);
+
+    refresh_next_frame_();
+    buffer_changed_();
+
+}
+
+//---------------------------------------------------------------------------------------
 void FileBufferWindow::paste()
 {
+    if (m_copyBuffer.size() == 0)
+        return;
+
+    //
+    int y0 = m_cursor.cy();
+    
+    int dy = m_copyBuffer.size() - 1;
+    int dx = m_copyBuffer[dy].len;
+
+    for (int i = m_copyBuffer.size() - 1; i >= 0 ; i--)
+    {
+        copy_line_t &cline = m_copyBuffer[i];
+        if (cline.newline == true)
+        {
+            m_lineBuffer.insertAtPtr(m_currentLine, INSERT_BEFORE, cline.line_chars, cline.len);
+            m_currentLine = m_currentLine->prev;
+        }
+        else
+        {
+            assert(m_copyBuffer.size() == 1);
+            insertStrAtCursor(cline.line_chars, cline.len);
+        }
+    }
+
+    // after paste, all lines after the paste needs to me updated
+    for (int i = y0; i < m_frame.nrows; i++)
+        m_linesUpdateList.insert(i);
+    
+    refresh_next_frame_();
 
 }
 
@@ -609,18 +738,16 @@ void FileBufferWindow::updateBufferCursorPos()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::updateCurrentLinePtr(int _dy)
 {
-    // m_prevLine = m_currentLine;
-
     // if the cursor moved, update current line in buffer
     if (_dy > 0)
     {
         for (int i = 0; i < abs(_dy); i++)
-            m_currentLine = m_currentLine->next; 
+            if (m_currentLine->next != NULL) m_currentLine = m_currentLine->next; 
     }
     else if (_dy < 0)
     {
         for (int i = 0; i < abs(_dy); i++)
-            m_currentLine = m_currentLine->prev; 
+            if (m_currentLine->prev != NULL) m_currentLine = m_currentLine->prev; 
     }
 
 }
@@ -709,23 +836,26 @@ void FileBufferWindow::redraw()
     __debug_print(x, y++, "pbpos = (%d, %d)", m_prevBufferCursorPos.x, m_prevBufferCursorPos.y);
     __debug_print(x, y++, "cpos  = (%d, %d)", m_cursor.cx(), m_cursor.cy());
     __debug_print(x, y++, "rpos  = (%d, %d)", m_cursor.rx(), m_cursor.ry());
-    y++;
-    __debug_print(x, y++, "last_rx = %d", m_cursor.last_rx());
     __debug_print(x, y++, "spos = (%d, %d)", m_scrollPos.x , m_scrollPos.y);
     y++;
     if (m_currentLine != NULL)
     {
-        __debug_print(x, y++, "this line: '%s'", m_currentLine->__debug_str());
+        __debug_print(x, y++, "this line: '%s'", m_currentLine->__debug_str);
         __debug_print(x, y++, "this len:  %zu", m_currentLine->len);
     }
     if (m_prevLine != NULL)
     {
-        __debug_print(x, y++, "prev line: '%s'", m_prevLine->__debug_str());
+        __debug_print(x, y++, "prev line: '%s'", m_prevLine->__debug_str);
         __debug_print(x, y++, "prev len:  %zu", m_prevLine->len);
     }
     y++;
-    if (m_pageFirstLine != NULL)    __debug_print(x, y++, "page[ 0]: '%s'", m_pageFirstLine->__debug_str());
+    if (m_pageFirstLine != NULL)    __debug_print(x, y++, "page[ 0]: '%s'", m_pageFirstLine->__debug_str);
     else                            __debug_print(x, y++, "page[ 0]: NULL");
+
+    __debug_print(x, y++, "m_lineBuffer.size() = %zu", m_lineBuffer.lineCount());
+    if (m_lineBuffer.m_head != NULL) __debug_print(x, y++, "buffer head: '%s'", m_lineBuffer.m_head->__debug_str);
+    if (m_lineBuffer.m_tail != NULL) __debug_print(x, y++, "buffer tail: '%s'", m_lineBuffer.m_tail->__debug_str);
+
 
     y++;
     __debug_print(x, y++, "selecting: %s", m_isSelecting ? "true" : "false");

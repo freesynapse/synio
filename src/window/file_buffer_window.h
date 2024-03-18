@@ -19,9 +19,13 @@ public:
     FileBufferWindow(const frame_t &_frame, const std::string &_id, bool _border=false);
     ~FileBufferWindow();
 
+    #ifdef DEBUG
+    void __debug_fnc();
+    #endif
+
     // (BufferWindowBase overrides)
     virtual void handleInput(int _c, CtrlKeyAction _ctrl_action) override;
-    virtual void scroll_(int _axis, int _dir, int _steps, bool _update_current_line) override;
+    virtual void scroll_(int _axis, int _dir, int _steps, bool _current_line) override;
 
     // Cursor functions (BufferWindowBase overrides)
     virtual void moveCursor(int _dx, int _dy) override;
@@ -35,16 +39,17 @@ public:
     virtual void moveFileEnd() override;
     virtual void insertCharAtCursor(char _c) override;
     virtual void insertStrAtCursor(char *_str, size_t _len) override;
+    virtual void insertStrAtCursor(CHTYPE_PTR _str, size_t _len) override;
     virtual void insertNewLine() override;
     virtual void deleteCharAtCursor() override;
     virtual void deleteCharBeforeCursor() override;
     //
     virtual void updateCursor() override;
 
-    // TODO : make these part of the main class? probably, but start here
-    void cut();
-    void copy();
-    void paste();
+    // TODO : make these part of the main class? possibly, but let's start here
+    virtual void copy() override;
+    virtual void cut() override;
+    virtual void paste() override;
 
     // for restoring cursor position after selections/cutting
     void gotoBufferCursorPos(const ivec2_t &_pos);
@@ -112,10 +117,12 @@ protected:
     //
     BufferFormatter m_formatter;
 
-    // selections; one (1) for now, could be array later? Or put in Selection class (probably)
+    // TODO : selections; one (1) for now, could be array later? Or put in Selection class (probably not though)
     Selection *m_selection = NULL;
     bool m_isSelecting = false;
     int m_dirOfSelection = FORWARD;
+
+    std::vector<copy_line_t> m_copyBuffer;
 
     // Line numbers window accompanying this one
     LineNumbers *m_lineNumbers = NULL;

@@ -14,12 +14,16 @@ void Selection::clear()
     
     m_entries.clear();
     m_startingBufferPos = ivec2_t(-1);
+    m_copyNewline = false;
 
 }
 
 //---------------------------------------------------------------------------------------
 void Selection::selectChars(line_t *_line, size_t _start, size_t _end)
 {
+    if (m_entries.size() <= 1)
+        m_copyNewline = false;
+
     select_(_line, _start, _end);
 
 }
@@ -30,8 +34,10 @@ void Selection::selectLines(line_t *_start_line,
                             line_t *_end_line,
                             size_t _end_offset)
 {
+    m_copyNewline = true;
+
     line_t *p = _start_line;
-    if (p->len - _start_offset > 0)
+    if (p->len - _start_offset >= 0)
         select_(p, _start_offset, p->len);
     p = p->next;
     while (p != NULL)
@@ -54,12 +60,13 @@ void Selection::selectLines(line_t *_start_line,
 //---------------------------------------------------------------------------------------
 void Selection::select_(line_t *_line, size_t _start, size_t _end)
 {
-    m_entries.insert(_line);
-
     // select / deselect (depending)
     ncurses_toggle_selection_substr(_line, _start, _end);
 
     // update correct line selection start and end
     ncurses_find_selected_offsets(_line, &_line->sel_start, &_line->sel_end);
+
+    //
+    m_entries.insert(_line);
 
 }

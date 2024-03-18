@@ -33,6 +33,8 @@ public:
     virtual void moveCursorToColDelim(int _dir) override;
     virtual void insertCharAtCursor(char _c) override;
     virtual void insertStrAtCursor(char *_str, size_t _len) override;
+    // TODO : implement this!
+    //virtual void insertStrAtCursor(CHTYPE_PTR _str, size_t _len) override;
     virtual void deleteCharAtCursor() override;
     virtual void deleteCharBeforeCursor() override;
 

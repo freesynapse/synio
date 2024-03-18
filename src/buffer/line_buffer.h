@@ -24,6 +24,7 @@ public:
     // void push_front(const char *_content)   { push_front(create_line(_content)); }
     // void push_back(const char *_content)    { push_back(create_line(_content));  }
     void insertAtPtr(line_t *_at_line, int _insert_flag, const char *_content) { insertAtPtr(_at_line, _insert_flag, create_line((char *)_content, strlen(_content))); }
+    void insertAtPtr(line_t *_at_line, int _insert_flag, char *_content, size_t _len) { insertAtPtr(_at_line, _insert_flag, create_line(_content, _len)); }
     void insertAtPtr(line_t *_at_line, int _insert_flag, line_t *_new_line);
     void insertBeforeIdx(int _index, const char *_content)  { insertAtPtr(ptrFromIdx(_index), INSERT_BEFORE, _content); }
     void insertAfterIdx(int _index, const char *_content)   { insertAtPtr(ptrFromIdx(_index), INSERT_AFTER, _content);  }

@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #if defined NCURSES_IMPL
 #include <ncurses.h>
@@ -66,7 +67,33 @@ line_t *create_line(CHTYPE_PTR _content, size_t _len)
 }
 
 //---------------------------------------------------------------------------------------
+line_t *copy_line(line_t *_line)
+{
+    return create_line(_line->content, _line->len);
+
+}
+
+
+//---------------------------------------------------------------------------------------
+copy_line_t::copy_line_t(line_t *_line, bool _newline)
+{
+    // fow now, lets use __debug_str
+    len = _line->sel_end - _line->sel_start;
+    line_chars = (char *)malloc(len);
+    memcpy(line_chars, _line->__debug_str+_line->sel_start, len);
+    newline = _newline;        
+}
+
+//---------------------------------------------------------------------------------------
 void line_t::insert_char(char _c, size_t _pos)
+{
+    CHTYPE c = _c;
+    insert_char(c, _pos);
+    
+}
+
+//---------------------------------------------------------------------------------------
+void line_t::insert_char(CHTYPE _c, size_t _pos)
 {
     // TODO : also, this isn't working properly anymore
     if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (len + 2))) == NULL) RAM_panic(this);
@@ -78,18 +105,32 @@ void line_t::insert_char(char _c, size_t _pos)
     #ifdef DEBUG
     __debug_content_to_str_();
     #endif
-
+    
 }
 
 //---------------------------------------------------------------------------------------
 void line_t::insert_str(char *_str, size_t _len, size_t _pos)
 {
+    CHTYPE_PTR str_ = (CHTYPE_PTR)malloc(CHTYPE_SIZE * _len);
+    for (size_t i = 0; i < _len; i++)
+       str_[i] = _str[i];
+    
+    insert_str(str_, _len, _pos);
+
+    free(str_);
+
+}
+
+//---------------------------------------------------------------------------------------
+void line_t::insert_str(CHTYPE_PTR _str, size_t _len, size_t _pos)
+{
+
     if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (len + _len + 1))) == NULL) RAM_panic(this);
     memmove(content + _pos + _len, content + _pos, CHTYPE_SIZE * (len - _pos));
     // TODO : add color here? -- no, surely on future onRowUpdate() callback?
-    memcpy(content + _pos, _str, _len);
+    memcpy(content + _pos, _str, CHTYPE_SIZE * _len);
     len += _len;
-    content[len] = '\0';
+    content[len] = 0;
 
     #ifdef DEBUG
     __debug_content_to_str_();
@@ -110,6 +151,26 @@ void line_t::delete_at(size_t _pos)
     
     memmove(content + _pos + offset[0], content + _pos + offset[1], CHTYPE_SIZE * (len - _pos));
     len--;
+    if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (len + 1))) == NULL) RAM_panic(this);
+    content[len] = 0;
+
+    #ifdef DEBUG
+    __debug_content_to_str_();
+    #endif
+
+}
+
+//---------------------------------------------------------------------------------------
+void line_t::delete_n_at(size_t _pos, size_t _n)
+{
+    if (!len)
+        return;
+    
+    assert(_pos + _n <= len);
+
+    size_t bytes_to_move = (len - (_pos + _n)) * CHTYPE_SIZE;
+    memmove(content + _pos, content + _pos + _n, bytes_to_move);
+    len -= _n;
     if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (len + 1))) == NULL) RAM_panic(this);
     content[len] = 0;
 

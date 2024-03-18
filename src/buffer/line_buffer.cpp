@@ -114,15 +114,18 @@ void LineBuffer::deleteAtPtr(line_t *_line)
         // basically deletes the list
         if (m_head->next == NULL)
         {
-            free(_line);
             m_head = NULL;
             m_tail = NULL;
+            free(_line);
+            _line = NULL;
         }
         // delete and update m_head
         else
         {
             m_head = m_head->next;
+            m_head->prev = NULL;
             free(_line);
+            _line = NULL;
         }
 
     }
@@ -133,6 +136,7 @@ void LineBuffer::deleteAtPtr(line_t *_line)
         m_tail->prev->next = NULL;
         m_tail = m_tail->prev;
         free(_line);
+        _line = NULL;
     }
 
     // otherwise, somewhere in the middle (i.e. line count > 2)
@@ -141,6 +145,7 @@ void LineBuffer::deleteAtPtr(line_t *_line)
         _line->prev->next = _line->next;
         _line->next->prev = _line->prev;
         free(_line);
+        _line = NULL;
     }
 
     m_lineCount--;
@@ -337,9 +342,9 @@ void LineBuffer::__debug_inspect()
         char ht[7] = { 0 };
         if      (p == m_head)   sprintf(ht, "(HEAD)");
         else if (p == m_tail)   sprintf(ht, "(TAIL)");
-        LOG_INFO("[%2zu] %p: %s %s", n, p, p->__debug_str(), ht);
-        LOG_INFO("        next: %s", p->next == NULL ? "NULL" : p->next->__debug_str());
-        LOG_INFO("        prev: %s", p->prev == NULL ? "NULL" : p->prev->__debug_str());
+        LOG_INFO("[%2zu] %p: %s %s", n, p, p->__debug_str, ht);
+        LOG_INFO("        next: %s", p->next == NULL ? "NULL" : p->next->__debug_str);
+        LOG_INFO("        prev: %s", p->prev == NULL ? "NULL" : p->prev->__debug_str);
         
         p = p->next;
         n++;
@@ -356,7 +361,7 @@ void LineBuffer::__debug_print()
     line_t *p = m_head;
     while (p != NULL)
     {
-        printf("%s\n", p->__debug_str());
+        printf("%s\n", p->__debug_str);
         p = p->next;
 
     }

@@ -69,36 +69,25 @@ struct line_t
     size_t rlen         = 0;    // rendered len, including tabs etc
     size_t sel_start    = 0;
     size_t sel_end      = 0;
-    #ifdef DEBUG
-    char __debug_content_str[1024];
-    #endif
 
     ~line_t() { free(content); }
 
     void insert_char(char _c, size_t _pos);
+    void insert_char(CHTYPE _c, size_t _pos);
     void insert_str(char *_str, size_t _len, size_t _pos);
+    void insert_str(CHTYPE_PTR _str, size_t _len, size_t _pos);
     void delete_at(size_t _pos);
+    void delete_n_at(size_t _pos, size_t _n);
     line_t *split_at_pos(size_t _pos);
 
-    // conversion to char * in case of debug printing
-    //char *content_to_str()
-    //{
-    //    memset(buf0, 0, buf0_sz);
-    //    for (size_t i = 0; i < len; i++)
-    //        buf0[i] = (content[i] & 0x000000ff);
-    //    buf0[len] = '\0';
-    //    return buf0;
-    //}
-
     #ifdef DEBUG
+    char __debug_str[1024];
     void __debug_content_to_str_()
     {
         for (size_t i = 0; i < len; i++)
-            __debug_content_str[i] = (char)(content[i] & CHTYPE_CHAR_MASK);
-        __debug_content_str[len] = '\0';
+            __debug_str[i] = (char)(content[i] & CHTYPE_CHAR_MASK);
+        __debug_str[len] = '\0';
     }
-
-    char *__debug_str() { return __debug_content_str; }
     #endif
 
 };
@@ -107,6 +96,20 @@ struct line_t
 line_t *create_line(char *_content, size_t _len);
 line_t *create_line(const char *_content);
 line_t *create_line(CHTYPE_PTR _content, size_t _len);
+line_t *copy_line(line_t *_line);
+
+
+// struct for copying lines
+struct copy_line_t
+{
+    char *line_chars = NULL;
+    size_t len = 0;
+    bool newline = false;
+
+    copy_line_t() {}
+    copy_line_t(line_t *_line, bool _newline);
+    
+};
 
 // helper function for line_t realloc assertions
 static void RAM_panic(line_t *_line)

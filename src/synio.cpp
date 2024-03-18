@@ -95,7 +95,7 @@ void Synio::mainLoop()
             m_currentWindow->handleInput(key, ctrl_action);
 
             // TODO : enter command mode (eventually)
-            if (key == CTRL('x'))
+            if (key == CTRL('q'))
                 m_shouldClose = true;
         }
 
