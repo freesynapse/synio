@@ -586,7 +586,7 @@ void FileBufferWindow::cut()
 {
     // TODO : refactor, merge with copy (with a cut flag perhaps). Low prio.
     //
-    
+
     copy();
 
     ivec2_t start = m_selection->startingBufferPos();
@@ -628,7 +628,7 @@ void FileBufferWindow::cut()
     m_pageFirstLine = m_lineBuffer.ptrFromIdx(m_scrollPos.y);
 
     // after cut, all lines after the paste needs to be updated
-    for (int i = 0; i < m_frame.nrows; i++)
+    for (int i = m_cursor.cy(); i < m_frame.nrows; i++)
         m_linesUpdateList.insert(i);
 
     refresh_next_frame_();
@@ -645,20 +645,17 @@ void FileBufferWindow::paste()
     //
     int y0 = m_cursor.cy();
     
-    int dy = m_copyBuffer.size() - 1;
-    int dx = m_copyBuffer[dy].len;
-
     for (int i = m_copyBuffer.size() - 1; i >= 0 ; i--)
     {
         copy_line_t &cline = m_copyBuffer[i];
         if (cline.newline == true)
         {
             m_lineBuffer.insertAtPtr(m_currentLine, INSERT_BEFORE, cline.line_chars, cline.len);
-            m_currentLine = m_currentLine->prev;
+            // m_currentLine = m_currentLine->prev;
         }
         else
         {
-            assert(m_copyBuffer.size() == 1);
+            // assert(m_copyBuffer.size() == 1);
             insertStrAtCursor(cline.line_chars, cline.len);
         }
     }
@@ -667,7 +664,13 @@ void FileBufferWindow::paste()
     for (int i = y0; i < m_frame.nrows; i++)
         m_linesUpdateList.insert(i);
     
+    moveCursor(0, m_copyBuffer.size());
+
+    m_currentLine = m_lineBuffer.ptrFromIdx(m_cursor.cy());
+    m_pageFirstLine = m_lineBuffer.ptrFromIdx(m_scrollPos.y);
+
     refresh_next_frame_();
+    buffer_changed_();
 
 }
 
