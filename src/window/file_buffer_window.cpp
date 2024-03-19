@@ -91,8 +91,8 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case KEY_NPAGE:     deselect_(FORWARD);  movePageDown();            break;
             case KEY_HOME:      deselect_(BACKWARD); moveCursorToLineBegin();   break;
             case KEY_END:       deselect_(FORWARD);  moveCursorToLineEnd();     break;
-            case KEY_DC:        deselect_(BACKWARD); deleteCharAtCursor();      break;
-            case KEY_BACKSPACE: deselect_(BACKWARD); deleteCharBeforeCursor();  break;
+            case KEY_DC:        /*deselect_(BACKWARD);*/ deleteCharAtCursor();      break;
+            case KEY_BACKSPACE: /*deselect_(BACKWARD);*/ deleteCharBeforeCursor();  break;
             case KEY_ENTER:
             case 10:            deselect_(FORWARD);  insertNewLine();           break;
 
@@ -467,6 +467,13 @@ void FileBufferWindow::deleteCharAtCursor()
 {
     // <DEL>
 
+    if (m_selection->lineCount())
+    {
+        deleteSelection();
+        return;
+    }
+
+    //
     if (m_cursor.cx() == m_currentLine->len && m_currentLine->next == NULL)
         return;
 
@@ -492,6 +499,13 @@ void FileBufferWindow::deleteCharBeforeCursor()
 {
     // <BACKSPACE>
     
+    if (m_selection->lineCount())
+    {
+        deleteSelection();
+        return;
+    }
+
+    //
     if (m_cursor.cx() == 0 && m_currentLine->prev == NULL) // beggining of first line
     {
         m_cursor.move(0, 0);
@@ -582,12 +596,21 @@ void FileBufferWindow::copy()
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::cut()
+void FileBufferWindow::deleteSelection()
 {
-    // TODO : refactor, merge with copy (with a cut flag perhaps). Low prio.
-    //
-
-    copy();
+    // no selection; delete the current line
+    if (!m_selection->lineCount())
+    {
+        line_t *next = m_currentLine->next;
+        if (next)
+        {
+            m_lineBuffer.deleteAtPtr(m_currentLine);
+            m_currentLine = next;
+            m_pageFirstLine = m_lineBuffer.ptrFromIdx(m_scrollPos.y);
+            update_lines_after_y_(m_cursor.cy());
+        }
+        return;
+    }
 
     ivec2_t start = m_selection->startingBufferPos();
     ivec2_t end = m_bufferCursorPos;
@@ -607,6 +630,8 @@ void FileBufferWindow::cut()
 
     int nlines = end.y - start.y;
     int y = 0;
+    bool merge_after = (line_ptr->sel_start != 0);
+
     //
     while (y <= nlines && line_ptr != NULL)
     {
@@ -627,12 +652,23 @@ void FileBufferWindow::cut()
     m_currentLine = m_lineBuffer.ptrFromIdx(start.y);
     m_pageFirstLine = m_lineBuffer.ptrFromIdx(m_scrollPos.y);
 
+    // if first line of selection was not a complete line
+    if (merge_after)
+        m_lineBuffer.appendNextToThis(m_currentLine);
+
     // after cut, all lines after the paste needs to be updated
-    for (int i = m_cursor.cy(); i < m_frame.nrows; i++)
-        m_linesUpdateList.insert(i);
+    update_lines_after_y_(m_cursor.cy());
 
     refresh_next_frame_();
     buffer_changed_();
+
+}
+
+//---------------------------------------------------------------------------------------
+void FileBufferWindow::cut()
+{
+    copy();
+    deleteSelection();
 
 }
 
@@ -649,15 +685,10 @@ void FileBufferWindow::paste()
     {
         copy_line_t &cline = m_copyBuffer[i];
         if (cline.newline == true)
-        {
             m_lineBuffer.insertAtPtr(m_currentLine, INSERT_BEFORE, cline.line_chars, cline.len);
-            // m_currentLine = m_currentLine->prev;
-        }
         else
-        {
-            // assert(m_copyBuffer.size() == 1);
             insertStrAtCursor(cline.line_chars, cline.len);
-        }
+
     }
 
     // after paste, all lines after the paste needs to me updated

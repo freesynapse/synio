@@ -48,6 +48,7 @@ public:
 
     // TODO : make these part of the main class? possibly, but let's start here
     virtual void copy() override;
+    virtual void deleteSelection() override;
     virtual void cut() override;
     virtual void paste() override;
 

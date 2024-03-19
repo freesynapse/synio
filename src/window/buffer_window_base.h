@@ -51,6 +51,7 @@ public:
 
     //
     virtual void cut() {}
+    virtual void deleteSelection() {}
     virtual void copy() {}
     virtual void paste() {}
 

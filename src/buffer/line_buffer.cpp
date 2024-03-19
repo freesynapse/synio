@@ -111,13 +111,17 @@ void LineBuffer::deleteAtPtr(line_t *_line)
     // first line
     else if (_line == m_head)
     {
-        // basically deletes the list
+        // deletes the list
         if (m_head->next == NULL)
         {
             m_head = NULL;
             m_tail = NULL;
             free(_line);
             _line = NULL;
+
+            // we need a line!
+            m_head = m_tail = create_line("");
+            m_lineCount++;
         }
         // delete and update m_head
         else
