@@ -5,6 +5,7 @@
 #include "line_numbers_window.h"
 #include "../cursor.h"
 #include "../buffer/selection.h"
+#include "../buffer/lexer.h"
 
 
 //
@@ -117,6 +118,7 @@ protected:
 
     //
     BufferFormatter m_formatter;
+    Lexer m_lexer;
 
     // TODO : selections; one (1) for now, could be array later? Or put in Selection class (probably not though)
     Selection *m_selection = NULL;

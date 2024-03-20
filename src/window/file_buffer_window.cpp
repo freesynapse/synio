@@ -791,18 +791,15 @@ void FileBufferWindow::readFromFile(const std::string &_filename)
 {
     FileIO::readFileIntoBuffer(_filename, &m_lineBuffer);
     
-    // DEBUG
-    #if defined DEBUG && defined NCURSES_IMPL
-    line_t *line = m_lineBuffer.m_head;
-    while (line != NULL)
-    {
-        #ifdef NCURSES_IMPL
-        ncurses_color_substr(line, 0, line->len, SYNIO_COLOR_KEYWORD);
-        #endif
-        line = line->next;
-    }
-    #endif
+    // apply syntax highlighting (depending on filetype, obviously)
+    m_lexer.set_start_line(m_lineBuffer.ptrFromIdx(0), m_lineBuffer.lineCount());
 
+    {
+        Timer timer;
+        m_lexer.parse_buffer();
+        LOG_INFO("parsed buffer (%zu lines) in %f ms.", m_lineBuffer.lineCount(), timer.getDeltaTimeMs());
+    }
+    
     // line pointers
     m_currentLine = m_lineBuffer.m_head;
     m_pageFirstLine = m_lineBuffer.m_head;

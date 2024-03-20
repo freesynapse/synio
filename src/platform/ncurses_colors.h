@@ -16,22 +16,24 @@
 #define SYNIO_COLOR_KEYWORD_FGD          3
 #define SYNIO_COLOR_STRING_FGD           4
 #define SYNIO_COLOR_NUMBER_FGD           5
-#define SYNIO_COLOR_DELIM_FGD            6
+#define SYNIO_COLOR_LITERAL_FGD          6
 #define SYNIO_COLOR_COMMENT_FGD          7
-#define SYNIO_COLOR_BLACK                8
+#define SYNIO_COLOR_PREPROC_FGD          8
+#define SYNIO_COLOR_BLACK                9
 
-#define SYNIO_COLOR_COUNT                9
+#define SYNIO_COLOR_COUNT               10
 
 // color pair ids
 #define SYNIO_COLOR_TEXT                 0
 #define SYNIO_COLOR_KEYWORD              1
 #define SYNIO_COLOR_STRING               2
 #define SYNIO_COLOR_NUMBER               3
-#define SYNIO_COLOR_DELIM                4
+#define SYNIO_COLOR_LITERAL              4
 #define SYNIO_COLOR_COMMENT              5
-#define SYNIO_COLOR_STATUS               6
+#define SYNIO_COLOR_PREPROC              6
+#define SYNIO_COLOR_STATUS               7
 
-#define SYNIO_COLOR_PAIR_COUNT           7
+#define SYNIO_COLOR_PAIR_COUNT           8
 
 // selection color pair ids
 #define SELECTION_OFFSET                (255 - SYNIO_COLOR_PAIR_COUNT)
@@ -39,8 +41,10 @@
 #define SYNIO_COLOR_SELECTED_KEYWORD    (SYNIO_COLOR_KEYWORD + SELECTION_OFFSET)
 #define SYNIO_COLOR_SELECTED_STRING     (SYNIO_COLOR_STRING  + SELECTION_OFFSET)
 #define SYNIO_COLOR_SELECTED_NUMBER     (SYNIO_COLOR_NUMBER  + SELECTION_OFFSET)
-#define SYNIO_COLOR_SELECTED_DELIM      (SYNIO_COLOR_DELIM   + SELECTION_OFFSET)
+#define SYNIO_COLOR_SELECTED_LITERAL    (SYNIO_COLOR_LITERAL + SELECTION_OFFSET)
 #define SYNIO_COLOR_SELECTED_COMMENT    (SYNIO_COLOR_COMMENT + SELECTION_OFFSET)
+#define SYNIO_COLOR_SELECTED_PREPROC    (SYNIO_COLOR_PREPROC + SELECTION_OFFSET)
+#define SYNIO_COLOR_SELECTED_STATUS     (SYNIO_COLOR_STATUS  + SELECTION_OFFSET)
 
 //
 extern void ncurses_init_colors(API_WINDOW_PTR _w);

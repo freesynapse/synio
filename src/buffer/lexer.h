@@ -3,8 +3,11 @@
 
 #include <stddef.h>
 #include <unordered_map>
+#include <unordered_set>
 #include <string.h>
-#include <stdio.h>
+
+#include "../types.h"
+#include "../platform/ncurses_colors.h"
 
 //
 enum TokenKind
@@ -43,8 +46,8 @@ enum TokenKind
     // separation literals
     TOKEN_DOT,
     TOKEN_SEMICOLON,
+    TOKEN_COLON,
     TOKEN_COMMA,
-
 
 };
 
@@ -58,34 +61,20 @@ typedef struct token_t
     
     int start_line = 0;
     int end_line = 0;   // for multi-line comments and strings
+    line_t *start_line_ptr;
+    line_t *end_line_ptr;
 
     //
     token_t() {}
     // NOTE : length will have to be book-kept outside, if needed at all
-    token_t(int _start, int _start_line, int _end, int _end_line, TokenKind _kind) :
-        start(_start), start_line(_start_line), end(_end), end_line(_end_line), kind(_kind)
+    //token_t(int _start, int _start_line, int _end, int _end_line, TokenKind _kind) :
+    //    start(_start), start_line(_start_line), end(_end), end_line(_end_line), kind(_kind)
+    //{}
+    token_t(int _start, int _start_line, line_t *_start_line_ptr, int _end, int _end_line, line_t *_end_line_ptr, TokenKind _kind) :
+        start(_start), start_line(_start_line), start_line_ptr(_start_line_ptr), end(_end), end_line(_end_line), end_line_ptr(_end_line_ptr), kind(_kind)
     {}
 
 } token_t;
-
-//
-typedef struct line_t
-{
-    line_t *next = NULL;
-    char *content = NULL;
-    size_t len = 0;
-    //
-    line_t() {}
-    line_t(const char *_content, size_t _len) :
-        len(_len)
-    {
-        content = new char[len + 1];
-        memset(content, 0, len + 1);
-        memcpy(content, _content, len);
-    }
-    ~line_t() { delete content; }
-
-} line_t;
 
 //
 class Lexer
@@ -95,15 +84,18 @@ public:
     ~Lexer() = default;
 
     void set_start_line(line_t *_line, int _line_no=0);
+    void color_token(line_t *_line, token_t *_t);
+    void parse_buffer();
+    void parse_line(line_t *_line);
     token_t next_token(bool _single_line=true);
 
     bool EOS() { return m_EOS; }
 
 // private:
-    void declare_eos_() { printf("%s: reached end of stream.\n", __PRETTY_FUNCTION__); m_EOS = true; }
+    __always_inline void declare_eos_() { m_EOS = true; }
+    __always_inline bool is_literal_(char _c) { return m_literals.find(_c) != m_literals.end(); }
     void trim_whitespace_left_();
-    __always_inline bool is_literal_(char _c) 
-    { return m_literals.find(_c) != m_literals.end(); }
+    __always_inline bool is_keyword_(const char *_token) { return (m_keywords.find((char *)_token) != m_keywords.end()); }
 
 
 // private:
@@ -112,6 +104,30 @@ public:
     int m_cursor = 0;
     bool m_EOS = false; // end of stream
 
+    // keywords for c/c++
+    // https://en.cppreference.com/w/cpp/keyword
+    #define KEYWORD_MAX_SIZE 128
+    char m_keyword_buffer[KEYWORD_MAX_SIZE];
+    struct unordered_cmp    { bool operator()(const char *_a, const char *_b) const noexcept { return strcmp(_a, _b) == 0; } };
+    struct unordered_deref  { size_t operator()(const char *_s) const noexcept { return std::hash<std::string>()(_s); } };
+    std::unordered_set<const char *, unordered_deref, unordered_cmp> m_keywords = {
+        "alignas", "alignof", "and", "and_eq", "asm", "atomic_cancel", "atomic_commit", 
+        "atomic_noexcept", "auto", "bitand", "bitor", "bool", "break", "case", "catch", 
+        "char", "char8_t", "char16_t", "char32_t", "class", "compl", "concept", "const", 
+        "consteval", "constexpr", "constinit", "const_cast", "continue", "co_await", 
+        "co_return", "co_yield", "decltype", "default", "delete", "do", "double", 
+        "dynamic_cast", "else", "enum", "explicit", "export", "extern", "false", "float", 
+        "for", "friend", "goto", "if", "inline", "int", "long", "mutable", "namespace", 
+        "new", "noexcept", "not", "not_eq", "nullptr", "operator", "or", "or_eq", 
+        "private", "protected", "public", "reflexpr", "register", "reinterpret_cast", 
+        "requires", "return", "short", "signed", "sizeof", "static", "static_assert", 
+        "static_cast", "struct", "switch", "synchronized", "template", "this", 
+        "thread_local", "throw", "true", "try", "typedef", "typeid", "typename", "union", 
+        "unsigned", "using", "virtual", "void", "volatile", "wchar_t", "while", "xor", 
+        "xor_eq", "NULL",
+    };
+
+    // literals
     std::unordered_map<char, TokenKind> m_literals = {
         { '(', TOKEN_LEFT_PAREN, },
         { ')', TOKEN_RIGHT_PAREN, },
@@ -132,6 +148,7 @@ public:
 
         { '.', TOKEN_DOT, },
         { ';', TOKEN_SEMICOLON, },
+        { ':', TOKEN_COLON, },
         { ',', TOKEN_COMMA, },
 
     };
