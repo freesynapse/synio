@@ -101,7 +101,7 @@ void Lexer::parse_buffer()
     do
     {
         t = next_token(false);    // false flag to go through all lines from the start line
-        if (t.start_line == t.end_line)
+        if (t.start_line_ptr == t.end_line_ptr)
             color_token(t.start_line_ptr, &t);
         else
         {
@@ -129,7 +129,7 @@ token_t Lexer::next_token(bool _single_line)
     if (m_cursor >= len && (m_line->next == NULL || _single_line == true))
     {
         // token = token_t(m_cursor, m_line_no, m_cursor, m_line_no, TOKEN_END);
-        token = token_t(m_cursor, m_line_no, m_line, m_cursor, m_line_no, m_line, TOKEN_END);
+        token = token_t(m_cursor, m_line, m_cursor, m_line, TOKEN_END);
         declare_eos_();
         return token;
 
@@ -137,7 +137,7 @@ token_t Lexer::next_token(bool _single_line)
     else if (m_cursor >= len && m_line->next != NULL)
     {
         // token = token_t(m_cursor, m_line_no, m_cursor, m_line_no, TOKEN_EOL);
-        token = token_t(m_cursor, m_line_no, m_line, m_cursor, m_line_no, m_line->next, TOKEN_EOL);
+        token = token_t(m_cursor, m_line, m_cursor, m_line, TOKEN_EOL);
 
         m_cursor = 0;
         m_line = m_line->next;
@@ -155,7 +155,7 @@ token_t Lexer::next_token(bool _single_line)
     if (m_cursor < len && line[m_cursor] == '#')
     {
         // token = token_t(m_cursor, m_line_no, len - m_cursor, m_line_no, TOKEN_PREPROCESSOR);
-        token = token_t(m_cursor, m_line_no, m_line, len, m_line_no, m_line, TOKEN_PREPROCESSOR);
+        token = token_t(m_cursor, m_line, len, m_line, TOKEN_PREPROCESSOR);
         m_cursor = len;
         return token;
     }
@@ -173,7 +173,7 @@ token_t Lexer::next_token(bool _single_line)
         TokenKind tk = (is_keyword_(m_keyword_buffer) ? TOKEN_KEYWORD : TOKEN_IDENTIFIER);
 
         // return token_t(start, m_line_no, m_cursor, m_line_no, TOKEN_IDENTIFIER);
-        return token_t(start, m_line_no, m_line, m_cursor, m_line_no, m_line, tk);
+        return token_t(start, m_line, m_cursor, m_line, tk);
     }
 
     // numbers
@@ -189,17 +189,17 @@ token_t Lexer::next_token(bool _single_line)
         }
         
         // return token_t(start, m_line_no, m_cursor, m_line_no, TOKEN_NUMBER);
-        return token_t(start, m_line_no, m_line, m_cursor, m_line_no, m_line, TOKEN_NUMBER);
+        return token_t(start, m_line, m_cursor, m_line, TOKEN_NUMBER);
     }
 
     // strings
-    /*
     else if (m_cursor < len && (line[m_cursor] == '\"' || line[m_cursor] == '\''))
     {
         char c = line[m_cursor]; // ' or ", so we can match against this for closing
         int start = m_cursor;
         int start_line = m_line_no;
         int curr_line = start_line;
+        line_t *start_line_ptr = m_line;
         m_cursor++;
         
         // everything is a string until hitting the next '"'
@@ -208,21 +208,23 @@ token_t Lexer::next_token(bool _single_line)
             if (m_cursor < m_line->len && m_line->content[m_cursor] == c)
             {
                 m_cursor++;
-                token = token_t(start, start_line, m_cursor, m_line_no, TOKEN_MSTRING);
-                return token;
+                TokenKind tk = (m_line == start_line_ptr ? TOKEN_STRING : TOKEN_MSTRING);
+                // token = token_t(start, start_line, m_cursor, m_line_no, TOKEN_MSTRING);
+                return token_t(start, start_line_ptr, m_cursor, m_line, tk);
             }
             m_cursor++;
 
             // goto next line
             if (m_cursor >= len)
             {
+                line_t *last_line = m_line;
                 m_line = m_line->next;
                 
                 // the rest of the stream (!) was a comment
                 if (!m_line)
                 {
                     declare_eos_();
-                    return token_t(start, start_line, m_cursor, m_line_no, TOKEN_MSTRING);
+                    return token_t(start, start_line_ptr, m_cursor, last_line, TOKEN_MSTRING);
                 }
                 
                 m_line_no++;
@@ -244,13 +246,13 @@ token_t Lexer::next_token(bool _single_line)
         {
             int start = m_cursor;
             int start_line = m_line_no;
+            line_t *start_line_ptr = m_line;
             m_cursor++;
             // single line comment
             if (line[m_cursor] == '/')
             {
-                token = token_t(start, m_line_no, len, m_line_no, TOKEN_COMMENT);
                 m_cursor = len;
-                return token;
+                return token_t(start, start_line_ptr, len, start_line_ptr, TOKEN_COMMENT);
 
             }
             // multi-line comment
@@ -263,21 +265,21 @@ token_t Lexer::next_token(bool _single_line)
                     if (m_cursor < m_line->len - 1 && m_line->content[m_cursor] == '*' && m_line->content[m_cursor+1] == '/')
                     {
                         m_cursor += 2;
-                        token = token_t(start, start_line, m_cursor, m_line_no, TOKEN_MCOMMENT);
-                        return token;
+                        return token_t(start, start_line_ptr, m_cursor, m_line, TOKEN_MCOMMENT);
                     }
                     m_cursor++;
 
                     // goto next line
                     if (m_cursor >= len)
                     {
+                        line_t *last_line = m_line;
                         m_line = m_line->next;
                         
                         // the rest of the stream (!) was a comment
                         if (!m_line)
                         {
                             declare_eos_();
-                            return token_t(start, start_line, m_cursor, m_line_no, TOKEN_MCOMMENT);
+                            return token_t(start, start_line_ptr, m_cursor, last_line, TOKEN_MCOMMENT);
                         }
                         
                         m_line_no++;
@@ -294,27 +296,26 @@ token_t Lexer::next_token(bool _single_line)
         // no comment, treat single '/' as a literal
         else
         {
-            token = token_t(m_cursor, m_line_no, m_cursor + 1, m_line_no, m_literals[line[m_cursor]]);
+            token = token_t(m_cursor, m_line, m_cursor + 1, m_line, m_literals[line[m_cursor]]);
             m_cursor++;
             return token;
 
         }
 
     }
-    */
 
     // literals
     else if (m_cursor < len && is_literal_(line[m_cursor]))
     {
         // token = token_t(m_cursor, m_line_no, m_cursor + 1, m_line_no, m_literals[line[m_cursor]]);
-        token = token_t(m_cursor, m_line_no, m_line, m_cursor + 1, m_line_no, m_line, m_literals[line[m_cursor]]);
+        token = token_t(m_cursor, m_line, m_cursor + 1, m_line, m_literals[line[m_cursor]]);
         m_cursor++;
         return token;
 
     }
 
     // token = token_t(m_cursor, m_line_no, m_cursor+1, m_line_no, TOKEN_INVALID);
-    token = token_t(m_cursor, m_line_no, m_line, m_cursor+1, m_line_no, m_line, TOKEN_INVALID);
+    token = token_t(m_cursor, m_line, m_cursor+1, m_line, TOKEN_INVALID);
     m_cursor++;
     return token;
 

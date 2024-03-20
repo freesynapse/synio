@@ -59,19 +59,15 @@ typedef struct token_t
     int end = 0;
     TokenKind kind = TOKEN_END;
     
-    int start_line = 0;
-    int end_line = 0;   // for multi-line comments and strings
     line_t *start_line_ptr;
-    line_t *end_line_ptr;
+    line_t *end_line_ptr;   // for multi-line comments and strings
 
     //
     token_t() {}
     // NOTE : length will have to be book-kept outside, if needed at all
-    //token_t(int _start, int _start_line, int _end, int _end_line, TokenKind _kind) :
-    //    start(_start), start_line(_start_line), end(_end), end_line(_end_line), kind(_kind)
-    //{}
-    token_t(int _start, int _start_line, line_t *_start_line_ptr, int _end, int _end_line, line_t *_end_line_ptr, TokenKind _kind) :
-        start(_start), start_line(_start_line), start_line_ptr(_start_line_ptr), end(_end), end_line(_end_line), end_line_ptr(_end_line_ptr), kind(_kind)
+    // TODO : Don't need line numbers for anything, right? Remove.
+    token_t(int _start, line_t *_start_line_ptr, int _end, line_t *_end_line_ptr, TokenKind _kind) :
+        start(_start), start_line_ptr(_start_line_ptr), end(_end), end_line_ptr(_end_line_ptr), kind(_kind)
     {}
 
 } token_t;

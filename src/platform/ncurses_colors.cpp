@@ -34,7 +34,7 @@ void ncurses_init_colors(API_WINDOW_PTR _w)
     // foreground colors
     init_color(SYNIO_COLOR_TEXT_FGD,      1000, 1000, 1000);
     init_color(SYNIO_COLOR_KEYWORD_FGD,   1000, 1000,    0);
-    init_color(SYNIO_COLOR_STRING_FGD,     100, 1000,  100);
+    init_color(SYNIO_COLOR_STRING_FGD,     100,  800,  100);
     init_color(SYNIO_COLOR_NUMBER_FGD,    1000,  360,    0);
     init_color(SYNIO_COLOR_LITERAL_FGD,    260,  575,  960);
     init_color(SYNIO_COLOR_COMMENT_FGD,    600,  360,    0);
