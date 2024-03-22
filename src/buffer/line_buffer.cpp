@@ -299,6 +299,24 @@ int LineBuffer::idxFromPtr(line_t *_line)
 }
 
 //---------------------------------------------------------------------------------------
+line_t *LineBuffer::ptrFromPtr(line_t *_start, int _n)
+{
+    if (_start == NULL)
+        return NULL;
+    
+    int n = 0;
+    line_t *p = _start;
+    while (n < _n && p != NULL)
+    {
+        n++;
+        p = p->next;
+    }
+    
+    return p;
+
+}
+
+//---------------------------------------------------------------------------------------
 void LineBuffer::clear()
 {
     if (m_head == NULL)

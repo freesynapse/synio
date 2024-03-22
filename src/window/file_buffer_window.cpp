@@ -94,7 +94,7 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case KEY_DC:        /*deselect_(BACKWARD);*/ deleteCharAtCursor();      break;
             case KEY_BACKSPACE: /*deselect_(BACKWARD);*/ deleteCharBeforeCursor();  break;
             case KEY_ENTER:
-            case 10:            deselect_(FORWARD);  insertNewLine();           break;
+            case 10:            delete_selection_();  insertNewLine();          break;
 
             // selections
             case KEY_SLEFT:     select_(); moveCursor(-1, 0);           break;
@@ -131,6 +131,7 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
 
             //
             default:
+                delete_selection_();
                 insertCharAtCursor((char)_c);
                 break;
 
@@ -210,7 +211,7 @@ void FileBufferWindow::moveCursor(int _dx, int _dy)
         dy = -1;
     }
     // last char in line, move to first char of next
-    else if (cx == m_currentLine->len && dx > 0 && m_currentLine->next != NULL)
+    else if (cx == m_currentLine->len && dx > 0 && (dy == 1 || dy == 0) && m_currentLine->next != NULL)
     {
         dx = -cx;
         dy = 1;
@@ -467,11 +468,8 @@ void FileBufferWindow::deleteCharAtCursor()
 {
     // <DEL>
 
-    if (m_selection->lineCount())
-    {
-        deleteSelection();
+    if (delete_selection_())
         return;
-    }
 
     //
     if (m_cursor.cx() == m_currentLine->len && m_currentLine->next == NULL)
@@ -499,11 +497,8 @@ void FileBufferWindow::deleteCharBeforeCursor()
 {
     // <BACKSPACE>
     
-    if (m_selection->lineCount())
-    {
-        deleteSelection();
+    if (delete_selection_())
         return;
-    }
 
     //
     if (m_cursor.cx() == 0 && m_currentLine->prev == NULL) // beggining of first line
@@ -614,7 +609,7 @@ void FileBufferWindow::deleteSelection()
 
     ivec2_t start = m_selection->startingBufferPos();
     ivec2_t end = m_bufferCursorPos;
-    
+
     if ((end.y == start.y && end.x < start.x) ||
         (end.y < start.y))
         std::swap(end, start);
@@ -626,11 +621,12 @@ void FileBufferWindow::deleteSelection()
 
     //
     // remove selected text
-    line_t *line_ptr = m_lineBuffer.ptrFromIdx(start.y);
-
+    line_t *start_line_ptr = m_lineBuffer.ptrFromIdx(start.y);
     int nlines = end.y - start.y;
+
+    line_t *line_ptr = start_line_ptr;
+    bool merge_after = (line_ptr->sel_start != 0 && nlines != 0);
     int y = 0;
-    bool merge_after = (line_ptr->sel_start != 0);
 
     //
     while (y <= nlines && line_ptr != NULL)

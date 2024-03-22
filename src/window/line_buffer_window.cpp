@@ -44,7 +44,7 @@ void LineBufferWindow::setQuery(const std::string &_query, const ivec2_t &_pos)
     for (size_t i = 0; i < m_queryLen; i++)
     {
         #ifdef NCURSES_IMPL
-        m_query[i] = CHTYPE(_query[i] | COLOR_PAIR(SYNIO_COLOR_TEXT));
+        m_query[i] = CHTYPE(_query[i] | COLOR_PAIR(SYN_COLOR_TEXT));
         #else
         m_query[i] = _query[i];
         #endif

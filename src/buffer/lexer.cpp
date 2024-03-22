@@ -54,7 +54,7 @@ void Lexer::set_start_line(line_t *_line, int _line_no)
 }
 
 //---------------------------------------------------------------------------------------
-void Lexer::color_token(line_t *_line, token_t *_t)
+void Lexer::SYN_COLOR_token(line_t *_line, token_t *_t)
 {
     // color parsed tokens
     switch (_t->kind)
@@ -62,21 +62,21 @@ void Lexer::color_token(line_t *_line, token_t *_t)
         case TOKEN_END:
         case TOKEN_EOL:
         case TOKEN_INVALID:         break;
-        case TOKEN_IDENTIFIER:      ncurses_color_substr(_line, _t->start, _t->end, SYNIO_COLOR_TEXT);      break;
-        case TOKEN_KEYWORD:         ncurses_color_substr(_line, _t->start, _t->end, SYNIO_COLOR_KEYWORD);   break;
-        case TOKEN_NUMBER:          ncurses_color_substr(_line, _t->start, _t->end, SYNIO_COLOR_NUMBER);    break;
+        case TOKEN_IDENTIFIER:      ncurses_SYN_COLOR_substr(_line, _t->start, _t->end, SYN_COLOR_TEXT);      break;
+        case TOKEN_KEYWORD:         ncurses_SYN_COLOR_substr(_line, _t->start, _t->end, SYN_COLOR_KEYWORD);   break;
+        case TOKEN_NUMBER:          ncurses_SYN_COLOR_substr(_line, _t->start, _t->end, SYN_COLOR_NUMBER);    break;
         case TOKEN_STRING:
-        case TOKEN_MSTRING:         ncurses_color_substr(_line, _t->start, _t->end, SYNIO_COLOR_STRING);    break;
+        case TOKEN_MSTRING:         ncurses_SYN_COLOR_substr(_line, _t->start, _t->end, SYN_COLOR_STRING);    break;
         case TOKEN_COMMENT:
-        case TOKEN_MCOMMENT:        ncurses_color_substr(_line, _t->start, _t->end, SYNIO_COLOR_COMMENT);   break;
-        case TOKEN_PREPROCESSOR:    ncurses_color_substr(_line, _t->start, _t->end, SYNIO_COLOR_PREPROC);   break;
+        case TOKEN_MCOMMENT:        ncurses_SYN_COLOR_substr(_line, _t->start, _t->end, SYN_COLOR_COMMENT);   break;
+        case TOKEN_PREPROCESSOR:    ncurses_SYN_COLOR_substr(_line, _t->start, _t->end, SYN_COLOR_PREPROC);   break;
 
         case TOKEN_LEFT_PAREN:
         case TOKEN_RIGHT_PAREN:
         case TOKEN_LEFT_BRACE:
         case TOKEN_RIGHT_BRACE:
         case TOKEN_LEFT_BRACKET:
-        case TOKEN_RIGHT_BRACKET:
+        case TOKEN_RIGHT_BRACKET:   ncurses_SYN_COLOR_substr(_line, _t->start, _t->end, SYN_COLOR_LITERAL_STRUCT);  break;
         case TOKEN_DQUOTE:
         case TOKEN_SQUOTE:
         case TOKEN_PLUS:
@@ -85,12 +85,12 @@ void Lexer::color_token(line_t *_line, token_t *_t)
         case TOKEN_DIV:
         case TOKEN_LT:
         case TOKEN_GT:
-        case TOKEN_EQUAL:
+        case TOKEN_EQUAL:           ncurses_SYN_COLOR_substr(_line, _t->start, _t->end, SYN_COLOR_LITERAL_OP);      break;
         case TOKEN_DOT:
         case TOKEN_SEMICOLON:
         case TOKEN_COLON:
-        case TOKEN_COMMA:           ncurses_color_substr(_line, _t->start, _t->end, SYNIO_COLOR_LITERAL);   break;
-        default:                    ncurses_color_substr(_line, _t->start, _t->end, SYNIO_COLOR_TEXT);      break;
+        case TOKEN_COMMA:           ncurses_SYN_COLOR_substr(_line, _t->start, _t->end, SYN_COLOR_LITERAL_DELIM);   break;
+        default:                    ncurses_SYN_COLOR_substr(_line, _t->start, _t->end, SYN_COLOR_TEXT);            break;
     }
 
 }
@@ -102,7 +102,7 @@ void Lexer::parse_buffer()
     {
         t = next_token(false);    // false flag to go through all lines from the start line
         if (t.start_line_ptr == t.end_line_ptr)
-            color_token(t.start_line_ptr, &t);
+            SYN_COLOR_token(t.start_line_ptr, &t);
         else
         {
             // TODO : implement mcomments and mstrings

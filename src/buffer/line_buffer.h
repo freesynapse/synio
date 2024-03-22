@@ -47,6 +47,7 @@ public:
     // accessors
     line_t *ptrFromIdx(int _index);
     int idxFromPtr(line_t *_line);
+    line_t *ptrFromPtr(line_t *_start, int _n);  // returns a ptr _n steps from _start
     const int lineCount() const { return m_lineCount; }
 
 

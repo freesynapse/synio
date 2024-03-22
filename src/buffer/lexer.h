@@ -80,7 +80,7 @@ public:
     ~Lexer() = default;
 
     void set_start_line(line_t *_line, int _line_no=0);
-    void color_token(line_t *_line, token_t *_t);
+    void SYN_COLOR_token(line_t *_line, token_t *_t);
     void parse_buffer();
     void parse_line(line_t *_line);
     token_t next_token(bool _single_line=true);

@@ -99,6 +99,14 @@ private:
         m_selection->clear();
         m_isSelecting = false; 
     }
+    // deletes selected text, for standard keypresses. Returns number of deleted lines
+    __always_inline int delete_selection_()
+    {
+        int deleted = m_selection->lineCount();
+        if (deleted)
+            deleteSelection();
+        return deleted;
+    }
 
 protected:
     std::string m_filename = "";
