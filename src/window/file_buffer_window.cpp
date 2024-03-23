@@ -787,12 +787,11 @@ void FileBufferWindow::readFromFile(const std::string &_filename)
 {
     FileIO::readFileIntoBuffer(_filename, &m_lineBuffer);
     
-    // apply syntax highlighting (depending on filetype, obviously)
-    m_lexer.set_start_line(m_lineBuffer.ptrFromIdx(0), m_lineBuffer.lineCount());
-
+    // apply syntax highlighting
+    // TODO : only highlight .c, .cpp, .cxx, .h, .hpp files
     {
         Timer timer;
-        m_lexer.parse_buffer();
+        m_lexer.parseBuffer(&m_lineBuffer);
         LOG_INFO("parsed buffer (%zu lines) in %f ms.", m_lineBuffer.lineCount(), timer.getDeltaTimeMs());
     }
     
@@ -863,7 +862,13 @@ void FileBufferWindow::redraw()
     __debug_print(x, y++, "pbpos = (%d, %d)", m_prevBufferCursorPos.x, m_prevBufferCursorPos.y);
     __debug_print(x, y++, "cpos  = (%d, %d)", m_cursor.cx(), m_cursor.cy());
     __debug_print(x, y++, "rpos  = (%d, %d)", m_cursor.rx(), m_cursor.ry());
-    __debug_print(x, y++, "spos = (%d, %d)", m_scrollPos.x , m_scrollPos.y);
+    __debug_print(x, y++, "spos  = (%d, %d)", m_scrollPos.x , m_scrollPos.y);
+    if (m_currentLine)
+    {
+        int16_t color = ncurses_get_CHTYPE_color(m_currentLine->content[m_cursor.cx()]);
+        TokenKind tk = m_lexer.tokenFromColor(color);
+        __debug_print(x, y++, "cpos HL: %s", token2str(tk));
+    }
     y++;
     if (m_currentLine != NULL)
     {

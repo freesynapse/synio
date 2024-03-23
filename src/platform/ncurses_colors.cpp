@@ -143,10 +143,17 @@ void ncurses_toggle_selection_substr(line_t *_line, size_t _start, size_t _end)
 }
 
 //---------------------------------------------------------------------------------------
-void ncurses_SYN_COLOR_substr(line_t *_line, size_t _start, size_t _end, short _pair_index)
+void ncurses_color_substr(line_t *_line, size_t _start, size_t _end, short _pair_index)
 {
     assert(_start >= 0 && _end <= _line->len);
     for (size_t i = _start; i < _end; i++)
       _line->content[i] = (_line->content[i] | COLOR_PAIR(_pair_index));
 
+}
+
+//---------------------------------------------------------------------------------------
+int16_t ncurses_get_CHTYPE_color(CHTYPE _c)
+{
+    return (_c & CHTYPE_SYN_COLOR_MASK) >> 8;
+    
 }

@@ -6,15 +6,17 @@
 #include <unordered_set>
 #include <string.h>
 
+#include "line_buffer.h"
 #include "../types.h"
 #include "../platform/ncurses_colors.h"
+
 
 //
 enum TokenKind
 {
-    TOKEN_END = 0,
+    TOKEN_INVALID = -1,
+    TOKEN_EOS = 0,
     TOKEN_EOL,
-    TOKEN_INVALID,
     TOKEN_IDENTIFIER,
     TOKEN_KEYWORD,
     TOKEN_NUMBER,
@@ -42,6 +44,9 @@ enum TokenKind
     TOKEN_LT,
     TOKEN_GT,
     TOKEN_EQUAL,
+    TOKEN_AMPERSAND,
+    TOKEN_QUESTIONMARK,
+    TOKEN_EXCLAMATION,
 
     // separation literals
     TOKEN_DOT,
@@ -49,25 +54,24 @@ enum TokenKind
     TOKEN_COLON,
     TOKEN_COMMA,
 
-};
+    //
+    TOKEN_LITERAL_STRUCT,
+    TOKEN_LITERAL_OP,
+    TOKEN_LITERAL_DELIM,
 
+};
 
 //
 typedef struct token_t
 {
     int start = 0;
     int end = 0;
-    TokenKind kind = TOKEN_END;
+    TokenKind kind = TOKEN_EOS;
     
-    line_t *start_line_ptr;
-    line_t *end_line_ptr;   // for multi-line comments and strings
-
     //
     token_t() {}
-    // NOTE : length will have to be book-kept outside, if needed at all
-    // TODO : Don't need line numbers for anything, right? Remove.
-    token_t(int _start, line_t *_start_line_ptr, int _end, line_t *_end_line_ptr, TokenKind _kind) :
-        start(_start), start_line_ptr(_start_line_ptr), end(_end), end_line_ptr(_end_line_ptr), kind(_kind)
+    token_t(int _start, int _end, TokenKind _kind) :
+        start(_start), end(_end), kind(_kind)
     {}
 
 } token_t;
@@ -79,31 +83,49 @@ public:
     Lexer() {}
     ~Lexer() = default;
 
-    void set_start_line(line_t *_line, int _line_no=0);
-    void SYN_COLOR_token(line_t *_line, token_t *_t);
-    void parse_buffer();
-    void parse_line(line_t *_line);
-    token_t next_token(bool _single_line=true);
+    // void set_start_line(line_t *_line, int _line_no);
+    // void parse_buffer();
+    // void parse_line(line_t *_line);
+    // token_t next_token(bool _single_line=true);
 
-    bool EOS() { return m_EOS; }
+    void parseBuffer(LineBuffer *_buffer);
+    void parseLine(line_t *_line);
+    token_t nextLineToken(line_t *_line);
+
+    void colorToken(line_t *_line, token_t *_t);
+    __always_inline TokenKind tokenFromColor(int16_t _color)
+    {
+        if (m_colorTokenMapping.find(_color) != m_colorTokenMapping.end())
+            return m_colorTokenMapping[_color];
+        return TOKEN_INVALID;
+    }
+
+
+    void setInMComment(bool _b) { m_inMComment = _b; }
+    void setInMString(bool _b) { m_inMString = _b; }
+    //
+    void __debug_print_parsing(token_t _t, int _fill=64);
+
 
 // private:
-    __always_inline void declare_eos_() { m_EOS = true; }
-    __always_inline bool is_literal_(char _c) { return m_literals.find(_c) != m_literals.end(); }
     void trim_whitespace_left_();
-    __always_inline bool is_keyword_(const char *_token) { return (m_keywords.find((char *)_token) != m_keywords.end()); }
-
+    __always_inline bool is_literal_(char _c) { return m_literals.find(_c) != m_literals.end(); }
+    __always_inline bool is_keyword_(const char *_s) { return m_keywords.find(_s) != m_keywords.end(); }
 
 // private:
-    line_t *m_line;
-    int m_line_no = 0;
+    line_t *m_line; // internal reference to current line ptr
     int m_cursor = 0;
-    bool m_EOS = false; // end of stream
+
+    bool m_inMComment = false;
+    bool m_inMString = false;
+    char m_startMStringChar;
 
     // keywords for c/c++
     // https://en.cppreference.com/w/cpp/keyword
     #define KEYWORD_MAX_SIZE 128
     char m_keyword_buffer[KEYWORD_MAX_SIZE];
+    // custom compare and hash functions needed to prevent a const char * unordered set 
+    // to compare pointers and instead use pointer contents (ie the strings).
     struct unordered_cmp    { bool operator()(const char *_a, const char *_b) const noexcept { return strcmp(_a, _b) == 0; } };
     struct unordered_deref  { size_t operator()(const char *_s) const noexcept { return std::hash<std::string>()(_s); } };
     std::unordered_set<const char *, unordered_deref, unordered_cmp> m_keywords = {
@@ -125,28 +147,46 @@ public:
 
     // literals
     std::unordered_map<char, TokenKind> m_literals = {
-        { '(', TOKEN_LEFT_PAREN, },
-        { ')', TOKEN_RIGHT_PAREN, },
-        { '{', TOKEN_LEFT_BRACE, },
-        { '}', TOKEN_RIGHT_BRACE, },
-        { '[', TOKEN_LEFT_BRACKET, },
-        { ']', TOKEN_RIGHT_BRACKET, },
-        { '\"', TOKEN_DQUOTE, },
-        { '\'', TOKEN_SQUOTE, },
+        { '(',  TOKEN_LEFT_PAREN    },
+        { ')',  TOKEN_RIGHT_PAREN   },
+        { '{',  TOKEN_LEFT_BRACE    },
+        { '}',  TOKEN_RIGHT_BRACE   },
+        { '[',  TOKEN_LEFT_BRACKET  },
+        { ']',  TOKEN_RIGHT_BRACKET },
+        { '\"', TOKEN_DQUOTE        },
+        { '\'', TOKEN_SQUOTE        },
 
-        { '+', TOKEN_PLUS, },
-        { '-', TOKEN_MINUS, },
-        { '*', TOKEN_TIMES, },
-        { '/', TOKEN_DIV, },
-        { '<', TOKEN_LT, },
-        { '>', TOKEN_GT, },
-        { '=', TOKEN_EQUAL, },
+        { '+',  TOKEN_PLUS          },
+        { '-',  TOKEN_MINUS         },
+        { '*',  TOKEN_TIMES         },
+        { '/',  TOKEN_DIV           },
+        { '<',  TOKEN_LT            },
+        { '>',  TOKEN_GT            },
+        { '=',  TOKEN_EQUAL         },
+        { '&',  TOKEN_AMPERSAND     },
+        { '?',  TOKEN_QUESTIONMARK  },
+        { '!',  TOKEN_EXCLAMATION   },
 
-        { '.', TOKEN_DOT, },
-        { ';', TOKEN_SEMICOLON, },
-        { ':', TOKEN_COLON, },
-        { ',', TOKEN_COMMA, },
+        { '.',  TOKEN_DOT           },
+        { ';',  TOKEN_SEMICOLON     },
+        { ':',  TOKEN_COLON         },
+        { ',',  TOKEN_COMMA         },
 
+    };
+
+    // mappings between tokens and their colors
+    std::unordered_map<int16_t, TokenKind> m_colorTokenMapping = {
+        { SYN_COLOR_TEXT,           TOKEN_IDENTIFIER        },
+        { SYN_COLOR_KEYWORD,        TOKEN_KEYWORD           },
+        { SYN_COLOR_STRING,         TOKEN_STRING            },
+        { SYN_COLOR_MSTRING,        TOKEN_MSTRING           },
+        { SYN_COLOR_NUMBER,         TOKEN_NUMBER            },
+        { SYN_COLOR_LITERAL_STRUCT, TOKEN_LITERAL_STRUCT    },
+        { SYN_COLOR_LITERAL_OP,     TOKEN_LITERAL_OP        },
+        { SYN_COLOR_LITERAL_DELIM,  TOKEN_LITERAL_DELIM     },
+        { SYN_COLOR_COMMENT,        TOKEN_COMMENT           },
+        { SYN_COLOR_MCOMMENT,       TOKEN_MCOMMENT          },
+        { SYN_COLOR_PREPROC,        TOKEN_PREPROCESSOR      },
     };
 
 };
@@ -154,50 +194,8 @@ public:
 //
 extern const char *token2str(TokenKind _kind);
 
-/*
 //
-enum TokenLiteralKind
-{
-    TOKEN_LITERAL_STRUCTURAL = 0,
-    TOKEN_LITERAL_ARITHMETIC,
-    TOKEN_LITERAL_SEPARATION,
-
-};
-
-//
-typedef struct literal_t
-{
-    TokenKind kind;
-    TokenLiteralKind literal_kind;
-
-    literal_t() {}
-    literal_t(TokenKind _kind, TokenLiteralKind _literal_kind) : 
-        kind(_kind), literal_kind(_literal_kind)
-    {}
-
-} literal_t;
-
-std::unordered_map<char, TokenKind> m_literals = {
-        { '(', literal_t(TOKEN_LEFT_PAREN, TOKEN_LITERAL_STRUCTURAL) },
-        { ')', literal_t(TOKEN_RIGHT_PAREN, TOKEN_LITERAL_STRUCTURAL) },
-        { '{', literal_t(TOKEN_LEFT_BRACE, TOKEN_LITERAL_STRUCTURAL) },
-        { '}', literal_t(TOKEN_RIGHT_BRACE, TOKEN_LITERAL_STRUCTURAL) },
-        { '\"', literal_t(TOKEN_DQUOTE, TOKEN_LITERAL_STRUCTURAL) },
-        { '\'', literal_t(TOKEN_SQUOTE, TOKEN_LITERAL_STRUCTURAL) },
-
-        { '+', literal_t(TOKEN_PLUS, TOKEN_LITERAL_ARITHMETIC) },
-        { '-', literal_t(TOKEN_MINUS, TOKEN_LITERAL_ARITHMETIC) },
-        { '*', literal_t(TOKEN_TIMES, TOKEN_LITERAL_ARITHMETIC) },
-        { '/', literal_t(TOKEN_DIV, TOKEN_LITERAL_ARITHMETIC) },
-        { '<', literal_t(TOKEN_LT, TOKEN_LITERAL_ARITHMETIC) },
-        { '>', literal_t(TOKEN_GT, TOKEN_LITERAL_ARITHMETIC) },
-        { '=', literal_t(TOKEN_EQUAL, TOKEN_LITERAL_ARITHMETIC) },
-
-        { '.', literal_t(TOKEN_DOT, TOKEN_LITERAL_SEPARATION) },
-        { ';', literal_t(TOKEN_SEMICOLON, TOKEN_LITERAL_SEPARATION) },
-        { ',', literal_t(TOKEN_COMMA, TOKEN_LITERAL_SEPARATION) },
-*/
-
+extern const char *token2str(TokenKind _kind);
 
 
 #endif // __LEXER_H
