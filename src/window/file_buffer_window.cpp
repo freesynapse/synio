@@ -396,10 +396,11 @@ void FileBufferWindow::insertCharAtCursor(char _c)
     moveCursor(1, 0);
 
     if (_c == '\t' || _c == ' ')
-        m_linesUpdateList.insert(m_cursor.cy());
+        m_windowLinesUpdateList.insert(m_cursor.cy());
     
     refresh_next_frame_();
     buffer_changed_();
+    syntax_highlight_line_(m_currentLine);
 
 }
 
@@ -427,7 +428,7 @@ void FileBufferWindow::insertStrAtCursor(CHTYPE_PTR _str, size_t _len)
     {
         if (_str[i] == '\t' || _str[i] == ' ')
         {
-            m_linesUpdateList.insert(m_cursor.cy());
+            m_windowLinesUpdateList.insert(m_cursor.cy());
             break;
         }
     }
@@ -456,10 +457,12 @@ void FileBufferWindow::insertNewLine()
 
     moveCursor(-m_cursor.cx() + white_spaces, 1);
     
-    // redraw lines
+    //
     update_lines_after_y_(m_cursor.cy() - 1);
     refresh_next_frame_();
     buffer_changed_();
+    syntax_highlight_line_(m_currentLine->prev);
+    syntax_highlight_line_(m_currentLine);
 
 }
 
@@ -478,7 +481,7 @@ void FileBufferWindow::deleteCharAtCursor()
     if (m_cursor.cx() < m_currentLine->len)
     {
         m_currentLine->delete_at(m_cursor.cx());
-        m_linesUpdateList.insert(m_cursor.cy());
+        m_windowLinesUpdateList.insert(m_cursor.cy());
     }
     else
     {
@@ -489,6 +492,7 @@ void FileBufferWindow::deleteCharAtCursor()
 
     refresh_next_frame_();
     buffer_changed_();
+    syntax_highlight_line_(m_currentLine);
 
 }
 
@@ -524,12 +528,13 @@ void FileBufferWindow::deleteCharBeforeCursor()
     {
         m_cursor.move(-1, 0);
         m_currentLine->delete_at(m_cursor.cx() + 1);
-        m_linesUpdateList.insert(m_cursor.cy());
+        m_windowLinesUpdateList.insert(m_cursor.cy());
 
     }
 
     refresh_next_frame_();
     buffer_changed_();
+    syntax_highlight_line_(m_currentLine);
 
 }
 
@@ -689,7 +694,7 @@ void FileBufferWindow::paste()
 
     // after paste, all lines after the paste needs to me updated
     for (int i = y0; i < m_frame.nrows; i++)
-        m_linesUpdateList.insert(i);
+        m_windowLinesUpdateList.insert(i);
     
     moveCursor(0, m_copyBuffer.size());
 
@@ -899,10 +904,10 @@ void FileBufferWindow::redraw()
     if (m_isWindowVisible)
     {
         // check for lines that have been changed
-        for (auto &line_y : m_linesUpdateList)
+        for (auto &line_y : m_windowLinesUpdateList)
             api->clearBufferLine(m_apiWindowPtr, line_y, m_frame.ncols);
 
-        m_linesUpdateList.clear();
+        m_windowLinesUpdateList.clear();
 
         m_formatter.render(m_apiWindowPtr, m_pageFirstLine, NULL);
     }

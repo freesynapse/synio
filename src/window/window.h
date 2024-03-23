@@ -81,10 +81,10 @@ protected:
     bool m_clearNextFrame = true;
     bool m_refreshNextFrame = true;
 
-    // vector of lines (in cursor corrdinates) in need of update (and thus clearing and 
+    // set of lines (in cursor corrdinates) in need of update (and thus clearing and 
     // re-rendering) to avoid using clear
     #ifdef NCURSES_IMPL
-    std::unordered_set<int> m_linesUpdateList;
+    std::unordered_set<int> m_windowLinesUpdateList;
     #endif
 
 };

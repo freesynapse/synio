@@ -38,7 +38,7 @@ typedef void* API_WINDOW_PTR;
 #define CHTYPE uint64_t
 #define CHTYPE_PTR uint64_t *
 #define CHTYPE_CHAR_MASK  0x00000000000000ff
-#define CHTYPE_SYN_COLOR_MASK 0x000000000000ff00
+#define CHTYPE_COLOR_MASK 0x000000000000ff00
 #define CHTYPE_ATTR_MASK  0x00000000ffff0000
 #define CHTYPE_SELECTION_BIT 32
 // #elif defined (GLFW_IMPL)
@@ -46,7 +46,7 @@ typedef void* API_WINDOW_PTR;
 #define CHTYPE uint32_t
 #define CHTYPE_PTR uint32_t *
 #define CHTYPE_CHAR_MASK  0x000000ff
-#define CHTYPE_SYN_COLOR_MASK 0x0000ff00
+#define CHTYPE_COLOR_MASK 0x0000ff00
 #define CHTYPE_ATTR_MASK  0xffff0000
 #define CHTYPE_SELECTION_BIT 31
 #endif

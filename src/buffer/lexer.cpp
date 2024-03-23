@@ -62,10 +62,10 @@ void Lexer::colorToken(line_t *_line, token_t *_t)
         case TOKEN_IDENTIFIER:      ncurses_color_substr(_line, _t->start, _t->end, SYN_COLOR_TEXT);      break;
         case TOKEN_KEYWORD:         ncurses_color_substr(_line, _t->start, _t->end, SYN_COLOR_KEYWORD);   break;
         case TOKEN_NUMBER:          ncurses_color_substr(_line, _t->start, _t->end, SYN_COLOR_NUMBER);    break;
-        case TOKEN_STRING:
-        case TOKEN_MSTRING:         ncurses_color_substr(_line, _t->start, _t->end, SYN_COLOR_STRING);    break;
-        case TOKEN_COMMENT:
-        case TOKEN_MCOMMENT:        ncurses_color_substr(_line, _t->start, _t->end, SYN_COLOR_COMMENT);   break;
+        case TOKEN_STRING:          ncurses_color_substr(_line, _t->start, _t->end, SYN_COLOR_STRING);    break;
+        case TOKEN_MSTRING:         ncurses_color_substr(_line, _t->start, _t->end, SYN_COLOR_MSTRING);   break;
+        case TOKEN_COMMENT:         ncurses_color_substr(_line, _t->start, _t->end, SYN_COLOR_COMMENT);   break;
+        case TOKEN_MCOMMENT:        ncurses_color_substr(_line, _t->start, _t->end, SYN_COLOR_MCOMMENT);  break;
         case TOKEN_PREPROCESSOR:    ncurses_color_substr(_line, _t->start, _t->end, SYN_COLOR_PREPROC);   break;
 
         case TOKEN_LEFT_PAREN:
@@ -99,11 +99,46 @@ void Lexer::colorToken(line_t *_line, token_t *_t)
 //---------------------------------------------------------------------------------------
 void Lexer::parseBuffer(LineBuffer *_buffer)
 {
-
     line_t *p = _buffer->m_head;
     while (p != NULL)
     {
         parseLine(p);
+        p = p->next;
+    }
+
+}
+
+//---------------------------------------------------------------------------------------
+void Lexer::parseBufferFromLine(line_t *_line, LineBuffer *_buffer)
+{
+    line_t *p = _line;
+    line_t *end_condition = _line->next;
+
+    bool in_mcomment = m_inMComment;
+    
+    if (m_inMComment)
+        end_condition = NULL;
+
+    else if (m_inMString)   // since we don't know if the opening was ' or ", we need
+                            // to reparse the whole buffer
+    {
+        end_condition = NULL;
+        p = _buffer->m_head;
+        m_inMString = false;
+    }
+
+    //
+    while (p != end_condition)
+    {
+        parseLine(p);
+
+        if (in_mcomment)
+        {
+            // no longer in comment
+            if (!m_inMComment)
+                break;
+        }
+        
         p = p->next;
     }
 
@@ -117,12 +152,6 @@ void Lexer::parseLine(line_t *_line)
     {
         token_t t = nextLineToken(_line);
         colorToken(_line, &t);
-
-        //int tlen = t.end - t.start;
-        //char buffer[128] = { 0 };
-        //memcpy(buffer, m_line->__debug_str+t.start, tlen);
-        //LOG_INFO("%s --> %s -- (%p) %d : %d", buffer, token2str(t.kind), _line, t.start, t.end);
-
     }
 
 }

@@ -79,7 +79,7 @@ private:
     __always_inline void update_lines_after_y_(int _y)
     {
         for (int i = _y; i < m_frame.nrows; i++)
-            m_linesUpdateList.insert(i);
+            m_windowLinesUpdateList.insert(i);
     }
     //
     __always_inline void buffer_changed_() { m_isDirty = true; }
@@ -107,6 +107,29 @@ private:
             deleteSelection();
         return deleted;
     }
+    //
+    __always_inline void syntax_highlight_line_(line_t *_line)
+    {
+        /*
+        line_t *prev = _line->prev;
+        if (prev != NULL)
+        {
+            int16_t prev_color = ncurses_get_CHTYPE_color(prev->content[prev->len - 1]);
+            TokenKind prev_line_tk = m_lexer.tokenFromColor(prev_color);
+
+            switch (prev_line_tk)
+            {
+                case TOKEN_MSTRING:     m_lexer.setInMString(true);     break;
+                case TOKEN_MCOMMENT:    m_lexer.setInMComment(true);    break;
+                default: break;
+            }
+        }
+
+        m_lexer.parseBufferFromLine(_line, &m_lineBuffer);
+        */
+        m_lexer.parseBuffer(&m_lineBuffer);
+
+    }
 
 protected:
     std::string m_filename = "";
@@ -124,7 +147,7 @@ protected:
     ivec2_t m_prevBufferCursorPos;
     ivec2_t m_scrollPos;
 
-    //
+    // output and syntax highlighting
     BufferFormatter m_formatter;
     Lexer m_lexer;
 
@@ -139,9 +162,6 @@ protected:
     LineNumbers *m_lineNumbers = NULL;
 
 };
-
-
-
 
 
 #endif // __BUFFER_WINDOW_H

@@ -89,6 +89,7 @@ public:
     // token_t next_token(bool _single_line=true);
 
     void parseBuffer(LineBuffer *_buffer);
+    void parseBufferFromLine(line_t *_line, LineBuffer *_buffer);
     void parseLine(line_t *_line);
     token_t nextLineToken(line_t *_line);
 
