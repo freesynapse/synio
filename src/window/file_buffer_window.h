@@ -108,7 +108,7 @@ private:
         return deleted;
     }
     //
-    __always_inline void syntax_highlight_line_(line_t *_line)
+    __always_inline void syntax_highlight_buffer_(/*line_t *_line*/)
     {
         /*
         line_t *prev = _line->prev;

@@ -400,7 +400,7 @@ void FileBufferWindow::insertCharAtCursor(char _c)
     
     refresh_next_frame_();
     buffer_changed_();
-    syntax_highlight_line_(m_currentLine);
+    syntax_highlight_buffer_();
 
 }
 
@@ -461,8 +461,7 @@ void FileBufferWindow::insertNewLine()
     update_lines_after_y_(m_cursor.cy() - 1);
     refresh_next_frame_();
     buffer_changed_();
-    syntax_highlight_line_(m_currentLine->prev);
-    syntax_highlight_line_(m_currentLine);
+    syntax_highlight_buffer_();
 
 }
 
@@ -492,7 +491,7 @@ void FileBufferWindow::deleteCharAtCursor()
 
     refresh_next_frame_();
     buffer_changed_();
-    syntax_highlight_line_(m_currentLine);
+    syntax_highlight_buffer_();
 
 }
 
@@ -534,7 +533,7 @@ void FileBufferWindow::deleteCharBeforeCursor()
 
     refresh_next_frame_();
     buffer_changed_();
-    syntax_highlight_line_(m_currentLine);
+    syntax_highlight_buffer_();
 
 }
 
@@ -681,28 +680,36 @@ void FileBufferWindow::paste()
 
     //
     int y0 = m_cursor.cy();
-    
+    bool pasted_lines = false;
+    size_t last_len = 0;
     for (int i = m_copyBuffer.size() - 1; i >= 0 ; i--)
     {
         copy_line_t &cline = m_copyBuffer[i];
         if (cline.newline == true)
+        {
             m_lineBuffer.insertAtPtr(m_currentLine, INSERT_BEFORE, cline.line_chars, cline.len);
+            pasted_lines = true;
+        }
         else
+        {
             insertStrAtCursor(cline.line_chars, cline.len);
+            last_len = cline.len;
+        }
 
     }
 
     // after paste, all lines after the paste needs to me updated
     for (int i = y0; i < m_frame.nrows; i++)
         m_windowLinesUpdateList.insert(i);
-    
-    moveCursor(0, m_copyBuffer.size());
+
+    if (pasted_lines)   moveCursor(0, m_copyBuffer.size());
 
     m_currentLine = m_lineBuffer.ptrFromIdx(m_cursor.cy());
     m_pageFirstLine = m_lineBuffer.ptrFromIdx(m_scrollPos.y);
 
     refresh_next_frame_();
     buffer_changed_();
+    syntax_highlight_buffer_();
 
 }
 

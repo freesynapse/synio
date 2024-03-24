@@ -163,7 +163,7 @@ void line_t::delete_at(size_t _pos)
 //---------------------------------------------------------------------------------------
 void line_t::delete_n_at(size_t _pos, size_t _n)
 {
-    if (!len)
+    if (!_n)
         return;
     
     assert(_pos + _n <= len);

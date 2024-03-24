@@ -99,6 +99,9 @@ void Lexer::colorToken(line_t *_line, token_t *_t)
 //---------------------------------------------------------------------------------------
 void Lexer::parseBuffer(LineBuffer *_buffer)
 {
+    m_inMString = false;
+    m_inMComment = false;
+    
     line_t *p = _buffer->m_head;
     while (p != NULL)
     {
