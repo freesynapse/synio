@@ -41,7 +41,7 @@ public:
     virtual void insertCharAtCursor(char _c) override;
     virtual void insertStrAtCursor(char *_str, size_t _len) override;
     virtual void insertStrAtCursor(CHTYPE_PTR _str, size_t _len) override;
-    virtual void insertNewLine() override;
+    virtual void insertNewLine(bool _auto_align=true) override;
     virtual void deleteCharAtCursor() override;
     virtual void deleteCharBeforeCursor() override;
     //
@@ -52,7 +52,8 @@ public:
     virtual void deleteSelection() override;
     virtual void cut() override;
     virtual void paste() override;
-
+    // inserts a new line and updates the cursor
+    void insertLineAtCursor(char *_content, size_t _len);
     // for restoring cursor position after selections/cutting
     void gotoBufferCursorPos(const ivec2_t &_pos);
     // calculate the position of the cursor in the buffer
@@ -107,33 +108,13 @@ private:
             deleteSelection();
         return deleted;
     }
-    //
-    __always_inline void syntax_highlight_buffer_(/*line_t *_line*/)
-    {
-        /*
-        line_t *prev = _line->prev;
-        if (prev != NULL)
-        {
-            int16_t prev_color = ncurses_get_CHTYPE_color(prev->content[prev->len - 1]);
-            TokenKind prev_line_tk = m_lexer.tokenFromColor(prev_color);
-
-            switch (prev_line_tk)
-            {
-                case TOKEN_MSTRING:     m_lexer.setInMString(true);     break;
-                case TOKEN_MCOMMENT:    m_lexer.setInMComment(true);    break;
-                default: break;
-            }
-        }
-
-        m_lexer.parseBufferFromLine(_line, &m_lineBuffer);
-        */
-        m_lexer.parseBuffer(&m_lineBuffer);
-
-    }
+    // specific for multi-line buffers; syntax HL next frame (in redraw()).
+    __always_inline void syntax_highlight_buffer_() { m_syntaxHLNextFrame = true; }
 
 protected:
     std::string m_filename = "";
     bool m_isDirty = false;
+    bool m_syntaxHLNextFrame = false;
 
     //
     LineBuffer m_lineBuffer;

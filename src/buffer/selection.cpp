@@ -14,16 +14,12 @@ void Selection::clear()
     
     m_entries.clear();
     m_startingBufferPos = ivec2_t(-1);
-    m_copyNewline = false;
 
 }
 
 //---------------------------------------------------------------------------------------
 void Selection::selectChars(line_t *_line, size_t _start, size_t _end)
 {
-    if (m_entries.size() <= 1)
-        m_copyNewline = false;
-
     select_(_line, _start, _end);
 
 }
@@ -34,8 +30,6 @@ void Selection::selectLines(line_t *_start_line,
                             line_t *_end_line,
                             size_t _end_offset)
 {
-    m_copyNewline = true;
-
     line_t *p = _start_line;
     if (p->len - _start_offset >= 0)
         select_(p, _start_offset, p->len);

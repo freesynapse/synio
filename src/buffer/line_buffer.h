@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <vector>
 
 #include "../types.h"  // for line_t 
 
@@ -21,13 +22,10 @@ public:
 
     void push_front(line_t *_new_line);
     void push_back(line_t *_new_line);
-    // void push_front(const char *_content)   { push_front(create_line(_content)); }
-    // void push_back(const char *_content)    { push_back(create_line(_content));  }
-    void insertAtPtr(line_t *_at_line, int _insert_flag, const char *_content) { insertAtPtr(_at_line, _insert_flag, create_line((char *)_content, strlen(_content))); }
-    void insertAtPtr(line_t *_at_line, int _insert_flag, char *_content, size_t _len) { insertAtPtr(_at_line, _insert_flag, create_line(_content, _len)); }
     void insertAtPtr(line_t *_at_line, int _insert_flag, line_t *_new_line);
     void insertBeforeIdx(int _index, const char *_content)  { insertAtPtr(ptrFromIdx(_index), INSERT_BEFORE, _content); }
     void insertAfterIdx(int _index, const char *_content)   { insertAtPtr(ptrFromIdx(_index), INSERT_AFTER, _content);  }
+    void splitLineAtPos(line_t *_line, size_t _split_offset);
     void deleteAtPtr(line_t *_line);
     void deleteBeforePtr(line_t *_line)     { deleteAtPtr(_line->prev);             }
     void deleteAfterPtr(line_t *_line)      { deleteAtPtr(_line->next);             }
@@ -37,6 +35,15 @@ public:
     line_t *appendThisToPrev(line_t *_line);   // as when <BACKSPACE> is pressed at start of line
     void appendNextToThis(line_t *_line);      // as when <DEL> is pressed at end of line
     void clear();
+
+    // some overloads
+    void push_front(const char *_content)           { push_front(create_line(_content)); }
+    void push_back(const char *_content)            { push_back(create_line(_content));  }
+    void push_front(char *_content, size_t _len)    { push_front(create_line(_content, _len)); }
+    void push_back(char *_content, size_t _len)     { push_back(create_line(_content, _len));  }
+    void insertAtPtr(line_t *_at_line, int _insert_flag, const char *_content) { insertAtPtr(_at_line, _insert_flag, create_line((char *)_content, strlen(_content))); }
+    void insertAtPtr(line_t *_at_line, int _insert_flag, char *_content, size_t _len) { insertAtPtr(_at_line, _insert_flag, create_line(_content, _len)); }
+
 
     //
     #ifdef DEBUG

@@ -76,6 +76,7 @@ struct line_t
     void insert_char(CHTYPE _c, size_t _pos);
     void insert_str(char *_str, size_t _len, size_t _pos);
     void insert_str(CHTYPE_PTR _str, size_t _len, size_t _pos);
+    void append_line(line_t *_other);
     void delete_at(size_t _pos);
     void delete_n_at(size_t _pos, size_t _n);
     line_t *split_at_pos(size_t _pos);
@@ -107,7 +108,7 @@ struct copy_line_t
     bool newline = false;
 
     copy_line_t() {}
-    copy_line_t(line_t *_line, bool _newline);
+    copy_line_t(line_t *_line, bool _newline, bool _use_sel_offsets=true);
     
 };
 

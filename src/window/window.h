@@ -39,6 +39,9 @@ public:
     virtual void redraw() = 0;
     virtual void clear()
     { 
+        // clear() clears the borders...
+        // ---> https://stackoverflow.com/questions/33986047/ncurses-is-it-possible-to-refresh-a-window-without-removing-its-borders
+        // -- Changed in the Window class so that all extra 'border' windows can be drawn.        
         if (!m_clearNextFrame)
             return;
 

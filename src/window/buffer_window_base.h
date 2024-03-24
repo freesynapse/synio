@@ -44,7 +44,7 @@ public:
     virtual void moveFileEnd() {}
     virtual void movePageUp() {}
     virtual void movePageDown() {}
-    virtual void insertNewLine() {}
+    virtual void insertNewLine(bool _auto_align=true) {}
 
     // update cursor (called during rendering and after keypress)
     virtual void updateCursor() {};

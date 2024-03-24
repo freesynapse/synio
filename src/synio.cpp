@@ -63,10 +63,7 @@ void Synio::mainLoop()
         // --- BEGIN DRAWING : order matters!
         //
 
-        // 
-        m_currentWindow->clear();    // very good, clear() clears the borders...
-        // ---> https://stackoverflow.com/questions/33986047/ncurses-is-it-possible-to-refresh-a-window-without-removing-its-borders
-        // -- Changed in the Window class so that all extra 'border' windows can be drawn.
+        m_currentWindow->clear();
         m_currentWindow->redraw();
         m_currentWindow->refresh();
         

@@ -75,13 +75,20 @@ line_t *copy_line(line_t *_line)
 
 
 //---------------------------------------------------------------------------------------
-copy_line_t::copy_line_t(line_t *_line, bool _newline)
+copy_line_t::copy_line_t(line_t *_line, bool _newline, bool _use_sel_offsets)
 {
     // fow now, lets use __debug_str
-    len = _line->sel_end - _line->sel_start;
+    size_t offset0 = (_use_sel_offsets ? _line->sel_start : 0);
+    size_t offset1 = (_use_sel_offsets ? _line->sel_end : _line->len);
+
+    // len = _line->sel_end - _line->sel_start;
+    len = offset1 - offset0;
     line_chars = (char *)malloc(len);
-    memcpy(line_chars, _line->__debug_str+_line->sel_start, len);
-    newline = _newline;        
+    // memcpy(line_chars, _line->__debug_str+_line->sel_start, len);
+    memcpy(line_chars, _line->__debug_str+offset0, len);
+    
+    newline = _newline;
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -136,6 +143,22 @@ void line_t::insert_str(CHTYPE_PTR _str, size_t _len, size_t _pos)
     __debug_content_to_str_();
     #endif
 
+}
+
+//---------------------------------------------------------------------------------------
+void line_t::append_line(line_t *_other)
+{
+    if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (len + _other->len + 1))) == NULL) RAM_panic(this);
+    memcpy(content + len, _other->content, CHTYPE_SIZE * _other->len);
+    len = len + _other->len;
+    content[len] = 0;
+
+    #ifdef DEBUG
+    __debug_content_to_str_();
+    #endif
+
+    free(_other);
+    
 }
 
 //---------------------------------------------------------------------------------------

@@ -102,6 +102,19 @@ void LineBuffer::insertAtPtr(line_t *_at_line, int _insert_flag, line_t *_new_li
 }
 
 //---------------------------------------------------------------------------------------
+void LineBuffer::splitLineAtPos(line_t *_line, size_t _split_offset)
+{
+    if (!_line) return;
+    if (_split_offset > _line->len) return;
+
+    line_t *new_line  = _line->split_at_pos(_split_offset);
+    new_line->next = _line->next;
+    new_line->prev = _line;
+    _line->next = new_line;
+
+}
+
+//---------------------------------------------------------------------------------------
 void LineBuffer::deleteAtPtr(line_t *_line)
 {
     // empty

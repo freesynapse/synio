@@ -83,18 +83,18 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
         switch (_c)
         {
             // cursor movement
-            case KEY_DOWN:      deselect_(FORWARD);  moveCursor( 0,  1);        break;
-            case KEY_UP:        deselect_(BACKWARD); moveCursor( 0, -1);        break;
-            case KEY_LEFT:      deselect_(BACKWARD); moveCursor(-1,  0);        break;
-            case KEY_RIGHT:     deselect_(FORWARD);  moveCursor( 1,  0);        break;
-            case KEY_PPAGE:     deselect_(BACKWARD); movePageUp();              break;
-            case KEY_NPAGE:     deselect_(FORWARD);  movePageDown();            break;
-            case KEY_HOME:      deselect_(BACKWARD); moveCursorToLineBegin();   break;
-            case KEY_END:       deselect_(FORWARD);  moveCursorToLineEnd();     break;
-            case KEY_DC:        /*deselect_(BACKWARD);*/ deleteCharAtCursor();      break;
-            case KEY_BACKSPACE: /*deselect_(BACKWARD);*/ deleteCharBeforeCursor();  break;
+            case KEY_DOWN:      deselect_(FORWARD);  moveCursor( 0,  1);            break;
+            case KEY_UP:        deselect_(BACKWARD); moveCursor( 0, -1);            break;
+            case KEY_LEFT:      deselect_(BACKWARD); moveCursor(-1,  0);            break;
+            case KEY_RIGHT:     deselect_(FORWARD);  moveCursor( 1,  0);            break;
+            case KEY_PPAGE:     deselect_(BACKWARD); movePageUp();                  break;
+            case KEY_NPAGE:     deselect_(FORWARD);  movePageDown();                break;
+            case KEY_HOME:      deselect_(BACKWARD); moveCursorToLineBegin();       break;
+            case KEY_END:       deselect_(FORWARD);  moveCursorToLineEnd();         break;
+            case KEY_DC:        deleteCharAtCursor();                               break;
+            case KEY_BACKSPACE: deleteCharBeforeCursor();                           break;
             case KEY_ENTER:
-            case 10:            delete_selection_();  insertNewLine();          break;
+            case 10:            delete_selection_();  insertNewLine();              break;
 
             // selections
             case KEY_SLEFT:     select_(); moveCursor(-1, 0);           break;
@@ -439,7 +439,7 @@ void FileBufferWindow::insertStrAtCursor(CHTYPE_PTR _str, size_t _len)
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::insertNewLine()
+void FileBufferWindow::insertNewLine(bool _auto_align)
 {
     // split line at cursor pos.x
     line_t *new_line = m_currentLine->split_at_pos(m_cursor.cx());
@@ -448,14 +448,17 @@ void FileBufferWindow::insertNewLine()
     // find correct indentation -- use spaces, not tabs
     // TODO :   1.  Use TabsOrSpaces Config::USE_TABS_OR_SPACES to determine tabs or
     //              spaces, for now, use spaces.
-    //          2.  Also fix for backspace, so that when pressed and all whitespace,
-    //              a whole TABs worth of spaces are removed per keypress.
     //
-    int white_spaces = find_indentation_level_(m_currentLine);
-    for (int i = 0; i < white_spaces; i++)
-        new_line->insert_char(' ', 0);
+    if (_auto_align)
+    {
+        int white_spaces = find_indentation_level_(m_currentLine);
+        for (int i = 0; i < white_spaces; i++)
+            new_line->insert_char(' ', 0);
 
-    moveCursor(-m_cursor.cx() + white_spaces, 1);
+        moveCursor(-m_cursor.cx() + white_spaces, 1);
+    }
+    else
+        moveCursor(-m_cursor.cx(), 1);
     
     //
     update_lines_after_y_(m_cursor.cy() - 1);
@@ -566,26 +569,26 @@ void FileBufferWindow::copy()
     if (!m_selection->lineCount())
     {
         // here a deep copy of at least the content is needed
-        m_copyBuffer.push_back(copy_line_t(m_currentLine, m_selection->copyNewline()));
+        assert(m_currentLine == m_lineBuffer.ptrFromIdx(m_bufferCursorPos.y));
+        m_copyBuffer.push_back(copy_line_t(m_currentLine, true, false));
         return;
     }
         
     //
-    ivec2_t bpos = m_bufferCursorPos;
     ivec2_t spos = m_selection->startingBufferPos();
+    ivec2_t bpos = m_bufferCursorPos;
 
     // single line
     if (bpos.y == spos.y && bpos.x < spos.x)    std::swap(bpos, spos);
     else if (bpos.y < spos.y)                   std::swap(bpos, spos);
 
-    line_t *line_ptr = m_lineBuffer.ptrFromIdx(spos.y);
-    size_t y = 0;
     //
-    int nlines = bpos.y - spos.y;
-    while (y <= nlines && line_ptr != NULL)
+    line_t *line_ptr = m_lineBuffer.ptrFromIdx(spos.y);
+    size_t y = spos.y;
+    while (y <= bpos.y && line_ptr != NULL)
     {
         if (m_selection->isLineEntry(line_ptr))
-            m_copyBuffer.push_back(copy_line_t(line_ptr, m_selection->copyNewline()));
+            m_copyBuffer.push_back(copy_line_t(line_ptr, y != bpos.y));
 
         y++;
         line_ptr = line_ptr->next;
@@ -607,6 +610,9 @@ void FileBufferWindow::deleteSelection()
             m_currentLine = next;
             m_pageFirstLine = m_lineBuffer.ptrFromIdx(m_scrollPos.y);
             update_lines_after_y_(m_cursor.cy());
+            refresh_next_frame_();
+            buffer_changed_();
+            syntax_highlight_buffer_();
         }
         return;
     }
@@ -656,11 +662,11 @@ void FileBufferWindow::deleteSelection()
     if (merge_after)
         m_lineBuffer.appendNextToThis(m_currentLine);
 
-    // after cut, all lines after the paste needs to be updated
+    //
     update_lines_after_y_(m_cursor.cy());
-
     refresh_next_frame_();
     buffer_changed_();
+    syntax_highlight_buffer_();
 
 }
 
@@ -679,37 +685,47 @@ void FileBufferWindow::paste()
         return;
 
     //
-    int y0 = m_cursor.cy();
-    bool pasted_lines = false;
-    size_t last_len = 0;
-    for (int i = m_copyBuffer.size() - 1; i >= 0 ; i--)
+    int cy = m_cursor.cy();
+
+    // first entry
+    copy_line_t cline = m_copyBuffer[0];
+    insertStrAtCursor(cline.line_chars, cline.len);
+    if (cline.newline)
+        insertNewLine(false);
+
+    if (m_copyBuffer.size() > 1)
     {
-        copy_line_t &cline = m_copyBuffer[i];
-        if (cline.newline == true)
+        for (size_t i = 1; i < m_copyBuffer.size() - 1; i++)
         {
-            m_lineBuffer.insertAtPtr(m_currentLine, INSERT_BEFORE, cline.line_chars, cline.len);
-            pasted_lines = true;
-        }
-        else
-        {
-            insertStrAtCursor(cline.line_chars, cline.len);
-            last_len = cline.len;
+            copy_line_t cline1 = m_copyBuffer[i];
+            // paste lines as a new lines (omitting last line)
+            insertLineAtCursor(cline1.line_chars, cline1.len);
         }
 
+        // last line
+        cline = m_copyBuffer[m_copyBuffer.size() - 1];
+        insertStrAtCursor(cline.line_chars, cline.len);
+        if (cline.newline)
+            insertNewLine(false);
     }
 
-    // after paste, all lines after the paste needs to me updated
-    for (int i = y0; i < m_frame.nrows; i++)
-        m_windowLinesUpdateList.insert(i);
-
-    if (pasted_lines)   moveCursor(0, m_copyBuffer.size());
-
-    m_currentLine = m_lineBuffer.ptrFromIdx(m_cursor.cy());
+    //
+    m_currentLine = m_lineBuffer.ptrFromIdx(m_cursor.cy() + m_scrollPos.y);
     m_pageFirstLine = m_lineBuffer.ptrFromIdx(m_scrollPos.y);
 
+    //
+    update_lines_after_y_(cy);
     refresh_next_frame_();
     buffer_changed_();
     syntax_highlight_buffer_();
+
+}
+
+//---------------------------------------------------------------------------------------
+void FileBufferWindow::insertLineAtCursor(char *_content, size_t _len)
+{
+    insertStrAtCursor(_content, _len);
+    insertNewLine(false);
 
 }
 
@@ -732,8 +748,6 @@ void FileBufferWindow::updateBufferCursorPos()
     // cursor moved in buffer, and in selection mode, add selection
     if (m_prevBufferCursorPos != m_bufferCursorPos && m_isSelecting)
     {
-        Timer t(__func__, false);
-
         assert(m_selection != NULL);
 
         ivec2_t prev = m_prevBufferCursorPos;
@@ -801,11 +815,7 @@ void FileBufferWindow::readFromFile(const std::string &_filename)
     
     // apply syntax highlighting
     // TODO : only highlight .c, .cpp, .cxx, .h, .hpp files
-    {
-        Timer timer;
-        m_lexer.parseBuffer(&m_lineBuffer);
-        LOG_INFO("parsed buffer (%zu lines) in %f ms.", m_lineBuffer.lineCount(), timer.getDeltaTimeMs());
-    }
+    m_lexer.parseBuffer(&m_lineBuffer);
     
     // line pointers
     m_currentLine = m_lineBuffer.m_head;
@@ -910,6 +920,11 @@ void FileBufferWindow::redraw()
     
     if (m_isWindowVisible)
     {
+        if (m_syntaxHLNextFrame)
+        {
+            m_lexer.parseBuffer(&m_lineBuffer);
+            m_syntaxHLNextFrame = false;
+        }
         // check for lines that have been changed
         for (auto &line_y : m_windowLinesUpdateList)
             api->clearBufferLine(m_apiWindowPtr, line_y, m_frame.ncols);
