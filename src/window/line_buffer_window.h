@@ -30,13 +30,15 @@ public:
     virtual void moveCursor(int _dx, int _dy=0) override;
     virtual void moveCursorToLineBegin() override;
     virtual void moveCursorToLineEnd() override;
-    virtual void moveCursorToColDelim(int _dir) override;
+    virtual int findColDelim(int _dir, bool _move_cursor=true) override;
     virtual void insertCharAtCursor(char _c) override;
     virtual void insertStrAtCursor(char *_str, size_t _len) override;
     // TODO : implement this!
     //virtual void insertStrAtCursor(CHTYPE_PTR _str, size_t _len) override;
     virtual void deleteCharAtCursor() override;
+    virtual void deleteToNextColDelim() override;
     virtual void deleteCharBeforeCursor() override;
+    virtual void deleteToPrevColDelim() override;
 
     // update cursor (called during rendering and after keypress)
     virtual void updateCursor() override;

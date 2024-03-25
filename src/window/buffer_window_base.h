@@ -31,12 +31,14 @@ public:
     virtual void moveCursor(int _dx, int _dy) {}
     virtual void moveCursorToLineBegin() {}
     virtual void moveCursorToLineEnd() {}
-    virtual void moveCursorToColDelim(int _dir) {}
+    virtual int findColDelim(int _dir, bool _move_cursor=true) { return 0; }
     virtual void insertCharAtCursor(char _c) {}
     virtual void insertStrAtCursor(char *_str, size_t _len) {}
     virtual void insertStrAtCursor(CHTYPE_PTR _str, size_t _len) {}
     virtual void deleteCharAtCursor() {}
+    virtual void deleteToNextColDelim() {}
     virtual void deleteCharBeforeCursor() {}
+    virtual void deleteToPrevColDelim() {}
 
     // (not used for single line buffers)
     virtual void moveCursorToRowDelim(int _dir) {}
@@ -57,11 +59,14 @@ public:
 
 protected:
     //
-    bool is_delimiter_(const char *_delim, CHTYPE _c)
+    bool is_col_delimiter_(CHTYPE _c)
+    // bool is_col_delimiter_(CHTYPE _c)
     {
-        for (size_t i = 0; i < strlen(_delim); i++)
-            if ((_c & CHTYPE_CHAR_MASK) == _delim[i])
-                return true;
+        // bool ret = (Config::COL_DELIMITERS.find((_c & CHTYPE_CHAR_MASK)) != Config::COL_DELIMITERS.end());
+        // return ret;
+        for (size_t i = 0; i < strlen(Config::COL_DELIMITERS); i++)
+           if ((_c & CHTYPE_CHAR_MASK) == Config::COL_DELIMITERS[i])
+               return true;
         return false;
     }
 

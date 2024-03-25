@@ -2,6 +2,7 @@
 #define __CONFIG_H
 
 #include <string>
+#include <unordered_set>
 
 // Enumerations
 enum class TabsOrSpaces

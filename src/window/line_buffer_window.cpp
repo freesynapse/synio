@@ -1,5 +1,8 @@
 
 #include "line_buffer_window.h"
+
+#include <assert.h>
+
 #include "../platform/ncurses_colors.h"
 
 
@@ -64,8 +67,8 @@ void LineBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
     {
         switch (_ctrl_action)
         {
-            case CtrlKeyAction::CTRL_LEFT:  moveCursorToColDelim(-1);   break;
-            case CtrlKeyAction::CTRL_RIGHT: moveCursorToColDelim(1);    break;
+            case CtrlKeyAction::CTRL_LEFT:  findColDelim(-1);   break;
+            case CtrlKeyAction::CTRL_RIGHT: findColDelim(1);    break;
             case CtrlKeyAction::CTRL_UP:    moveCursorToRowDelim(-1);   break;
             case CtrlKeyAction::CTRL_DOWN:  moveCursorToRowDelim(1);    break;
             // default: LOG_INFO("ctrl keycode %d : %s", _c, ctrlActionStr(_ctrl_action)); break;
@@ -138,8 +141,13 @@ void LineBufferWindow::moveCursorToLineEnd()
 }
 
 //---------------------------------------------------------------------------------------
-void LineBufferWindow::moveCursorToColDelim(int _dir)
+int LineBufferWindow::findColDelim(int _dir, bool _move_cursor)
 {
+    // TODO : implement me!
+    assert(1 == 0 && __func__);
+    return -1;
+ 
+#if 0
     if (_dir > 0 && m_cursor.cx() == m_currentLine->len - 1)    { moveCursor(1, 0); return;  }
     else if (_dir > 0 && m_cursor.cx() == m_currentLine->len)   { moveCursor(1, 0); return;  }
     else if (_dir < 0 && m_cursor.cx() == 1)                    { moveCursor(-1, 0); return; }
@@ -148,7 +156,7 @@ void LineBufferWindow::moveCursorToColDelim(int _dir)
     CHTYPE_PTR p = m_currentLine->content + m_cursor.cx();
     size_t line_len = m_currentLine->len;
     int x = (_dir < 0 ? m_cursor.cx() : 0);
-    bool on_delimiter = is_delimiter_(Config::COL_DELIMITERS, *p);
+    bool on_delimiter = is_col_delimiter_(*p);
     bool do_continue = (_dir < 0 ? x > 0 : (*p & CHTYPE_CHAR_MASK) != 0);
 
     //
@@ -162,9 +170,9 @@ void LineBufferWindow::moveCursorToColDelim(int _dir)
         char c2 = (*(p + _dir) & CHTYPE_CHAR_MASK);
 
         // if starting on a delimiter,<>=!,,, we search for non-delimiters
-        if (on_delimiter && is_delimiter_(Config::COL_DELIMITERS, *p))
+        if (on_delimiter && is_col_delimiter_(*p))
         {
-            while (is_delimiter_(Config::COL_DELIMITERS, *p) && do_continue)
+            while (is_col_delimiter_(*p) && do_continue)
             {
                 x += _dir;
                 p += _dir;
@@ -174,11 +182,11 @@ void LineBufferWindow::moveCursorToColDelim(int _dir)
             x -= 1;
             break;
         }
-        else if (on_delimiter && !is_delimiter_(Config::COL_DELIMITERS, *p))
+        else if (on_delimiter && !is_col_delimiter_(*p))
         {
             // ex: 'char *p = ...'
             // find next delimiter
-            while (!is_delimiter_(Config::COL_DELIMITERS, *p) && do_continue)
+            while (!is_col_delimiter_(*p) && do_continue)
             {
                 x += _dir;
                 p += _dir;
@@ -189,7 +197,7 @@ void LineBufferWindow::moveCursorToColDelim(int _dir)
         }
         else // not starting on delimiter
         {
-            if (is_delimiter_(Config::COL_DELIMITERS, *p))
+            if (is_col_delimiter_(*p))
                 break;
         }
 
@@ -198,6 +206,8 @@ void LineBufferWindow::moveCursorToColDelim(int _dir)
 
     int dx = (_dir < 0 ? -(m_cursor.cx() - x) : x);
     moveCursor(dx);
+#endif
+    return 0;
 
 }
 
@@ -236,6 +246,13 @@ void LineBufferWindow::deleteCharAtCursor()
 }
 
 //---------------------------------------------------------------------------------------
+void LineBufferWindow::deleteToNextColDelim()
+{
+    // TODO : implement me!
+    assert(1 == 0 && __func__);
+}
+
+//---------------------------------------------------------------------------------------
 void LineBufferWindow::deleteCharBeforeCursor()
 {
     // <BACKSPACE>    
@@ -254,6 +271,13 @@ void LineBufferWindow::deleteCharBeforeCursor()
 
     refresh_next_frame_();
 
+}
+
+//---------------------------------------------------------------------------------------
+void LineBufferWindow::deleteToPrevColDelim()
+{
+    // TODO : implement me!
+    assert(1 == 0 && __func__);
 }
 
 //---------------------------------------------------------------------------------------

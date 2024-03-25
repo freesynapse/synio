@@ -234,7 +234,7 @@ void Ncurses_Impl::initKeycodeList()
         ctrl_keycode_t("kDN5",  CtrlKeyAction::CTRL_DOWN),
         ctrl_keycode_t("kHOM5", CtrlKeyAction::CTRL_HOME),
         ctrl_keycode_t("kEND5", CtrlKeyAction::CTRL_END),
-        ctrl_keycode_t("kDC5",  CtrlKeyAction::CTRL_DELETE),
+        ctrl_keycode_t("kDC5",  CtrlKeyAction::CTRL_DEL),
         ctrl_keycode_t("kDC6",  CtrlKeyAction::CTRL_SHIFT_DELETE),
         ctrl_keycode_t("kUP",   CtrlKeyAction::SHIFT_UP),
         ctrl_keycode_t("kDN",   CtrlKeyAction::SHIFT_DOWN),

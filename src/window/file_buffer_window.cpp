@@ -44,7 +44,7 @@ FileBufferWindow::~FileBufferWindow()
 #ifdef DEBUG
 void FileBufferWindow::__debug_fnc()
 {
-    m_currentLine->delete_n_at(m_cursor.cx(), 3);
+    deleteToPrevColDelim();
     refresh_next_frame_();
     
 }
@@ -56,22 +56,24 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
     {
         switch (_ctrl_action)
         {
-            case CtrlKeyAction::CTRL_LEFT:  deselect_(BACKWARD); moveCursorToColDelim(-1);  break;
-            case CtrlKeyAction::CTRL_RIGHT: deselect_(FORWARD);  moveCursorToColDelim( 1);  break;
-            case CtrlKeyAction::CTRL_UP:    deselect_(BACKWARD); moveCursorToRowDelim(-1);  break;
-            case CtrlKeyAction::CTRL_DOWN:  deselect_(FORWARD);  moveCursorToRowDelim( 1);  break;
-            case CtrlKeyAction::CTRL_HOME:  deselect_(BACKWARD); moveFileBegin();           break;
-            case CtrlKeyAction::CTRL_END:   deselect_(FORWARD);  moveFileEnd();             break;
+            case CtrlKeyAction::CTRL_LEFT:  deselect_(BACKWARD); findColDelim(BACKWARD);            break;
+            case CtrlKeyAction::CTRL_RIGHT: deselect_(FORWARD);  findColDelim(FORWARD);             break;
+            case CtrlKeyAction::CTRL_UP:    deselect_(BACKWARD); moveCursorToRowDelim(BACKWARD);    break;
+            case CtrlKeyAction::CTRL_DOWN:  deselect_(FORWARD);  moveCursorToRowDelim(FORWARD);     break;
+            case CtrlKeyAction::CTRL_HOME:  deselect_(BACKWARD); moveFileBegin();                   break;
+            case CtrlKeyAction::CTRL_END:   deselect_(FORWARD);  moveFileEnd();                     break;
+            
+            case CtrlKeyAction::CTRL_DEL:   deselect_(FORWARD);  deleteToNextColDelim();            break;
             
             // selections
-            case CtrlKeyAction::SHIFT_UP:           select_(); moveCursor(0, -1);           break;
-            case CtrlKeyAction::SHIFT_DOWN:         select_(); moveCursor(0,  1);           break;
-            case CtrlKeyAction::SHIFT_CTRL_LEFT:    select_(); moveCursorToColDelim(-1);    break;
-            case CtrlKeyAction::SHIFT_CTRL_RIGHT:   select_(); moveCursorToColDelim( 1);    break;
-            case CtrlKeyAction::SHIFT_CTRL_UP:      select_(); moveCursorToRowDelim(-1);    break;
-            case CtrlKeyAction::SHIFT_CTRL_DOWN:    select_(); moveCursorToRowDelim( 1);    break;
-            case CtrlKeyAction::SHIFT_CTRL_HOME:    select_(); moveFileBegin();             break;
-            case CtrlKeyAction::SHIFT_CTRL_END:     select_(); moveFileEnd();               break;
+            case CtrlKeyAction::SHIFT_UP:           select_(); moveCursor(0, -1);                   break;
+            case CtrlKeyAction::SHIFT_DOWN:         select_(); moveCursor(0,  1);                   break;
+            case CtrlKeyAction::SHIFT_CTRL_LEFT:    select_(); findColDelim(BACKWARD);              break;
+            case CtrlKeyAction::SHIFT_CTRL_RIGHT:   select_(); findColDelim(FORWARD);               break;
+            case CtrlKeyAction::SHIFT_CTRL_UP:      select_(); moveCursorToRowDelim(BACKWARD);      break;
+            case CtrlKeyAction::SHIFT_CTRL_DOWN:    select_(); moveCursorToRowDelim(FORWARD);       break;
+            case CtrlKeyAction::SHIFT_CTRL_HOME:    select_(); moveFileBegin();                     break;
+            case CtrlKeyAction::SHIFT_CTRL_END:     select_(); moveFileEnd();                       break;
 
             default: break;
             // default: LOG_INFO("ctrl keycode %d : %s", _c, ctrlActionStr(_ctrl_action)); break;
@@ -95,6 +97,9 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case KEY_BACKSPACE: deleteCharBeforeCursor();                           break;
             case KEY_ENTER:
             case 10:            delete_selection_();  insertNewLine();              break;
+
+            // for some reason, ctrl+backspace maps to 8
+            case 8:             deselect_(BACKWARD); deleteToPrevColDelim();        break;
 
             // selections
             case KEY_SLEFT:     select_(); moveCursor(-1, 0);           break;
@@ -262,75 +267,54 @@ void FileBufferWindow::moveCursorToLineEnd()
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::moveCursorToColDelim(int _dir)
+int FileBufferWindow::findColDelim(int _dir, bool _move_cursor)
 {
-    if (_dir > 0 && m_cursor.cx() == m_currentLine->len - 1)    { moveCursor(1, 0); return; }
-    else if (_dir > 0 && m_cursor.cx() == m_currentLine->len)   { moveCursor(1, 0); return; }
-    else if (_dir < 0 && m_cursor.cx() == 1)                    { moveCursor(-1, 0); return; }
-    else if (_dir < 0 && m_cursor.cx() == 0)                    { moveCursor(-1, 0); return; }
+    // change lines if at beginning or end of line
+    if (_dir > 0 && m_cursor.cx() >= m_currentLine->len - 1)    { if (_move_cursor) moveCursor( 1, 0); return  1; }
+    else if (_dir < 0 && m_cursor.cx() <= 1)                    { if (_move_cursor) moveCursor(-1, 0); return -1; }
 
-    // IDEA : is cursor at delim? if so use goto next non-delim. No? then goto next delim. For both directions obv.
-
-    CHTYPE_PTR p = m_currentLine->content + m_cursor.cx();
-    size_t line_len = m_currentLine->len;
-    int x = (_dir < 0 ? m_cursor.cx() : 0);
-    bool on_delimiter = is_delimiter_(Config::COL_DELIMITERS, *p);
-    bool do_continue = (_dir < 0 ? x > 0 : (*p & CHTYPE_CHAR_MASK) != 0);
-
+    int cx = m_cursor.cx();
+    int dx = 0;
     //
-    while (do_continue)
+    CHTYPE_PTR p = m_currentLine->content + cx;
+    bool start_on_delimiter = is_col_delimiter_(*p);
+
+    p += _dir;
+    start_on_delimiter = is_col_delimiter_(*p);
+    dx += _dir;
+    char c = (*p & CHTYPE_CHAR_MASK);
+    // starting on a delimiter -> skip all delimiters and then find the next
+    if (start_on_delimiter)
     {
-        x += _dir;
-        p += _dir;
-
-        // -- DEBUG
-        char c = (*p & CHTYPE_CHAR_MASK);
-        char c2 = (*(p + _dir) & CHTYPE_CHAR_MASK);
-
-        // if starting on a delimiter,<>=!,,, we search for non-delimiters
-        if (on_delimiter && is_delimiter_(Config::COL_DELIMITERS, *p))
+        while (is_col_delimiter_((*p & CHTYPE_CHAR_MASK)) && cx + dx < m_currentLine->len && cx + dx >= 0)
         {
-            while (is_delimiter_(Config::COL_DELIMITERS, *p) && do_continue)
-            {
-                x += _dir;
-                p += _dir;
-
-                do_continue = (_dir < 0 ? x > 0 : (*p & CHTYPE_CHAR_MASK) != 0);
-            }
-            x -= 1;
-            break;
+            p += _dir;
+            c = (*p & CHTYPE_CHAR_MASK);
+            dx += _dir;
         }
-        else if (on_delimiter && !is_delimiter_(Config::COL_DELIMITERS, *p))
+    }
+    // just jump to next delimiter
+    else
+    {
+        while (!is_col_delimiter_((*p & CHTYPE_CHAR_MASK)) && cx + dx < m_currentLine->len && cx + dx >= 0)
         {
-            // ex: 'char *p = ...'
-            // find next delimiter
-            while (!is_delimiter_(Config::COL_DELIMITERS, *p) && do_continue)
-            {
-                x += _dir;
-                p += _dir;
-
-                do_continue = (_dir < 0 ? x > 0 : (*p & CHTYPE_CHAR_MASK) != 0);
-            }
-            break;
-        }
-        else // not starting on delimiter
-        {
-            if (is_delimiter_(Config::COL_DELIMITERS, *p))
-                break;
+            p += _dir;
+            c = (*p & CHTYPE_CHAR_MASK);
+            dx += _dir;
         }
 
-        do_continue = (_dir < 0 ? x > 0 : (*p & CHTYPE_CHAR_MASK) != 0);
     }
 
-    int dx = (_dir < 0 ? -(m_cursor.cx() - x) : x);
-    moveCursor(dx, 0);
+    if (_move_cursor)
+        moveCursor(dx, 0);
+
+    return dx;
 
 }
 
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::moveCursorToRowDelim(int _dir)
 {
-    assert(_dir == -1 || _dir == 1);
     line_t *line = m_currentLine;
     
     int y = (_dir < 0 ? m_cursor.cy() : 0);
@@ -499,6 +483,16 @@ void FileBufferWindow::deleteCharAtCursor()
 }
 
 //---------------------------------------------------------------------------------------
+void FileBufferWindow::deleteToNextColDelim()
+{
+    // <CTRL> + <DEL>
+    int next_delim_pos_dx = findColDelim(FORWARD, false);
+    for (int i = 0; i < next_delim_pos_dx; i++)
+        deleteCharAtCursor();
+
+}
+
+//---------------------------------------------------------------------------------------
 void FileBufferWindow::deleteCharBeforeCursor()
 {
     // <BACKSPACE>
@@ -541,6 +535,19 @@ void FileBufferWindow::deleteCharBeforeCursor()
 }
 
 //---------------------------------------------------------------------------------------
+void FileBufferWindow::deleteToPrevColDelim()
+{
+    // <CTRL> + <BACKSPACE>
+    int next_delim_pos_dx = findColDelim(BACKWARD, false);
+    if (abs(next_delim_pos_dx) > m_currentLine->len)
+        next_delim_pos_dx++;
+
+    for (int i = 0; i < abs(next_delim_pos_dx); i++)
+        deleteCharBeforeCursor();
+
+}
+
+//---------------------------------------------------------------------------------------
 void FileBufferWindow::updateCursor()
 {
     static ivec2_t prev_pos = m_cursor.cpos();
@@ -563,17 +570,11 @@ void FileBufferWindow::updateCursor()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::copy()
 {
+    if (!m_selection->lineCount())
+        return;
+
     m_copyBuffer.clear();
 
-    // no selection, so copy the current line
-    if (!m_selection->lineCount())
-    {
-        // here a deep copy of at least the content is needed
-        assert(m_currentLine == m_lineBuffer.ptrFromIdx(m_bufferCursorPos.y));
-        m_copyBuffer.push_back(copy_line_t(m_currentLine, true, false));
-        return;
-    }
-        
     //
     ivec2_t spos = m_selection->startingBufferPos();
     ivec2_t bpos = m_bufferCursorPos;
@@ -600,23 +601,9 @@ void FileBufferWindow::copy()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::deleteSelection()
 {
-    // no selection; delete the current line
     if (!m_selection->lineCount())
-    {
-        line_t *next = m_currentLine->next;
-        if (next)
-        {
-            m_lineBuffer.deleteAtPtr(m_currentLine);
-            m_currentLine = next;
-            m_pageFirstLine = m_lineBuffer.ptrFromIdx(m_scrollPos.y);
-            update_lines_after_y_(m_cursor.cy());
-            refresh_next_frame_();
-            buffer_changed_();
-            syntax_highlight_buffer_();
-        }
         return;
-    }
-
+    
     ivec2_t start = m_selection->startingBufferPos();
     ivec2_t end = m_bufferCursorPos;
 
@@ -885,11 +872,14 @@ void FileBufferWindow::redraw()
     __debug_print(x, y++, "cpos  = (%d, %d)", m_cursor.cx(), m_cursor.cy());
     __debug_print(x, y++, "rpos  = (%d, %d)", m_cursor.rx(), m_cursor.ry());
     __debug_print(x, y++, "spos  = (%d, %d)", m_scrollPos.x , m_scrollPos.y);
-    if (m_currentLine)
+    y++;
+    if (m_currentLine != NULL)
     {
-        int16_t color = ncurses_get_CHTYPE_color(m_currentLine->content[m_cursor.cx()]);
+        CHTYPE c = m_currentLine->content[m_cursor.cx()];
+        __debug_print(x, y++, "is_delim: %s", is_col_delimiter_(c) ? "true" : "false");
+        int16_t color = ncurses_get_CHTYPE_color(c);
         TokenKind tk = m_lexer.tokenFromColor(color);
-        __debug_print(x, y++, "cpos HL: %s", token2str(tk));
+        __debug_print(x, y++, "cpos HL:  %s", token2str(tk));
     }
     y++;
     if (m_currentLine != NULL)

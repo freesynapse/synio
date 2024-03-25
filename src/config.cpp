@@ -9,7 +9,7 @@ int             Config::PAGE_SIZE               = 25;
 int             Config::TAB_SIZE                = 4;
 TabsOrSpaces    Config::USE_TABS_OR_SPACES      = TabsOrSpaces::SPACES;
 
-const char     *Config::COL_DELIMITERS          = "\"\'.:;()<>$~\t{} ";
+const char     *Config::COL_DELIMITERS          = "\"\'.:;()<>$~&,\t{} ";
 const char     *Config::FILE_PATH_DELIMITERS    = ".-/_";
 
 //---------------------------------------------------------------------------------------

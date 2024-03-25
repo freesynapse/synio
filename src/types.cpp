@@ -166,13 +166,8 @@ void line_t::delete_at(size_t _pos)
 {
     if (!len)
         return;
-
-    int offset[2];
     
-    if (_pos > 0) { offset[0] = -1; offset[1] = 0; }
-    else          { offset[0] =  0; offset[1] = 1; }
-    
-    memmove(content + _pos + offset[0], content + _pos + offset[1], CHTYPE_SIZE * (len - _pos));
+    memmove(content + _pos, content + _pos + 1, CHTYPE_SIZE * (len - _pos));
     len--;
     if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (len + 1))) == NULL) RAM_panic(this);
     content[len] = 0;
@@ -295,7 +290,7 @@ const char *ctrlActionStr(CtrlKeyAction _action)
         case CtrlKeyAction::CTRL_DOWN:          return "CTRL_DOWN";
         case CtrlKeyAction::CTRL_HOME:          return "CTRL_HOME";
         case CtrlKeyAction::CTRL_END:           return "CTRL_END";
-        case CtrlKeyAction::CTRL_DELETE:        return "CTRL_DELETE";
+        case CtrlKeyAction::CTRL_DEL:           return "CTRL_DELETE";
         case CtrlKeyAction::CTRL_SHIFT_DELETE:  return "CTRL_SHIFT_DELETE";
         case CtrlKeyAction::SHIFT_UP:           return "SHIFT_UP";
         case CtrlKeyAction::SHIFT_DOWN:         return "SHIFT_DOWN";
