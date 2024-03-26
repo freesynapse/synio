@@ -35,6 +35,8 @@ public:
     virtual void insertCharAtCursor(char _c) {}
     virtual void insertStrAtCursor(char *_str, size_t _len) {}
     virtual void insertStrAtCursor(CHTYPE_PTR _str, size_t _len) {}
+    virtual void insertTab() {}
+    virtual void removeLeadingTab() {}
     virtual void deleteCharAtCursor() {}
     virtual void deleteToNextColDelim() {}
     virtual void deleteCharBeforeCursor() {}
@@ -60,10 +62,7 @@ public:
 protected:
     //
     bool is_col_delimiter_(CHTYPE _c)
-    // bool is_col_delimiter_(CHTYPE _c)
     {
-        // bool ret = (Config::COL_DELIMITERS.find((_c & CHTYPE_CHAR_MASK)) != Config::COL_DELIMITERS.end());
-        // return ret;
         for (size_t i = 0; i < strlen(Config::COL_DELIMITERS); i++)
            if ((_c & CHTYPE_CHAR_MASK) == Config::COL_DELIMITERS[i])
                return true;
@@ -116,6 +115,31 @@ protected:
 
         return x;
 
+    }
+
+    //
+    int find_empty_chars_from_pos_(int _pos, int _dir=FORWARD)//, line_t *_line=m_currentLine)
+    {
+        // if (_pos == m_currentLine->len && _dir < 0) _pos--;
+        // char *s = _line->__debug_str;
+        char *s = m_currentLine->__debug_str;
+        int nspaces = 0;
+        int x = _pos;
+        // while (x >= 0 && x < _line->len)
+        while (x >= 0 && x <= m_currentLine->len)
+        {
+            if (_dir < 0) x += _dir;
+            
+            char c = s[x];
+            if (s[x] != ' ' && s[x] != '\t')
+                break;
+            else if (s[x] == ' ') nspaces++;
+            else if (s[x] == '\t') nspaces += Config::TAB_SIZE;
+            
+            if (_dir > 0) x += _dir;
+        }
+        return nspaces;
+        
     }
     
 protected:

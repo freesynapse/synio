@@ -42,18 +42,20 @@ public:
     virtual void insertStrAtCursor(char *_str, size_t _len) override;
     virtual void insertStrAtCursor(CHTYPE_PTR _str, size_t _len) override;
     virtual void insertNewLine(bool _auto_align=true) override;
+    virtual void insertTab() override;
+    virtual void removeLeadingTab() override;
     virtual void deleteCharAtCursor() override;
     virtual void deleteToNextColDelim() override;
     virtual void deleteCharBeforeCursor() override;
     virtual void deleteToPrevColDelim() override;
+
     //
     virtual void updateCursor() override;
-
-    // TODO : make these part of the main class? possibly, but let's start here
     virtual void copy() override;
     virtual void deleteSelection() override;
     virtual void cut() override;
     virtual void paste() override;
+
     // inserts a new line and updates the cursor
     void insertLineAtCursor(char *_content, size_t _len);
     // for restoring cursor position after selections/cutting
@@ -64,8 +66,9 @@ public:
     // (called both my moveCursor() and onScroll())
     void updateCurrentLinePtr(int _dy);
 
-    // read contents of a file into the buffer and set pointers
-    void readFromFile(const std::string &_filename);
+    // load/save buffer
+    void readFileToBuffer(const std::string &_filename);
+    void saveBufferToFile();
 
     // Window class overrides
     virtual void resize(frame_t _new_frame, int _left_reserved=-1);

@@ -144,7 +144,7 @@ void LineBufferWindow::moveCursorToLineEnd()
 int LineBufferWindow::findColDelim(int _dir, bool _move_cursor)
 {
     // TODO : implement me!
-    assert(1 == 0 && __func__);
+    assert(1 == 0);
     return -1;
  
 #if 0
@@ -249,7 +249,7 @@ void LineBufferWindow::deleteCharAtCursor()
 void LineBufferWindow::deleteToNextColDelim()
 {
     // TODO : implement me!
-    assert(1 == 0 && __func__);
+    assert(1 == 0);
 }
 
 //---------------------------------------------------------------------------------------
@@ -277,7 +277,7 @@ void LineBufferWindow::deleteCharBeforeCursor()
 void LineBufferWindow::deleteToPrevColDelim()
 {
     // TODO : implement me!
-    assert(1 == 0 && __func__);
+    assert(1 == 0);
 }
 
 //---------------------------------------------------------------------------------------

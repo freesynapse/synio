@@ -99,7 +99,6 @@ line_t *create_line(const char *_content);
 line_t *create_line(CHTYPE_PTR _content, size_t _len);
 line_t *copy_line(line_t *_line);
 
-
 // struct for copying lines
 struct copy_line_t
 {
@@ -118,8 +117,9 @@ static void RAM_panic(line_t *_line)
     free(_line->content);
     _line->content = NULL;
     _line->len = 0;
-    LOG_CRITICAL_ERROR("couldn't reallocate char buffer, considering buying more RAM.");
+    LOG_CRITICAL_ERROR("couldn't reallocate CHTYPE_PTR, considering buying more RAM.");
 }
+
 #ifdef DEBUG
 // printing debugging function
 void __debug_addchstr(API_WINDOW_PTR _w, const char *_fmt, ...);
@@ -197,6 +197,7 @@ typedef irect_t frame_t;
 // related to ncruses strange capture of control keys (ctrl, shift, alt)
 // NOTE: for some/all of these to work, some terminals with custom, non-conformant 
 //       terminfo will not work, including kitty and terminator (unfortunately)..
+// more keycodes at https://samuallb.github.io/ncurses/NCurses/Key.html
 enum class CtrlKeyAction
 {
     CTRL_LEFT, CTRL_RIGHT, CTRL_UP, CTRL_DOWN, CTRL_HOME, CTRL_END, CTRL_DEL, 

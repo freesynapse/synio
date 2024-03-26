@@ -164,9 +164,14 @@ void line_t::append_line(line_t *_other)
 //---------------------------------------------------------------------------------------
 void line_t::delete_at(size_t _pos)
 {
-    if (!len)
+    if (!len || _pos < 0)
         return;
-    
+
+    // a b c d
+    //   *      --> _pos = 1
+    // memmove (content + _pos, content + _pos + 1)
+
+    // if (_pos > 0)   memmove(content + _pos - 1, content + _pos, CHTYPE_SIZE * (len - _pos));
     memmove(content + _pos, content + _pos + 1, CHTYPE_SIZE * (len - _pos));
     len--;
     if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (len + 1))) == NULL) RAM_panic(this);

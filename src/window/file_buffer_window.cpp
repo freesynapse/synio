@@ -44,8 +44,7 @@ FileBufferWindow::~FileBufferWindow()
 #ifdef DEBUG
 void FileBufferWindow::__debug_fnc()
 {
-    deleteToPrevColDelim();
-    refresh_next_frame_();
+    removeLeadingTab();
     
 }
 #endif
@@ -62,8 +61,7 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case CtrlKeyAction::CTRL_DOWN:  deselect_(FORWARD);  moveCursorToRowDelim(FORWARD);     break;
             case CtrlKeyAction::CTRL_HOME:  deselect_(BACKWARD); moveFileBegin();                   break;
             case CtrlKeyAction::CTRL_END:   deselect_(FORWARD);  moveFileEnd();                     break;
-            
-            case CtrlKeyAction::CTRL_DEL:   deselect_(FORWARD);  deleteToNextColDelim();            break;
+            case CtrlKeyAction::CTRL_DEL:   deleteToNextColDelim();                                 break;
             
             // selections
             case CtrlKeyAction::SHIFT_UP:           select_(); moveCursor(0, -1);                   break;
@@ -99,7 +97,7 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case 10:            delete_selection_();  insertNewLine();              break;
 
             // for some reason, ctrl+backspace maps to 8
-            case 8:             deselect_(BACKWARD); deleteToPrevColDelim();        break;
+            case 8:             deleteToPrevColDelim();                             break;
 
             // selections
             case KEY_SLEFT:     select_(); moveCursor(-1, 0);           break;
@@ -122,9 +120,14 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                 refresh_next_frame_();
                 break;
 
-            case CTRL('x'):
+            case CTRL('w'):
                 cut();
                 refresh_next_frame_();
+                break;
+
+            // save file
+            case CTRL('s'):
+                saveBufferToFile();
                 break;
 
             #ifdef DEBUG
@@ -135,6 +138,14 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             #endif
 
             //
+            case 9:
+                insertTab();
+                break;
+
+            case KEY_BTAB:
+                removeLeadingTab();
+                break;
+
             default:
                 delete_selection_();
                 insertCharAtCursor((char)_c);
@@ -305,6 +316,13 @@ int FileBufferWindow::findColDelim(int _dir, bool _move_cursor)
 
     }
 
+    // special case where the first char is preceeded by only whitespace (i.e. tabs),
+    // then move to the first actual character
+    // if (_dir < 0 && find_first_non_empty_char_(m_currentLine) > cx + dx)
+    // Actually, we want to jump to the non-delimieter when going backwards, always
+    if (_dir < 0)
+        dx++;
+
     if (_move_cursor)
         moveCursor(dx, 0);
 
@@ -379,9 +397,6 @@ void FileBufferWindow::insertCharAtCursor(char _c)
     m_currentLine->insert_char(_c, m_cursor.cx());
     moveCursor(1, 0);
 
-    if (_c == '\t' || _c == ' ')
-        m_windowLinesUpdateList.insert(m_cursor.cy());
-    
     refresh_next_frame_();
     buffer_changed_();
     syntax_highlight_buffer_();
@@ -439,13 +454,53 @@ void FileBufferWindow::insertNewLine(bool _auto_align)
         for (int i = 0; i < white_spaces; i++)
             new_line->insert_char(' ', 0);
 
-        moveCursor(-m_cursor.cx() + white_spaces, 1);
+        moveCursor(0, 1);
+        moveCursorToLineBegin();
     }
     else
         moveCursor(-m_cursor.cx(), 1);
     
     //
     update_lines_after_y_(m_cursor.cy() - 1);
+    refresh_next_frame_();
+    buffer_changed_();
+    syntax_highlight_buffer_();
+
+}
+
+//---------------------------------------------------------------------------------------
+void FileBufferWindow::insertTab()
+{
+    char buffer[Config::TAB_SIZE];
+    memset(buffer, ' ', Config::TAB_SIZE);
+    m_currentLine->insert_str(buffer, Config::TAB_SIZE, m_cursor.cx());
+    moveCursor(Config::TAB_SIZE, 0);
+
+    m_windowLinesUpdateList.insert(m_cursor.cy());
+    refresh_next_frame_();
+    buffer_changed_();
+    syntax_highlight_buffer_();
+
+}
+
+//---------------------------------------------------------------------------------------
+void FileBufferWindow::removeLeadingTab()
+{
+    // if tabbed before line chars, removes one tabstop
+    int first_char = find_first_non_empty_char_(m_currentLine);
+    if (!first_char)
+    {
+        moveCursor(0, 0);
+        return;
+    }
+    
+    // find previous tab stop before first char
+    int steps = first_char - (first_char - (Config::TAB_SIZE - (first_char % Config::TAB_SIZE)));
+    for (int i = 0; i < steps; i++)
+        m_currentLine->delete_at(0);
+    moveCursor(-steps, 0);
+
+    m_windowLinesUpdateList.insert(m_cursor.cy());
     refresh_next_frame_();
     buffer_changed_();
     syntax_highlight_buffer_();
@@ -460,15 +515,21 @@ void FileBufferWindow::deleteCharAtCursor()
     if (delete_selection_())
         return;
 
-    //
-    if (m_cursor.cx() == m_currentLine->len && m_currentLine->next == NULL)
-        return;
+    int cx = m_cursor.cx();
 
-    if (m_cursor.cx() < m_currentLine->len)
+    //
+    if ((cx == 0 || cx == m_currentLine->len) && m_currentLine->len == 0 && m_currentLine->next == NULL)
     {
-        m_currentLine->delete_at(m_cursor.cx());
+        moveCursor(0, 0);
+        return;
+    }
+    // in line
+    else if (cx < m_currentLine->len)
+    {
+        m_currentLine->delete_at(cx);
         m_windowLinesUpdateList.insert(m_cursor.cy());
     }
+    // end of line (with len > 0)
     else
     {
         m_lineBuffer.appendNextToThis(m_currentLine);
@@ -486,8 +547,18 @@ void FileBufferWindow::deleteCharAtCursor()
 void FileBufferWindow::deleteToNextColDelim()
 {
     // <CTRL> + <DEL>
+
+    if (delete_selection_())
+        return;
+
+    int nspaces = find_empty_chars_from_pos_(m_cursor.cx(), FORWARD);
     int next_delim_pos_dx = findColDelim(FORWARD, false);
-    for (int i = 0; i < next_delim_pos_dx; i++)
+    
+    int ndels = next_delim_pos_dx;
+    if (nspaces < next_delim_pos_dx && nspaces > 0)
+        ndels = nspaces;
+    
+    for (int i = 0; i < ndels; i++)
         deleteCharAtCursor();
 
 }
@@ -500,14 +571,17 @@ void FileBufferWindow::deleteCharBeforeCursor()
     if (delete_selection_())
         return;
 
-    //
-    if (m_cursor.cx() == 0 && m_currentLine->prev == NULL) // beggining of first line
+    int cx = m_cursor.cx();
+
+    // beggining of first line
+    if (cx == 0 && m_currentLine->prev == NULL)
     {
         m_cursor.move(0, 0);
         refresh_next_frame_();
         return;
     }
-    else if (m_cursor.cx() == 0 && m_currentLine->prev != NULL)// at x 0 and not first line
+    // at x 0 and not first line
+    else if (cx == 0 && m_currentLine->prev != NULL)
     {
         if (m_cursor.cy() == 0)
             scroll_(Y_AXIS, -1, 1, false);
@@ -520,10 +594,29 @@ void FileBufferWindow::deleteCharBeforeCursor()
         update_lines_after_y_(m_cursor.cy());
 
     }
-    else if (m_cursor.cx() > 0) // inside line
+    // inside line
+    else if (cx > 0)
     {
-        m_cursor.move(-1, 0);
-        m_currentLine->delete_at(m_cursor.cx() + 1);
+        // if before printed chars remove spaces one tabstop at the time
+        if (cx <= find_first_non_empty_char_(m_currentLine))
+        {
+            int dx = 0;
+            int nspaces = find_empty_chars_from_pos_(cx, BACKWARD);
+            if (nspaces > 1)
+            {
+                // find previous tab stop
+                dx = (cx - (Config::TAB_SIZE - (cx % Config::TAB_SIZE)));
+                int steps = cx - dx;
+                for (int i = 0; i < steps; i++)
+                    m_currentLine->delete_at(cx - steps);
+                m_cursor.move(-steps, 0);
+            }
+        }
+        else
+        {
+            m_currentLine->delete_at(cx - 1);
+            m_cursor.move(-1, 0);
+        }
         m_windowLinesUpdateList.insert(m_cursor.cy());
 
     }
@@ -538,12 +631,32 @@ void FileBufferWindow::deleteCharBeforeCursor()
 void FileBufferWindow::deleteToPrevColDelim()
 {
     // <CTRL> + <BACKSPACE>
-    int next_delim_pos_dx = findColDelim(BACKWARD, false);
-    if (abs(next_delim_pos_dx) > m_currentLine->len)
-        next_delim_pos_dx++;
 
-    for (int i = 0; i < abs(next_delim_pos_dx); i++)
+    if (delete_selection_())
+        return;
+
+    if (m_cursor.cx() == 0)
+    {
         deleteCharBeforeCursor();
+        return;
+    }
+    
+    int prev_delim_pos_dx = findColDelim(BACKWARD, false);
+    int cx = m_cursor.cx();
+    int nspaces = find_empty_chars_from_pos_(cx, BACKWARD);
+
+    if (abs(prev_delim_pos_dx) > m_currentLine->len)
+        prev_delim_pos_dx++;
+    
+    int ndels = abs(prev_delim_pos_dx);
+    if (nspaces < abs(prev_delim_pos_dx) && nspaces > 0)
+        ndels = nspaces;
+    
+    for (int i = 0; i < ndels; i++)
+        m_currentLine->delete_at(cx - ndels);
+
+    moveCursor(-ndels, 0);
+    m_windowLinesUpdateList.insert(m_cursor.cy());
 
 }
 
@@ -796,13 +909,16 @@ void FileBufferWindow::updateCurrentLinePtr(int _dy)
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::readFromFile(const std::string &_filename)
+void FileBufferWindow::readFileToBuffer(const std::string &_filename)
 {
-    FileIO::readFileIntoBuffer(_filename, &m_lineBuffer);
+    FileIO::read_file_to_buffer(_filename, &m_lineBuffer);
     
     // apply syntax highlighting
-    // TODO : only highlight .c, .cpp, .cxx, .h, .hpp files
-    m_lexer.parseBuffer(&m_lineBuffer);
+    // TODO :   inherit lexer base class and intiialize here depending on filetype
+    //          i.e. LexerCCPP, LexerSH, LexerPY etc.
+    if (FileIO::s_lastFileType == C_CPP)
+        m_lexer.parseBuffer(&m_lineBuffer);
+        // m_syntaxHLNextFrame = true;
     
     // line pointers
     m_currentLine = m_lineBuffer.m_head;
@@ -826,10 +942,28 @@ void FileBufferWindow::readFromFile(const std::string &_filename)
 }
 
 //---------------------------------------------------------------------------------------
+void FileBufferWindow::saveBufferToFile()
+{
+    // m_filename = get_filename() something;
+    // needs something to open a dialog for a  filename
+
+    if (FileIO::file_exists(m_filename))
+    {
+        // overwrite option
+        // m_filename = get_filename();
+        // some sort of recursion to again find if the new filename exists
+    }
+
+    FileIO::write_buffer_to_file(m_filename, &m_lineBuffer);
+    m_isDirty = false;
+
+}
+
+//---------------------------------------------------------------------------------------
 void FileBufferWindow::resize(frame_t _new_frame, int _left_reserved)
 {
     // the _left_reserved argument is used to reserve space of the LineNumbers window
-    // (eg when called from FileBufferWindow::readFromFile when we know the max number of lines in 
+    // (eg when called from FileBufferWindow::readFileToBuffer when we know the max number of lines in 
     // the file).
     //
 

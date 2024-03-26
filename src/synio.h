@@ -20,21 +20,29 @@ public:
 
 
 private:
+    void clear_redraw_refresh_window_()
+    {
+        if (!m_currentWindow) 
+            return;
+            
+        m_currentWindow->clear();
+        m_currentWindow->redraw();
+        m_currentWindow->refresh();
+    }
+
+private:
     // flags
     bool m_shouldClose = false;
     bool m_commandMode = false;
     
     // windows
     FileBufferWindow *m_bufferWindow = NULL;      // TODO : to become an undordered map of windows?
+    LineBufferWindow *m_commandWindow = NULL;
 
     BufferWindowBase *m_currentWindow = NULL;     // indicating use of multiple buffers...
-    LineBufferWindow *m_dialog = NULL;
     
-
     //
     ivec2_t m_screenSize;
-
-    //
     std::string m_filename = "";
     
 };

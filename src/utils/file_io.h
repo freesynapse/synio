@@ -7,19 +7,29 @@
 #include "../buffer/line_buffer.h"
 
 //
+enum FileType
+{
+    C_CPP = 0,
+    
+    UNKNOWN,
+
+};
+
+//
 class FileIO
 {
 public:
-    static int readFileIntoBuffer(const std::string &_filename, LineBuffer *_line_buffer);
+    //
+    static int read_file_to_buffer(const std::string &_filename, LineBuffer *_line_buffer);
+    static int write_buffer_to_file(const std::string &_filename, LineBuffer *_line_buffer);
 
-    // accessors
-    const char *lastReadFile() { return s_lastReadFile.c_str(); }
-    const char *lastWrittenFile() { return s_lastWrittenFile.c_str(); }
-    
+    // helpers
+    static bool file_exists(const std::string &_filename);
 
-private:
+    //
     static std::string s_lastReadFile;
     static std::string s_lastWrittenFile;
+    static FileType s_lastFileType;
 
 };
 

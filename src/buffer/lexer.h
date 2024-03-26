@@ -83,11 +83,6 @@ public:
     Lexer() {}
     ~Lexer() = default;
 
-    // void set_start_line(line_t *_line, int _line_no);
-    // void parse_buffer();
-    // void parse_line(line_t *_line);
-    // token_t next_token(bool _single_line=true);
-
     void parseBuffer(LineBuffer *_buffer);
     void parseBufferFromLine(line_t *_line, LineBuffer *_buffer);
     void parseLine(line_t *_line);
@@ -101,19 +96,15 @@ public:
         return TOKEN_INVALID;
     }
 
-
     void setInMComment(bool _b) { m_inMComment = _b; }
     void setInMString(bool _b) { m_inMString = _b; }
-    //
-    void __debug_print_parsing(token_t _t, int _fill=64);
 
-
-// private:
+protected:
     void trim_whitespace_left_();
     __always_inline bool is_literal_(char _c) { return m_literals.find(_c) != m_literals.end(); }
     __always_inline bool is_keyword_(const char *_s) { return m_keywords.find(_s) != m_keywords.end(); }
 
-// private:
+protected:
     line_t *m_line; // internal reference to current line ptr
     int m_cursor = 0;
 
