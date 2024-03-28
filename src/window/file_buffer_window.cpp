@@ -45,9 +45,7 @@ FileBufferWindow::~FileBufferWindow()
 #ifdef DEBUG
 void FileBufferWindow::__debug_fnc()
 {
-    int sel_y = m_selection->startingBufferPos().y;
-    int cy = m_cursor.cy(), sy = m_scrollPos.y, by = m_bufferCursorPos.y;
-    LOG_INFO("------------------------------------------------------------\nsel_y.start %d, cy %d, sy %d, by %d", sel_y, cy, sy, by);
+    
     
 }
 #endif
@@ -508,6 +506,8 @@ void FileBufferWindow::insertTab()
         int cy_start = m_bufferCursorPos.y - m_selection->startingBufferPos().y;
         for (line_t *line : m_selection->getSelectedLines())
         {
+            if (line->sel_end - line->sel_start == 0)
+                continue;
             insert_leading_tab_(line);
             m_selection->expandSelection(line, 0, Config::TAB_SIZE);
         }
@@ -537,6 +537,8 @@ void FileBufferWindow::removeLeadingTab()
         int cy_start = m_bufferCursorPos.y - m_selection->startingBufferPos().y;
         for (line_t *line : m_selection->getSelectedLines())
         {
+            if (line->sel_end - line->sel_start == 0)
+                continue;
             int first_char = find_first_non_empty_char_(line);
             if (!first_char)
                 continue;
