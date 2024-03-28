@@ -7,10 +7,11 @@
 
 #include "utils.h"
 
+
 // static decls
 std::string FileIO::s_lastReadFile = "";
 std::string FileIO::s_lastWrittenFile = "";
-FileType FileIO::s_lastFileType = UNKNOWN;
+FileType FileIO::s_lastFileType = TXT;
 
 //---------------------------------------------------------------------------------------
 int FileIO::read_file_to_buffer(const std::string &_filename, LineBuffer *_buffer)
@@ -25,11 +26,12 @@ int FileIO::read_file_to_buffer(const std::string &_filename, LineBuffer *_buffe
                    file_ext.end(),
                    file_ext.begin(),
                    [](unsigned char c){ return std::tolower(c); });
-    LOG_INFO("file_ext '%s'", file_ext.c_str());
 
     // ifs for now
+    s_lastFileType = TXT;
     if (file_ext == "cpp" || file_ext == "c" || file_ext == "cxx" || file_ext == "h" || file_ext == "hpp")
         s_lastFileType = C_CPP;
+    LOG_INFO("file_ext %s", FileType2Str(s_lastFileType));
 
     //
     std::ifstream file;
@@ -81,3 +83,13 @@ bool FileIO::file_exists(const std::string &_filename)
 
 }
 
+//---------------------------------------------------------------------------------------
+const char *FileType2Str(FileType _ft)
+{
+    switch (_ft)
+    {
+        case C_CPP: return "C_CPP";
+        default: return "TXT";
+    }
+
+}

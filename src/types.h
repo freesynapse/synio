@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <string>
+#include <unordered_map>
 
 #include "utils/log.h"
 
@@ -62,13 +63,14 @@ typedef void* API_WINDOW_PTR;
 //
 struct line_t
 {
-    line_t *next        = NULL;
-    line_t *prev        = NULL;
-    CHTYPE_PTR content  = NULL;
-    size_t len          = 0;
-    size_t rlen         = 0;    // rendered len, including tabs etc
-    size_t sel_start    = 0;
-    size_t sel_end      = 0;
+    line_t *next            = NULL;
+    line_t *prev            = NULL;
+    CHTYPE_PTR content      = NULL;
+    size_t len              = 0;
+    size_t rlen             = 0;    // rendered len, including tabs etc
+    size_t sel_start        = 0;
+    size_t sel_end          = 0;
+    size_t replay_line_no   = 0;
 
     ~line_t() { free(content); }
 
@@ -82,6 +84,7 @@ struct line_t
     line_t *split_at_pos(size_t _pos);
 
     #ifdef DEBUG
+    // TODO : make this permanent, and dynamic allocation of __debug_str
     char __debug_str[1024];
     void __debug_content_to_str_()
     {

@@ -5,11 +5,12 @@
 #include <string.h>
 #include <assert.h>
 
-#if defined NCURSES_IMPL
+#ifdef NCURSES_IMPL
 #include <ncurses.h>
 #endif
 
 #include "platform/platform.h"
+#include "buffer/replay_buffer.h"
 
 
 //
@@ -31,6 +32,8 @@ line_t *create_line(char *_content, size_t _len)
     #ifdef DEBUG
     new_line->__debug_content_to_str_();
     #endif
+
+    new_line->replay_line_no = get_next_replay_line_no();
 
     return new_line;
 
@@ -62,6 +65,8 @@ line_t *create_line(CHTYPE_PTR _content, size_t _len)
     new_line->__debug_content_to_str_();
     #endif
 
+    new_line->replay_line_no = get_next_replay_line_no();
+
     return new_line;
 
 }
@@ -69,8 +74,8 @@ line_t *create_line(CHTYPE_PTR _content, size_t _len)
 //---------------------------------------------------------------------------------------
 line_t *copy_line(line_t *_line)
 {
-    return create_line(_line->content, _line->len);
-
+    line_t *line_copy = create_line(_line->content, _line->len);
+    return line_copy;
 }
 
 
@@ -102,10 +107,9 @@ void line_t::insert_char(char _c, size_t _pos)
 //---------------------------------------------------------------------------------------
 void line_t::insert_char(CHTYPE _c, size_t _pos)
 {
-    // TODO : also, this isn't working properly anymore
+    //
     if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (len + 2))) == NULL) RAM_panic(this);
     memmove(content + _pos + 1, content + _pos, CHTYPE_SIZE * (len - _pos));
-    // TODO : add color here? -- no, surely on future onRowUpdate() callback?
     content[_pos] = _c;
     content[++len] = '\0';
 
@@ -157,6 +161,7 @@ void line_t::append_line(line_t *_other)
     __debug_content_to_str_();
     #endif
 
+    // TODO : remove from map?
     free(_other);
     
 }
@@ -167,11 +172,6 @@ void line_t::delete_at(size_t _pos)
     if (!len || _pos < 0)
         return;
 
-    // a b c d
-    //   *      --> _pos = 1
-    // memmove (content + _pos, content + _pos + 1)
-
-    // if (_pos > 0)   memmove(content + _pos - 1, content + _pos, CHTYPE_SIZE * (len - _pos));
     memmove(content + _pos, content + _pos + 1, CHTYPE_SIZE * (len - _pos));
     len--;
     if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (len + 1))) == NULL) RAM_panic(this);

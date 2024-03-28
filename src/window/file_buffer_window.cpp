@@ -269,16 +269,10 @@ void FileBufferWindow::moveCursor(int _dx, int _dy)
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::moveCursorToLineBegin()
 {
-    // find first character (not tabs/spaces)
-    int first_ch = 0;
-    CHTYPE_PTR c = m_currentLine->content;
-    while ((*c == ' ' || *c == '\t') && *c != 0)
-    {
-        first_ch++;
-        c++;
-    }
-
-    moveCursor(-(m_cursor.cx() - first_ch), 0);
+    int first_char = find_first_non_empty_char_(m_currentLine);
+    if (m_cursor.cx() == first_char)
+        first_char = 0;
+    moveCursor(-(m_cursor.cx() - first_char), 0);
 
 }
 
@@ -1008,10 +1002,12 @@ void FileBufferWindow::updateCurrentLinePtr(int _dy)
 void FileBufferWindow::readFileToBuffer(const std::string &_filename)
 {
     FileIO::read_file_to_buffer(_filename, &m_lineBuffer);
+    if (!m_lineBuffer.lineCount())
+        m_lineBuffer.push_front("");
     
     // apply syntax highlighting
     // TODO :   inherit lexer base class and intiialize here depending on filetype
-    //          i.e. LexerCCPP, LexerSH, LexerPY etc.
+    //          i.e. LexerC_CPP, LexerSH, LexerPY etc.
     if (FileIO::s_lastFileType == C_CPP)
         m_lexer.parseBuffer(&m_lineBuffer);
         // m_syntaxHLNextFrame = true;

@@ -11,8 +11,7 @@ enum FileType
 {
     C_CPP = 0,
     
-    UNKNOWN,
-
+    TXT,
 };
 
 //
@@ -33,6 +32,8 @@ public:
 
 };
 
+//
+extern const char *FileType2Str(FileType _ft);
 
 
 #endif // __FILE_IO_H
