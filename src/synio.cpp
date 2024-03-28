@@ -68,14 +68,14 @@ void Synio::mainLoop()
         m_currentWindow->clear();
         m_currentWindow->redraw();
         m_currentWindow->refresh();
-        
-        //
-        // --- END DRAWING
 
         // actually swap the buffers
         api->redrawScreen();
 
-        // get keypress; may be important
+        //
+        // --- END DRAWING
+
+        //
         int key = api->getKey();
 
         // check for control characters (e.g. ctrl, shift, alt key combinations)
@@ -84,7 +84,7 @@ void Synio::mainLoop()
         
         // command mode
         //
-        if (key == CTRL('x')) m_commandMode = !m_commandMode;
+        // if (key == CTRL('x')) m_commandMode = !m_commandMode;
         // some kind of stack of windows maybe?
         if (m_commandMode)
         {

@@ -63,7 +63,9 @@ extern void ncurses_find_selected_offsets(line_t *_line, size_t *start, size_t *
 extern void ncurses_deselect_substr(line_t *_line, size_t _start, size_t _end);
 extern void ncurses_toggle_selection_substr(line_t *_line, size_t _start, size_t _end);
 
+// keeps background for selection 
 extern void ncurses_color_substr(line_t *_line, size_t _start, size_t _end, short _pair_index);
+//
 extern int16_t ncurses_get_CHTYPE_color(CHTYPE _c);
 
 

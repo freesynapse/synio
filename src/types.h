@@ -89,6 +89,7 @@ struct line_t
             __debug_str[i] = (char)(content[i] & CHTYPE_CHAR_MASK);
         __debug_str[len] = '\0';
     }
+    void __debug_line();
     #endif
 
 };

@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <string>
 
 
 //
@@ -28,7 +29,8 @@ public:
     static void open(const char *_filename="log.txt")
     { 
         #ifdef DEBUG
-        file_handle = fopen(_filename, "w");
+        filename = std::string(_filename);
+        file_handle = fopen(filename.c_str(), "w");
         LOG_INFO("log file '%s' created.", _filename);
         #endif
     }
@@ -38,7 +40,6 @@ public:
     {
         #ifdef DEBUG
         LOG_INFO("closing log.");
-        fclose(file_handle);
         #endif
 
     }
@@ -77,6 +78,7 @@ private:
     // member variables
     static FILE *file_handle;
     static char log_buffer_ptr[512];
+    static std::string filename;
 
 };
 

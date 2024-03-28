@@ -24,6 +24,7 @@ public:
 
     static const char *COL_DELIMITERS;
     static const char *FILE_PATH_DELIMITERS;
+    static const char *STRUCTURAL_LITERALS;
 
     //
     static void readConfigFile(const std::string &_filename="");

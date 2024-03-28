@@ -225,6 +225,21 @@ line_t *line_t::split_at_pos(size_t _pos)
 
 //---------------------------------------------------------------------------------------
 #ifdef DEBUG
+void line_t::__debug_line()
+{
+    LOG_INFO("------------------------");
+    LOG_INFO("next: %p", next);
+    LOG_INFO("prev: %p", prev);
+    LOG_INFO("content: %s", __debug_str);
+    LOG_INFO("len = %zu", len);
+    LOG_INFO("rlen = %zu", rlen);
+    LOG_INFO("sel_start = %zu", sel_start);
+    LOG_INFO("sel_end = %zu", sel_end);
+}
+#endif
+
+//---------------------------------------------------------------------------------------
+#ifdef DEBUG
 void __debug_addchstr(API_WINDOW_PTR _w, const char *_fmt, ...)
 {
     int x, y;
@@ -323,5 +338,6 @@ const char *ctrlActionStr(CtrlKeyAction _action)
 
 }
 #endif
+
 
 

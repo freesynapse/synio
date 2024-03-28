@@ -38,8 +38,13 @@ void Selection::selectLines(line_t *_start_line,
     {
         if (p == _end_line)
         {
-            if (_end_offset > 0)
+            // if (_end_offset > 0)
                 select_(p, 0, _end_offset);
+            // else
+            // {
+                // p->sel_start = 0;   // can't understand why this is needed...
+                // p->sel_end = 0;
+            // }
             break;
         }
         else
@@ -61,6 +66,15 @@ void Selection::select_(line_t *_line, size_t _start, size_t _end)
     ncurses_find_selected_offsets(_line, &_line->sel_start, &_line->sel_end);
 
     //
+    m_entries.insert(_line);
+
+}
+
+//---------------------------------------------------------------------------------------
+void Selection::expandSelection(line_t *_line, size_t _start_expand, size_t _end_expand)
+{
+    ncurses_toggle_selection_substr(_line, _start_expand, _end_expand);
+    ncurses_find_selected_offsets(_line, &_line->sel_start, &_line->sel_end);
     m_entries.insert(_line);
 
 }

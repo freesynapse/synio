@@ -11,6 +11,7 @@ TabsOrSpaces    Config::USE_TABS_OR_SPACES      = TabsOrSpaces::SPACES;
 
 const char     *Config::COL_DELIMITERS          = "\"\'.:;()<>$~&,\t ";
 const char     *Config::FILE_PATH_DELIMITERS    = ".-/_";
+const char     *Config::STRUCTURAL_LITERALS     = "{}()[]";
 
 //---------------------------------------------------------------------------------------
 void Config::readConfigFile(const std::string &_filename)

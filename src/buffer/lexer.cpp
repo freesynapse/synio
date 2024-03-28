@@ -269,7 +269,9 @@ token_t Lexer::nextLineToken(line_t *_line)
         
         while (m_cursor < len)
         {
-            if (line[m_cursor] == m_startMStringChar)
+            // check for back slash before ' or ", denoting a string literal and not the 
+            // start of a mcomment.
+            if (line[m_cursor] == m_startMStringChar && line[m_cursor - 1] != '\\')
             {
                 m_cursor++;
                 token = token_t(start, m_cursor, TOKEN_STRING);

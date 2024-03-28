@@ -17,7 +17,8 @@ FileBufferWindow::FileBufferWindow(const frame_t &_frame,
     
     // Create a line numbers subwindow. In case of reading buffer from file, the width 
     // of the LineNumbers are deduced at runtime
-    frame_t line_numbers_rect(ivec2_t(0, m_frame.v0.y), ivec2_t(m_frame.v0.x, m_frame.v1.y));
+    frame_t line_numbers_rect(ivec2_t(0, m_frame.v0.y), 
+                              ivec2_t(m_frame.v0.x, m_frame.v1.y));
     m_lineNumbers = new LineNumbers(line_numbers_rect, _id+"_line_numbers", _border);
     m_lineNumbers->setBuffer(this);
 
@@ -44,7 +45,7 @@ FileBufferWindow::~FileBufferWindow()
 #ifdef DEBUG
 void FileBufferWindow::__debug_fnc()
 {
-    removeLeadingTab();
+    m_currentLine->__debug_line();
     
 }
 #endif
@@ -146,6 +147,14 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                 removeLeadingTab();
                 break;
 
+            case '{':
+            case '\'':
+            case '"':
+            case '[':
+            case '(':
+                insertStructuralLiteral(_c);
+                break;
+            
             default:
                 delete_selection_();
                 insertCharAtCursor((char)_c);
@@ -440,6 +449,14 @@ void FileBufferWindow::insertStrAtCursor(CHTYPE_PTR _str, size_t _len)
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::insertNewLine(bool _auto_align)
 {
+    // need to check if this is a newline between two structural literals
+    int cx = m_cursor.cx();
+    int cy = m_cursor.cy();
+
+    bool new_empty_line = false;
+    if (cx > 0 && is_structural_literal_(m_currentLine->content[cx]) > 0)
+        new_empty_line = true;
+
     // split line at cursor pos.x
     line_t *new_line = m_currentLine->split_at_pos(m_cursor.cx());
     m_lineBuffer.insertAtPtr(m_currentLine, INSERT_AFTER, new_line);
@@ -453,15 +470,33 @@ void FileBufferWindow::insertNewLine(bool _auto_align)
         int white_spaces = find_indentation_level_(m_currentLine);
         for (int i = 0; i < white_spaces; i++)
             new_line->insert_char(' ', 0);
+        if (new_empty_line)
+        {
+            m_lineBuffer.insertAtPtr(m_currentLine, INSERT_AFTER, "");
+            int white_spaces = find_indentation_level_(m_currentLine);
+            int next_tab = find_next_tab_stop_(white_spaces);
+            for (int i = 0; i < next_tab; i++)
+                m_currentLine->next->insert_char(' ', 0);
+        }
 
-        moveCursor(0, 1);
+        int dy = m_frame.nrows - cy;
+        if (new_empty_line && 3 > dy)
+        {
+            scroll_(Y_AXIS, 1, 3 - dy, true); // 2 or 1
+            moveCursor(0, -(2 - dy));
+        }
+        else
+        {
+            moveCursor(0, 1);
+
+        }
         moveCursorToLineBegin();
     }
     else
-        moveCursor(-m_cursor.cx(), 1);
+        moveCursor(-cx, 1);
     
     //
-    update_lines_after_y_(m_cursor.cy() - 1);
+    update_lines_after_y_(cy - 1);
     refresh_next_frame_();
     buffer_changed_();
     syntax_highlight_buffer_();
@@ -471,12 +506,28 @@ void FileBufferWindow::insertNewLine(bool _auto_align)
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::insertTab()
 {
-    char buffer[Config::TAB_SIZE];
-    memset(buffer, ' ', Config::TAB_SIZE);
-    m_currentLine->insert_str(buffer, Config::TAB_SIZE, m_cursor.cx());
-    moveCursor(Config::TAB_SIZE, 0);
+    if (m_selection->lineCount())
+    {
+        int y = m_selection->startingBufferPos().y;
+        for (line_t *line : m_selection->getSelectedLines())
+        {
+            // add before possible 'continue'
+            m_windowLinesUpdateList.insert(y);
+            y++;
 
-    m_windowLinesUpdateList.insert(m_cursor.cy());
+            insert_leading_tab_(line);
+            m_selection->expandSelection(line, 0, Config::TAB_SIZE);
+        }
+    }
+    else
+    {
+        char buffer[Config::TAB_SIZE];
+        memset(buffer, ' ', Config::TAB_SIZE);
+        m_currentLine->insert_str(buffer, Config::TAB_SIZE, m_cursor.cx());
+        moveCursor(Config::TAB_SIZE, 0);
+        m_windowLinesUpdateList.insert(m_cursor.cy());
+    }
+
     refresh_next_frame_();
     buffer_changed_();
     syntax_highlight_buffer_();
@@ -486,21 +537,68 @@ void FileBufferWindow::insertTab()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::removeLeadingTab()
 {
-    // if tabbed before line chars, removes one tabstop
-    int first_char = find_first_non_empty_char_(m_currentLine);
-    if (!first_char)
+    // TODO : implement this!
+    if (m_selection->lineCount())
     {
-        moveCursor(0, 0);
-        return;
-    }
-    
-    // find previous tab stop before first char
-    int steps = first_char - (first_char - (Config::TAB_SIZE - (first_char % Config::TAB_SIZE)));
-    for (int i = 0; i < steps; i++)
-        m_currentLine->delete_at(0);
-    moveCursor(-steps, 0);
+        int y = m_selection->startingBufferPos().y;
+        for (line_t *line : m_selection->getSelectedLines())
+        {
+            // add before possible 'continue'
+            m_windowLinesUpdateList.insert(y);
+            y++;
 
-    m_windowLinesUpdateList.insert(m_cursor.cy());
+            int first_char = find_first_non_empty_char_(line);
+            if (!first_char)
+                continue;
+            // find previous tab stop before first char
+            int steps = first_char - find_prev_tab_stop_(first_char);
+            for (int i = 0; i < steps; i++)
+                line->delete_at(0);
+            // update selection
+            line->sel_end -= steps;
+
+        }
+    }
+    else
+    {
+        // if tabbed before line chars, removes one tabstop
+        int first_char = find_first_non_empty_char_(m_currentLine);
+        if (!first_char)
+        {
+            moveCursor(0, 0);
+            return;
+        }
+        
+        // find previous tab stop before first char
+        int steps = first_char - find_prev_tab_stop_(first_char);
+        for (int i = 0; i < steps; i++)
+            m_currentLine->delete_at(0);
+        moveCursor(-steps, 0);
+
+        m_windowLinesUpdateList.insert(m_cursor.cy());
+    }
+
+    refresh_next_frame_();
+    buffer_changed_();
+    syntax_highlight_buffer_();
+
+}
+
+//---------------------------------------------------------------------------------------
+void FileBufferWindow::insertStructuralLiteral(char _c)
+{
+    char b[2];
+    switch (_c)
+    {
+        case '{':   b[0] = '{';  b[1] = '}';    break;
+        case '\'':  b[0] = '\''; b[1] = '\'';   break;
+        case '"':   b[0] = '"';  b[1] = '"';    break;
+        case '[':   b[0] = '[';  b[1] = ']';    break;
+        case '(':   b[0] = '(';  b[1] = ')';    break;
+    }
+    insertStrAtCursor(b, 2);
+    moveCursor(-1, 0);
+    
     refresh_next_frame_();
     buffer_changed_();
     syntax_highlight_buffer_();
@@ -518,7 +616,9 @@ void FileBufferWindow::deleteCharAtCursor()
     int cx = m_cursor.cx();
 
     //
-    if ((cx == 0 || cx == m_currentLine->len) && m_currentLine->len == 0 && m_currentLine->next == NULL)
+    if ((cx == 0 || cx == m_currentLine->len) &&
+        m_currentLine->len == 0 &&
+        m_currentLine->next == NULL)
     {
         moveCursor(0, 0);
         return;
@@ -605,7 +705,7 @@ void FileBufferWindow::deleteCharBeforeCursor()
             if (nspaces > 1)
             {
                 // find previous tab stop
-                dx = (cx - (Config::TAB_SIZE - (cx % Config::TAB_SIZE)));
+                dx = find_prev_tab_stop_(cx);
                 int steps = cx - dx;
                 for (int i = 0; i < steps; i++)
                     m_currentLine->delete_at(cx - steps);
@@ -734,7 +834,8 @@ void FileBufferWindow::deleteSelection()
     line_t *start_line_ptr = m_lineBuffer.ptrFromIdx(start.y);
     int nlines = end.y - start.y;
 
-    line_t *line_ptr = start_line_ptr;
+    // line_t *line_ptr = start_line_ptr;
+    line_t *line_ptr = m_lineBuffer.ptrFromIdx(start.y);
     bool merge_after = (line_ptr->sel_start != 0 && nlines != 0);
     int y = 0;
 
@@ -848,8 +949,6 @@ void FileBufferWindow::updateBufferCursorPos()
     // cursor moved in buffer, and in selection mode, add selection
     if (m_prevBufferCursorPos != m_bufferCursorPos && m_isSelecting)
     {
-        assert(m_selection != NULL);
-
         ivec2_t prev = m_prevBufferCursorPos;
         ivec2_t curr = m_bufferCursorPos;
 

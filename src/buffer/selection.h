@@ -16,11 +16,11 @@ public:
     void clear();   // clears all entries
 
     // TODO : threaded implementation for large files?
-    //
-
+    
     //
     void selectChars(line_t *_line, size_t _start, size_t _end);
     void selectLines(line_t *_start_line, size_t _start_offset, line_t *_end_line, size_t _end_offset);
+    void expandSelection(line_t *_line, size_t _start_expand, size_t _end_expand);
 
     // accessors
     size_t lineCount() { return m_entries.size(); }
@@ -31,6 +31,7 @@ public:
 
 private:
     void select_(line_t *_line, size_t _start, size_t _end);
+
 
 private:
     ivec2_t m_startingBufferPos;

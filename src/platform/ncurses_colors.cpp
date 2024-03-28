@@ -145,9 +145,13 @@ void ncurses_toggle_selection_substr(line_t *_line, size_t _start, size_t _end)
 //---------------------------------------------------------------------------------------
 void ncurses_color_substr(line_t *_line, size_t _start, size_t _end, short _pair_index)
 {
-    // assert(_start >= 0 && _end <= _line->len);
     for (size_t i = _start; i < _end; i++)
-      _line->content[i] = ((_line->content[i] & ~CHTYPE_COLOR_MASK) | COLOR_PAIR(_pair_index));
+    {
+        // keeps selection background
+        int sel = (CHECK_BIT(_line->content[i], CHTYPE_SELECTION_BIT) ? SELECTION_OFFSET : 0);
+        _line->content[i] = ((_line->content[i] & ~CHTYPE_COLOR_MASK) | COLOR_PAIR(_pair_index + sel));
+
+    }
 
 }
 

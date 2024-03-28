@@ -44,6 +44,7 @@ public:
     virtual void insertNewLine(bool _auto_align=true) override;
     virtual void insertTab() override;
     virtual void removeLeadingTab() override;
+    virtual void insertStructuralLiteral(char _c) override;
     virtual void deleteCharAtCursor() override;
     virtual void deleteToNextColDelim() override;
     virtual void deleteCharBeforeCursor() override;
@@ -115,6 +116,15 @@ private:
     }
     // specific for multi-line buffers; syntax HL next frame (in redraw()).
     __always_inline void syntax_highlight_buffer_() { m_syntaxHLNextFrame = true; }
+    // inserts a tab into a line
+    __always_inline void insert_leading_tab_(line_t *_line)
+    {
+        char buffer[Config::TAB_SIZE];
+        memset(buffer, ' ', Config::TAB_SIZE);
+        _line->insert_str(buffer, Config::TAB_SIZE, 0);        
+    }
+    // removes a leading tab from line
+    __always_inline void remove_leading_tab_(line_t *_line) {}
 
 protected:
     std::string m_filename = "";

@@ -37,6 +37,7 @@ public:
     virtual void insertStrAtCursor(CHTYPE_PTR _str, size_t _len) {}
     virtual void insertTab() {}
     virtual void removeLeadingTab() {}
+    virtual void insertStructuralLiteral(char _c) {};
     virtual void deleteCharAtCursor() {}
     virtual void deleteToNextColDelim() {}
     virtual void deleteCharBeforeCursor() {}
@@ -83,16 +84,27 @@ protected:
 
         return true;
     }
+    //
+    char is_structural_literal_(CHTYPE _c)
+    {
+        for (size_t i = 0; i < strlen(Config::STRUCTURAL_LITERALS); i++)
+            if ((_c & CHTYPE_CHAR_MASK) == Config::STRUCTURAL_LITERALS[i])
+                return Config::STRUCTURAL_LITERALS[i];
+        return 0;
+    }
 
+    //
+    __always_inline int find_next_tab_stop_(int _pos) { return (_pos + (Config::TAB_SIZE - (_pos % Config::TAB_SIZE))); }
+    __always_inline int find_prev_tab_stop_(int _pos) { return (_pos - (Config::TAB_SIZE - (_pos % Config::TAB_SIZE))); }
+    
     //
     int find_indentation_level_(line_t *_line)
     {
-        int first_char_idx = find_first_non_empty_char_(_line);
-        
-        if ((_line->content[first_char_idx] & CHTYPE_CHAR_MASK) == '{')
-            return first_char_idx + Config::TAB_SIZE;
-        
-        return first_char_idx;
+        //int first_char_idx = find_first_non_empty_char_(_line);
+        //if ((_line->content[first_char_idx] & CHTYPE_CHAR_MASK) == '{')
+        //    return find_next_tab_stop_(first_char_idx);
+        //return first_char_idx;
+        return find_first_non_empty_char_(_line);
     }
 
     //
