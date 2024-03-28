@@ -2,6 +2,7 @@
 #include "synio.h"
 
 #include "utils/log.h"
+#include "utils/backtrace.h"
 #include "event_handler.h"
 
 
@@ -16,6 +17,13 @@ Synio::Synio(const std::string &_filename)
     // register callbacks
     // EventHandler::register_callback(EventType::BUFFER_SCROLL, 
     //                                 EVENT_MEMBER_FNC(Synio::onBufferScroll));
+
+    // register signal handler
+    struct sigaction sa;
+    sa.sa_sigaction = signal_handler;   // in backtrace.h|.cpp
+    sa.sa_flags = SA_RESTART | SA_SIGINFO;
+    if (sigaction(SIGSEGV, &sa, (struct sigaction *)NULL) != 0)
+        fprintf(stderr, "could not set signal handler for %d (%s)", SIGSEGV, strsignal(SIGSEGV));
 
     //
     mainLoop();

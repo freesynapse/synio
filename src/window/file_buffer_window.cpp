@@ -45,7 +45,9 @@ FileBufferWindow::~FileBufferWindow()
 #ifdef DEBUG
 void FileBufferWindow::__debug_fnc()
 {
-    m_currentLine->__debug_line();
+    int sel_y = m_selection->startingBufferPos().y;
+    int cy = m_cursor.cy(), sy = m_scrollPos.y, by = m_bufferCursorPos.y;
+    LOG_INFO("------------------------------------------------------------\nsel_y.start %d, cy %d, sy %d, by %d", sel_y, cy, sy, by);
     
 }
 #endif
@@ -152,6 +154,7 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case '"':
             case '[':
             case '(':
+                delete_selection_();
                 insertStructuralLiteral(_c);
                 break;
             
@@ -508,16 +511,14 @@ void FileBufferWindow::insertTab()
 {
     if (m_selection->lineCount())
     {
-        int y = m_selection->startingBufferPos().y;
+        int cy_start = m_bufferCursorPos.y - m_selection->startingBufferPos().y;
         for (line_t *line : m_selection->getSelectedLines())
         {
-            // add before possible 'continue'
-            m_windowLinesUpdateList.insert(y);
-            y++;
-
             insert_leading_tab_(line);
             m_selection->expandSelection(line, 0, Config::TAB_SIZE);
         }
+        update_lines_after_y_(cy_start);
+
     }
     else
     {
@@ -537,16 +538,11 @@ void FileBufferWindow::insertTab()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::removeLeadingTab()
 {
-    // TODO : implement this!
     if (m_selection->lineCount())
     {
-        int y = m_selection->startingBufferPos().y;
+        int cy_start = m_bufferCursorPos.y - m_selection->startingBufferPos().y;
         for (line_t *line : m_selection->getSelectedLines())
         {
-            // add before possible 'continue'
-            m_windowLinesUpdateList.insert(y);
-            y++;
-
             int first_char = find_first_non_empty_char_(line);
             if (!first_char)
                 continue;
@@ -558,6 +554,7 @@ void FileBufferWindow::removeLeadingTab()
             line->sel_end -= steps;
 
         }
+        update_lines_after_y_(cy_start);
     }
     else
     {
@@ -1149,7 +1146,7 @@ void FileBufferWindow::redraw()
             m_syntaxHLNextFrame = false;
         }
         // check for lines that have been changed
-        for (auto &line_y : m_windowLinesUpdateList)
+    for (auto &line_y : m_windowLinesUpdateList)
             api->clearBufferLine(m_apiWindowPtr, line_y, m_frame.ncols);
 
         m_windowLinesUpdateList.clear();

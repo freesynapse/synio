@@ -7,7 +7,6 @@
 #include "../buffer/selection.h"
 #include "../buffer/lexer.h"
 
-
 //
 class FileBufferWindow : public BufferWindowBase
 {

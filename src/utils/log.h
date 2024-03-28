@@ -40,6 +40,7 @@ public:
     {
         #ifdef DEBUG
         LOG_INFO("closing log.");
+        fclose(file_handle);
         #endif
 
     }
@@ -74,7 +75,7 @@ public:
         return p;
     }
 
-private:
+// private:
     // member variables
     static FILE *file_handle;
     static char log_buffer_ptr[512];
