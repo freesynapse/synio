@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "utils/log.h"
 
@@ -70,7 +71,6 @@ struct line_t
     size_t rlen             = 0;    // rendered len, including tabs etc
     size_t sel_start        = 0;
     size_t sel_end          = 0;
-    size_t replay_line_no   = 0;
 
     ~line_t() { free(content); }
 
@@ -112,7 +112,23 @@ struct copy_line_t
 
     copy_line_t() {}
     copy_line_t(line_t *_line, bool _newline, bool _use_sel_offsets=true);
-    
+    copy_line_t(const copy_line_t &_rhs);           // copy ctor
+    copy_line_t &operator=(const copy_line_t &_rhs) // copy assignment operator
+    {
+        len = _rhs.len;
+        line_chars = (char *)malloc(len);
+        memcpy(line_chars, _rhs.line_chars, len);
+        newline = _rhs.newline;
+        return *this;
+
+    }
+    copy_line_t(copy_line_t &&_rhs);                // move ctor
+    // TODO :   implement a proper copy constructor and copy assignment operator for this
+    //          class since we use a vector to store it, and a (default) shallow copy will
+    //          copy pointers but not allocate the content, and when the vector is 
+    //          destroyed, a double free operation is done on the same pointer.
+    // strike that: we need the move constructor
+    ~copy_line_t() { free(line_chars); }
 };
 
 // helper function for line_t realloc assertions
@@ -155,6 +171,28 @@ struct ivec2_t
     void operator+=(const ivec2_t &_v)      { x += _v.x; y += _v.y;                 }
     ivec2_t operator-(const ivec2_t &_v)    { return ivec2_t(x - _v.x, y - _v.y);   }
     void operator-=(const ivec2_t &_v)      { x -= _v.x; y -= _v.y;                 }
+
+};
+
+// multi-line block (used for copy/cut/paste and undo buffers)
+struct mline_block_t
+{
+    ivec2_t start_pos;
+    ivec2_t end_pos;
+    std::vector<copy_line_t> copy_lines;
+
+    //
+    mline_block_t() {}
+    ~mline_block_t() = default;
+    mline_block_t(const ivec2_t &_start_pos, const ivec2_t &_end_pos, const std::vector<copy_line_t> &_copy_lines) :
+        start_pos(_start_pos), end_pos(_end_pos), copy_lines(_copy_lines)
+    {}
+
+    //
+    void clear() { copy_lines.clear(); }
+    const size_t size() const { return copy_lines.size(); }
+    void setStart(const ivec2_t &_start) { start_pos = _start; }
+    void setEnd(const ivec2_t &_end) { end_pos = _end; }
 
 };
 

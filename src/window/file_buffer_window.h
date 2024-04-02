@@ -7,6 +7,10 @@
 #include "../buffer/selection.h"
 #include "../buffer/lexer.h"
 
+// TODO : move undo types to types.h
+#include "../buffer/undo_buffer.h"
+
+
 //
 class FileBufferWindow : public BufferWindowBase
 {
@@ -38,6 +42,7 @@ public:
     virtual void moveFileBegin() override;
     virtual void moveFileEnd() override;
     virtual void insertCharAtCursor(char _c) override;
+    virtual void insertCharAtPos(char _c, size_t _pos, bool _update_cursor=true) override;
     virtual void insertStrAtCursor(char *_str, size_t _len) override;
     virtual void insertStrAtCursor(CHTYPE_PTR _str, size_t _len) override;
     virtual void insertNewLine(bool _auto_align=true) override;
@@ -51,9 +56,10 @@ public:
 
     //
     virtual void updateCursor() override;
-    virtual void copy() override;
+    virtual void copySelection() override;
     virtual void deleteSelection() override;
-    virtual void cut() override;
+    void __delete_mline_block(const mline_block_t &_mline_block);
+    virtual void cutSelection() override;
     virtual void paste() override;
 
     // inserts a new line and updates the cursor
@@ -152,6 +158,8 @@ protected:
     int m_dirOfSelection = FORWARD;
 
     std::vector<copy_line_t> m_copyBuffer;
+    mline_block_t m_copyBuffer2;
+    UndoBuffer m_undoBuffer;
 
     // Line numbers window accompanying this one
     LineNumbers *m_lineNumbers = NULL;

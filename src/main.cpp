@@ -3,7 +3,7 @@
 #include "platform/platform.h"
 #include "synio.h"
 
-//
+
 int main(int argc, char *argv[])
 {
     // std::string filename = "short.cpp";

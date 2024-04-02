@@ -10,7 +10,7 @@
 #endif
 
 #include "platform/platform.h"
-#include "buffer/replay_buffer.h"
+#include "buffer/undo_buffer.h"
 
 
 //
@@ -32,8 +32,6 @@ line_t *create_line(char *_content, size_t _len)
     #ifdef DEBUG
     new_line->__debug_content_to_str_();
     #endif
-
-    new_line->replay_line_no = get_next_replay_line_no();
 
     return new_line;
 
@@ -65,8 +63,6 @@ line_t *create_line(CHTYPE_PTR _content, size_t _len)
     new_line->__debug_content_to_str_();
     #endif
 
-    new_line->replay_line_no = get_next_replay_line_no();
-
     return new_line;
 
 }
@@ -93,6 +89,26 @@ copy_line_t::copy_line_t(line_t *_line, bool _newline, bool _use_sel_offsets)
     memcpy(line_chars, _line->__debug_str+offset0, len);
     
     newline = _newline;
+
+}
+
+//---------------------------------------------------------------------------------------
+copy_line_t::copy_line_t(const copy_line_t &_rhs)
+{
+    len = _rhs.len;
+    line_chars = (char *)malloc(len);
+    memcpy(line_chars, _rhs.line_chars, len);
+    newline = _rhs.newline;
+
+}
+
+//---------------------------------------------------------------------------------------
+copy_line_t::copy_line_t(copy_line_t &&_rhs)
+{
+    len = _rhs.len;
+    line_chars = (char *)malloc(len);
+    memcpy(line_chars, _rhs.line_chars, len);
+    newline = _rhs.newline;
 
 }
 
@@ -138,7 +154,6 @@ void line_t::insert_str(CHTYPE_PTR _str, size_t _len, size_t _pos)
 
     if ((content = (CHTYPE_PTR)realloc(content, CHTYPE_SIZE * (len + _len + 1))) == NULL) RAM_panic(this);
     memmove(content + _pos + _len, content + _pos, CHTYPE_SIZE * (len - _pos));
-    // TODO : add color here? -- no, surely on future onRowUpdate() callback?
     memcpy(content + _pos, _str, CHTYPE_SIZE * _len);
     len += _len;
     content[len] = 0;

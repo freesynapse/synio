@@ -33,6 +33,7 @@ public:
     virtual void moveCursorToLineEnd() {}
     virtual int findColDelim(int _dir, bool _move_cursor=true) { return 0; }
     virtual void insertCharAtCursor(char _c) {}
+    virtual void insertCharAtPos(char _c, size_t _pos, bool _update_cursor=true) {}
     virtual void insertStrAtCursor(char *_str, size_t _len) {}
     virtual void insertStrAtCursor(CHTYPE_PTR _str, size_t _len) {}
     virtual void insertTab() {}
@@ -55,9 +56,9 @@ public:
     virtual void updateCursor() {};
 
     //
-    virtual void cut() {}
+    virtual void cutSelection() {}
     virtual void deleteSelection() {}
-    virtual void copy() {}
+    virtual void copySelection() {}
     virtual void paste() {}
 
 protected:

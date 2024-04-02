@@ -6,6 +6,7 @@
 #include "../platform/ncurses_colors.h"
 #include "../utils/timer.h"
 
+
 //
 FileBufferWindow::FileBufferWindow(const frame_t &_frame,
                                    const std::string &_id,
@@ -32,6 +33,9 @@ FileBufferWindow::FileBufferWindow(const frame_t &_frame,
     // selection instance
     m_selection = new Selection();
 
+    // undo buffer
+    m_undoBuffer = UndoBuffer(this);
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -45,7 +49,7 @@ FileBufferWindow::~FileBufferWindow()
 #ifdef DEBUG
 void FileBufferWindow::__debug_fnc()
 {
-    
+    m_undoBuffer.undo();
     
 }
 #endif
@@ -110,7 +114,7 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
 
             // cut-n-paste (and copy)
             case CTRL('c'):
-                copy();
+                copySelection();
                 deselect_(FORWARD);
                 refresh_next_frame_();
                 break;
@@ -122,7 +126,7 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                 break;
 
             case CTRL('w'):
-                cut();
+                cutSelection();
                 refresh_next_frame_();
                 break;
 
@@ -152,7 +156,6 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case '"':
             case '[':
             case '(':
-                delete_selection_();
                 insertStructuralLiteral(_c);
                 break;
             
@@ -398,13 +401,26 @@ void FileBufferWindow::moveFileEnd()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::insertCharAtCursor(char _c)
 {
-    m_currentLine->insert_char(_c, m_cursor.cx());
-    moveCursor(1, 0);
+    insertCharAtPos(_c, m_cursor.cx());
+    //m_currentLine->insert_char(_c, m_cursor.cx());
+    //moveCursor(1, 0);
+
+    //refresh_next_frame_();
+    //buffer_changed_();
+    //syntax_highlight_buffer_();
+
+}
+
+//---------------------------------------------------------------------------------------
+void FileBufferWindow::insertCharAtPos(char _c, size_t _pos, bool _update_cursor)
+{
+    m_currentLine->insert_char(_c, _pos);
+    if (_update_cursor)
+        moveCursor(1, 0);
 
     refresh_next_frame_();
     buffer_changed_();
     syntax_highlight_buffer_();
-
 }
 
 //---------------------------------------------------------------------------------------
@@ -580,17 +596,63 @@ void FileBufferWindow::removeLeadingTab()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::insertStructuralLiteral(char _c)
 {
-    char b[2];
-    switch (_c)
+    char next_char = m_currentLine->__debug_str[m_cursor.cx() + 1];
+    if (next_char == ' ' || next_char == 0 || !m_currentLine->len || m_selection->lineCount())
+        // (m_selection->lineCount()) &&
+        //  m_selection->startingBufferPos().y == m_bufferCursorPos.y)  
     {
-        case '{':   b[0] = '{';  b[1] = '}';    break;
-        case '\'':  b[0] = '\''; b[1] = '\'';   break;
-        case '"':   b[0] = '"';  b[1] = '"';    break;
-        case '[':   b[0] = '[';  b[1] = ']';    break;
-        case '(':   b[0] = '(';  b[1] = ')';    break;
+        // TODO :   remove condition to be on the same line in a selection, allowing
+        //          to select over multiple rows
+        char b[2];
+        switch (_c)
+        {
+            case '{':   b[0] = '{';  b[1] = '}';    break;
+            case '\'':  b[0] = '\''; b[1] = '\'';   break;
+            case '"':   b[0] = '"';  b[1] = '"';    break;
+            case '[':   b[0] = '[';  b[1] = ']';    break;
+            case '(':   b[0] = '(';  b[1] = ')';    break;
+        }
+        if (m_selection->lineCount())
+        {
+            ivec2_t bpos = m_bufferCursorPos;
+            ivec2_t sspos = m_selection->startingBufferPos();
+
+            if (bpos.y != sspos.y)
+            {
+                if (sspos.y > bpos.y)
+                    std::swap(sspos, bpos);
+                line_t *ssline = m_lineBuffer.ptrFromIdx(sspos.y);
+                ssline->insert_char(b[0], sspos.x);
+                line_t *bline = m_lineBuffer.ptrFromIdx(bpos.y);
+                bline->insert_char(b[1], bpos.x);
+                //insertCharAtPos(b[0], sspos.x, false);
+                //insertCharAtPos(b[1], bpos.x + 1);
+                moveCursor(1, 0);
+                deselect_(FORWARD);
+            }
+            else
+            {
+                if (sspos.x > m_bufferCursorPos.x)
+                    std::swap(sspos, bpos);
+                insertCharAtPos(b[0], sspos.x, false);
+                insertCharAtPos(b[1], bpos.x + 1);
+                deselect_(FORWARD);
+            }
+
+        }
+        else
+        {
+            delete_selection_();
+            insertStrAtCursor(b, 2);
+            moveCursor(-1, 0);
+        }
+
     }
-    insertStrAtCursor(b, 2);
-    moveCursor(-1, 0);
+    else
+    {
+        delete_selection_();
+        insertCharAtCursor(_c);
+    }
     
     refresh_next_frame_();
     buffer_changed_();
@@ -774,12 +836,13 @@ void FileBufferWindow::updateCursor()
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::copy()
+void FileBufferWindow::copySelection()
 {
     if (!m_selection->lineCount())
         return;
 
     m_copyBuffer.clear();
+    m_copyBuffer2.copy_lines.clear();
 
     //
     ivec2_t spos = m_selection->startingBufferPos();
@@ -787,7 +850,12 @@ void FileBufferWindow::copy()
 
     // single line
     if (bpos.y == spos.y && bpos.x < spos.x)    std::swap(bpos, spos);
+    // multi line
     else if (bpos.y < spos.y)                   std::swap(bpos, spos);
+
+    //
+    m_copyBuffer2.setStart(spos);
+    m_copyBuffer2.setEnd(bpos);
 
     //
     line_t *line_ptr = m_lineBuffer.ptrFromIdx(spos.y);
@@ -795,7 +863,10 @@ void FileBufferWindow::copy()
     while (y <= bpos.y && line_ptr != NULL)
     {
         if (m_selection->isLineEntry(line_ptr))
+        {
             m_copyBuffer.push_back(copy_line_t(line_ptr, y != bpos.y));
+            m_copyBuffer2.copy_lines.push_back(copy_line_t(line_ptr, y != bpos.y));
+        }
 
         y++;
         line_ptr = line_ptr->next;
@@ -824,10 +895,9 @@ void FileBufferWindow::deleteSelection()
 
     //
     // remove selected text
-    line_t *start_line_ptr = m_lineBuffer.ptrFromIdx(start.y);
+    // line_t *start_line_ptr = m_lineBuffer.ptrFromIdx(start.y);
     int nlines = end.y - start.y;
 
-    // line_t *line_ptr = start_line_ptr;
     line_t *line_ptr = m_lineBuffer.ptrFromIdx(start.y);
     bool merge_after = (line_ptr->sel_start != 0 && nlines != 0);
     int y = 0;
@@ -865,9 +935,65 @@ void FileBufferWindow::deleteSelection()
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::cut()
+void FileBufferWindow::__delete_mline_block(const mline_block_t &_mline_block)
 {
-    copy();
+    if (_mline_block.size() == 0)
+        return;
+    
+    ivec2_t start = _mline_block.start_pos;
+    ivec2_t end = _mline_block.end_pos;
+
+    if ((end.y == start.y && end.x < start.x) ||
+        (end.y < start.y))
+        std::swap(end, start);
+
+    // 'manual' deselect_()
+    gotoBufferCursorPos(start);
+    updateCursor();
+
+    //
+    // remove selected text
+    int nlines = end.y - start.y;
+    line_t *line_ptr = m_lineBuffer.ptrFromIdx(start.y);
+    bool merge_after = (line_ptr->sel_start != 0 && nlines != 0);
+    int y = 0;
+
+    //
+    while (y <= nlines && line_ptr != NULL)
+    {
+        size_t sel_len = line_ptr->sel_end - line_ptr->sel_start;
+        line_t *lnext = line_ptr->next;
+        // delete entire line
+        if (sel_len == line_ptr->len)
+            m_lineBuffer.deleteAtPtr(line_ptr);
+        // delete part of line
+        else
+            line_ptr->delete_n_at(line_ptr->sel_start, sel_len);
+        
+        y++;
+        line_ptr = lnext;
+
+    }
+    // update line ptrs
+    m_currentLine = m_lineBuffer.ptrFromIdx(start.y);
+    m_pageFirstLine = m_lineBuffer.ptrFromIdx(m_scrollPos.y);
+
+    // if first line of selection was not a complete line
+    if (merge_after)
+        m_lineBuffer.appendNextToThis(m_currentLine);
+
+    //
+    update_lines_after_y_(m_cursor.cy());
+    refresh_next_frame_();
+    buffer_changed_();
+    syntax_highlight_buffer_();
+
+}
+
+//---------------------------------------------------------------------------------------
+void FileBufferWindow::cutSelection()
+{
+    copySelection();
     deleteSelection();
 
 }
@@ -875,29 +1001,35 @@ void FileBufferWindow::cut()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::paste()
 {
-    if (m_copyBuffer.size() == 0)
+    // if (m_copyBuffer.size() == 0)
+    if (m_copyBuffer2.size() == 0)
         return;
 
     //
     int cy = m_cursor.cy();
 
     // first entry
-    copy_line_t cline = m_copyBuffer[0];
+    // copy_line_t cline = m_copyBuffer[0];
+    copy_line_t cline = m_copyBuffer2.copy_lines[0];
     insertStrAtCursor(cline.line_chars, cline.len);
     if (cline.newline)
         insertNewLine(false);
 
-    if (m_copyBuffer.size() > 1)
+    // if (m_copyBuffer.size() > 1)
+    if (m_copyBuffer2.size() > 1)
     {
-        for (size_t i = 1; i < m_copyBuffer.size() - 1; i++)
+        // for (size_t i = 1; i < m_copyBuffer.size() - 1; i++)
+        for (size_t i = 1; i < m_copyBuffer2.size() - 1; i++)
         {
-            copy_line_t cline1 = m_copyBuffer[i];
+            // copy_line_t cline1 = m_copyBuffer[i];
+            copy_line_t cline1 = m_copyBuffer2.copy_lines[i];
             // paste lines as a new lines (omitting last line)
             insertLineAtCursor(cline1.line_chars, cline1.len);
         }
 
         // last line
-        cline = m_copyBuffer[m_copyBuffer.size() - 1];
+        // cline = m_copyBuffer[m_copyBuffer.size() - 1];
+        cline = m_copyBuffer2.copy_lines[m_copyBuffer2.size() - 1];
         insertStrAtCursor(cline.line_chars, cline.len);
         if (cline.newline)
             insertNewLine(false);
@@ -906,6 +1038,11 @@ void FileBufferWindow::paste()
     //
     m_currentLine = m_lineBuffer.ptrFromIdx(m_cursor.cy() + m_scrollPos.y);
     m_pageFirstLine = m_lineBuffer.ptrFromIdx(m_scrollPos.y);
+
+    //
+    m_undoBuffer.push(undo_item_t(UndoItemType::LINES,
+                                  UndoAction::LINES_ADD,
+                                  m_copyBuffer2));
 
     //
     update_lines_after_y_(cy);
