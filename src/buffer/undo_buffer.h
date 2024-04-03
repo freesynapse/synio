@@ -34,16 +34,34 @@ struct undo_item_t
 {
     undo_item_t() {}
     ~undo_item_t() = default;
-    undo_item_t(UndoItemType _type, UndoAction _action, const mline_block_t &_mline_block) :
-        type(_type), action(_action), mline_block(_mline_block)
-    {}
+    undo_item_t(/*UndoItemType _type, */UndoAction _action, const mline_block_t &_mline_block) :
+        /*type(_type), */action(_action), mline_block(_mline_block)
+    {}    
+    undo_item_t(/*UndoItemType _type,*/
+                UndoAction _action,
+                const ivec2_t &_start_pos,
+                const ivec2_t &_end_pos) :
+        /*type(_type), */action(_action)
+    {
+        mline_block.setStart(_start_pos);
+        mline_block.setEnd(_end_pos);
+    }
+    undo_item_t(/*UndoItemType _type,*/
+                UndoAction _action,
+                const ivec2_t &_start_pos,
+                const ivec2_t &_end_pos,
+                const std::vector<copy_line_t> &_lines) :
+        /*type(_type), */action(_action)
+    {
+        mline_block.setStart(_start_pos);
+        mline_block.setEnd(_end_pos);
+        mline_block.copy_lines = _lines;
+    }
 
-    UndoItemType type;
+    // UndoItemType type;
     UndoAction action;
-    mline_block_t mline_block;
-    //std::vector<copy_line_t> m_lines;
-    //ivec2_t m_startPos;
-    //ivec2_t m_endPos;   // only used for block insert/delete
+    mline_block_t mline_block;  // multi-line actions
+    copy_line_t sline;          // single line actions
 
 };
 
@@ -61,11 +79,19 @@ public:
     void push(const undo_item_t &_item);
     void undo();
 
-// private:
+private:
+    // action functions
+    void deleteLines(const undo_item_t &_item);
+    void addLines(const undo_item_t &_item);
+
+private:
     std::stack<undo_item_t> m_stack;
     FileBufferWindow *m_window = NULL;
 
 };
+
+//extern const char *UndoItemType2Str(UndoItemType _t);
+extern const char *UndoAction2Str(UndoAction _a);
 
 // TODO :   these should be moved to the ReplayBuffer class, since each file buffer  
 //          window should have its own ReplayBuffer.

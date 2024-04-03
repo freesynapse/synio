@@ -58,7 +58,7 @@ public:
     //
     virtual void cutSelection() {}
     virtual void deleteSelection() {}
-    virtual void copySelection() {}
+    virtual void copySelection(std::vector<copy_line_t> *_store_buffer) {}
     virtual void paste() {}
 
 protected:

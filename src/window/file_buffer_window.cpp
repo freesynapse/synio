@@ -49,7 +49,6 @@ FileBufferWindow::~FileBufferWindow()
 #ifdef DEBUG
 void FileBufferWindow::__debug_fnc()
 {
-    m_undoBuffer.undo();
     
 }
 #endif
@@ -130,7 +129,12 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                 refresh_next_frame_();
                 break;
 
-            // save file
+            //
+            case CTRL('z'):
+                m_undoBuffer.undo();
+                break;
+
+            // save file -- TODO: move to commands
             case CTRL('s'):
                 saveBufferToFile();
                 break;
@@ -138,11 +142,12 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             #ifdef DEBUG
             case CTRL('d'):
                 __debug_fnc();
+                moveCursor(0, 0);
                 refresh_next_frame_();
                 break;
             #endif
 
-            //
+            // 'proper' inputs
             case 9:
                 insertTab();
                 break;
@@ -625,8 +630,6 @@ void FileBufferWindow::insertStructuralLiteral(char _c)
                 ssline->insert_char(b[0], sspos.x);
                 line_t *bline = m_lineBuffer.ptrFromIdx(bpos.y);
                 bline->insert_char(b[1], bpos.x);
-                //insertCharAtPos(b[0], sspos.x, false);
-                //insertCharAtPos(b[1], bpos.x + 1);
                 moveCursor(1, 0);
                 deselect_(FORWARD);
             }
@@ -836,26 +839,26 @@ void FileBufferWindow::updateCursor()
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::copySelection()
+void FileBufferWindow::copySelection(std::vector<copy_line_t> *_store_buffer)
 {
     if (!m_selection->lineCount())
         return;
 
-    m_copyBuffer.clear();
-    m_copyBuffer2.copy_lines.clear();
+    if (_store_buffer == NULL)
+        _store_buffer = &m_copyBuffer;
+
+    _store_buffer->clear();
 
     //
     ivec2_t spos = m_selection->startingBufferPos();
     ivec2_t bpos = m_bufferCursorPos;
 
     // single line
-    if (bpos.y == spos.y && bpos.x < spos.x)    std::swap(bpos, spos);
+    if (bpos.y == spos.y && bpos.x < spos.x)
+        std::swap(bpos, spos);
     // multi line
-    else if (bpos.y < spos.y)                   std::swap(bpos, spos);
-
-    //
-    m_copyBuffer2.setStart(spos);
-    m_copyBuffer2.setEnd(bpos);
+    else if (bpos.y < spos.y)
+        std::swap(bpos, spos);
 
     //
     line_t *line_ptr = m_lineBuffer.ptrFromIdx(spos.y);
@@ -864,8 +867,7 @@ void FileBufferWindow::copySelection()
     {
         if (m_selection->isLineEntry(line_ptr))
         {
-            m_copyBuffer.push_back(copy_line_t(line_ptr, y != bpos.y));
-            m_copyBuffer2.copy_lines.push_back(copy_line_t(line_ptr, y != bpos.y));
+            _store_buffer->push_back(copy_line_t(line_ptr, y != bpos.y));
         }
 
         y++;
@@ -888,83 +890,34 @@ void FileBufferWindow::deleteSelection()
         (end.y < start.y))
         std::swap(end, start);
 
+    // handle future undo
+    std::vector<copy_line_t> undo_lines;
+    copySelection(&undo_lines);
+    m_undoBuffer.push(undo_item_t(UndoAction::LINES_DEL,
+                                  start,
+                                  end,
+                                  undo_lines));
+
     // 'manual' deselect_()
-    gotoBufferCursorPos(start);
     m_selection->clear();
     m_isSelecting = false;
 
     //
-    // remove selected text
-    // line_t *start_line_ptr = m_lineBuffer.ptrFromIdx(start.y);
-    int nlines = end.y - start.y;
-
-    line_t *line_ptr = m_lineBuffer.ptrFromIdx(start.y);
-    bool merge_after = (line_ptr->sel_start != 0 && nlines != 0);
-    int y = 0;
-
-    //
-    while (y <= nlines && line_ptr != NULL)
-    {
-        size_t sel_len = line_ptr->sel_end - line_ptr->sel_start;
-        line_t *lnext = line_ptr->next;
-        // delete entire line
-        if (sel_len == line_ptr->len)
-            m_lineBuffer.deleteAtPtr(line_ptr);
-        // delete part of line
-        else
-            line_ptr->delete_n_at(line_ptr->sel_start, sel_len);
-        
-        y++;
-        line_ptr = lnext;
-
-    }
-    // update line ptrs
-    m_currentLine = m_lineBuffer.ptrFromIdx(start.y);
-    m_pageFirstLine = m_lineBuffer.ptrFromIdx(m_scrollPos.y);
-
-    // if first line of selection was not a complete line
-    if (merge_after)
-        m_lineBuffer.appendNextToThis(m_currentLine);
-
-    //
-    update_lines_after_y_(m_cursor.cy());
-    refresh_next_frame_();
-    buffer_changed_();
-    syntax_highlight_buffer_();
-
-}
-
-//---------------------------------------------------------------------------------------
-void FileBufferWindow::__delete_mline_block(const mline_block_t &_mline_block)
-{
-    if (_mline_block.size() == 0)
-        return;
-    
-    ivec2_t start = _mline_block.start_pos;
-    ivec2_t end = _mline_block.end_pos;
-
-    if ((end.y == start.y && end.x < start.x) ||
-        (end.y < start.y))
-        std::swap(end, start);
-
-    // 'manual' deselect_()
     gotoBufferCursorPos(start);
-    updateCursor();
 
-    //
     // remove selected text
-    int nlines = end.y - start.y;
     line_t *line_ptr = m_lineBuffer.ptrFromIdx(start.y);
+    int nlines = end.y - start.y;
     bool merge_after = (line_ptr->sel_start != 0 && nlines != 0);
-    int y = 0;
 
     //
+    int y = 0;
     while (y <= nlines && line_ptr != NULL)
     {
         size_t sel_len = line_ptr->sel_end - line_ptr->sel_start;
         line_t *lnext = line_ptr->next;
         // delete entire line
-        if (sel_len == line_ptr->len)
+        if (sel_len == line_ptr->len && y != nlines)
             m_lineBuffer.deleteAtPtr(line_ptr);
         // delete part of line
         else
@@ -1001,35 +954,30 @@ void FileBufferWindow::cutSelection()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::paste()
 {
-    // if (m_copyBuffer.size() == 0)
-    if (m_copyBuffer2.size() == 0)
+    if (m_copyBuffer.size() == 0)
         return;
 
     //
+    ivec2_t pre_paste = m_bufferCursorPos;
     int cy = m_cursor.cy();
 
     // first entry
-    // copy_line_t cline = m_copyBuffer[0];
-    copy_line_t cline = m_copyBuffer2.copy_lines[0];
+    copy_line_t cline = m_copyBuffer[0];
     insertStrAtCursor(cline.line_chars, cline.len);
     if (cline.newline)
         insertNewLine(false);
 
-    // if (m_copyBuffer.size() > 1)
-    if (m_copyBuffer2.size() > 1)
+    if (m_copyBuffer.size() > 1)
     {
-        // for (size_t i = 1; i < m_copyBuffer.size() - 1; i++)
-        for (size_t i = 1; i < m_copyBuffer2.size() - 1; i++)
+        for (size_t i = 1; i < m_copyBuffer.size() - 1; i++)
         {
-            // copy_line_t cline1 = m_copyBuffer[i];
-            copy_line_t cline1 = m_copyBuffer2.copy_lines[i];
+            copy_line_t cline1 = m_copyBuffer[i];
             // paste lines as a new lines (omitting last line)
             insertLineAtCursor(cline1.line_chars, cline1.len);
         }
 
         // last line
-        // cline = m_copyBuffer[m_copyBuffer.size() - 1];
-        cline = m_copyBuffer2.copy_lines[m_copyBuffer2.size() - 1];
+        cline = m_copyBuffer[m_copyBuffer.size() - 1];
         insertStrAtCursor(cline.line_chars, cline.len);
         if (cline.newline)
             insertNewLine(false);
@@ -1039,10 +987,12 @@ void FileBufferWindow::paste()
     m_currentLine = m_lineBuffer.ptrFromIdx(m_cursor.cy() + m_scrollPos.y);
     m_pageFirstLine = m_lineBuffer.ptrFromIdx(m_scrollPos.y);
 
-    //
-    m_undoBuffer.push(undo_item_t(UndoItemType::LINES,
-                                  UndoAction::LINES_ADD,
-                                  m_copyBuffer2));
+    updateCursor();
+    ivec2_t post_paste = m_bufferCursorPos;
+    m_undoBuffer.push(undo_item_t(UndoAction::LINES_ADD,
+                                  pre_paste,
+                                  post_paste,
+                                  m_copyBuffer));
 
     //
     update_lines_after_y_(cy);
@@ -1187,6 +1137,9 @@ void FileBufferWindow::saveBufferToFile()
 
     FileIO::write_buffer_to_file(m_filename, &m_lineBuffer);
     m_isDirty = false;
+
+    //
+    moveCursor(0, 0);
 
 }
 

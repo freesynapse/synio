@@ -10,11 +10,13 @@
 #define __func__ __PRETTY_FUNCTION__
 
 #ifdef DEBUG
-    #define LOG_INFO(...) { Log::log_("[INFO] ", __func__, __VA_ARGS__); }
-    #define LOG_WARNING(...) { Log::log_("[WARN] ", __func__, __VA_ARGS__); }
-    #define LOG_ERROR(...) { Log::log_("[ERR]  ", __func__, __VA_ARGS__); }
-    #define LOG_CRITICAL_ERROR(...) { Log::log_("[CERR] ", __func__, __VA_ARGS__); exit(-1); }
+    #define LOG_RAW(...) { Log::open(); Log::log_("", "", __VA_ARGS__); fclose(Log::file_handle); }
+    #define LOG_INFO(...) { Log::open(); Log::log_("\x1b[32m[INFO]\x1b[0m ", __func__, __VA_ARGS__); fclose(Log::file_handle); }
+    #define LOG_WARNING(...) { Log::open(); Log::log_("\x1b[33m[WARN]\x1b[0m ", __func__, __VA_ARGS__); fclose(Log::file_handle); }
+    #define LOG_ERROR(...) { Log::open(); Log::log_("\x1b[31m[ERR]\x1b[0m  ", __func__, __VA_ARGS__); fclose(Log::file_handle); }
+    #define LOG_CRITICAL_ERROR(...) { Log::open(); Log::log_("\x1b[31m[CERR]\x1b[0m ", __func__, __VA_ARGS__); fclose(Log::file_handle); int *a = NULL; *a = 1; }
 #else
+    #define LOG_RAW(...)
     #define LOG_INFO(...)
     #define LOG_WARNING(...)
     #define LOG_ERROR(...)
@@ -26,22 +28,26 @@ class Log
 {
 public:
     //
-    static void open(const char *_filename="log.txt")
-    { 
-        #ifdef DEBUG
-        filename = std::string(_filename);
-        file_handle = fopen(filename.c_str(), "w");
-        LOG_INFO("log file '%s' created.", _filename);
-        #endif
+    static void open(const char *_filename="")
+    {
+        if (filename == "")
+        {
+            filename = std::string(_filename);
+            file_handle = fopen(_filename, "w");
+            log_("\x1b[32m[INFO]\x1b[0m ", __func__, "log file '%s' created.", _filename);
+            fclose(file_handle);
+        }
+        else
+            file_handle = fopen(filename.c_str(), "a");
     }
 
     //    
     static void close() 
     {
-        #ifdef DEBUG
         LOG_INFO("closing log.");
-        fclose(file_handle);
-        #endif
+        //printf("file handle %p\n", file_handle);
+        //if (file_handle)
+        //    fclose(file_handle);
 
     }
 
@@ -49,7 +55,12 @@ public:
     static void log_(const char *_prefix, const char *_func, const char *_fmt, ...)
     {
         char *p = write_meta_to_buffer_ptr_(_prefix, _func);
-     
+        if (p - log_buffer_ptr != 0)
+        {
+            sprintf(p, ": ");
+            p += 2;
+        }
+
         va_list arg_list;
         va_start(arg_list, _fmt);
         int n = vsprintf(p, _fmt, arg_list);
@@ -69,7 +80,7 @@ public:
         char *p = log_buffer_ptr;
         n = sprintf(p, "%s", _prefix);
         p += n;
-        n = sprintf(p, "%s: ", _func);
+        n = sprintf(p, "%s", _func);
         p += n;
 
         return p;

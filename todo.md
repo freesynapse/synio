@@ -34,11 +34,9 @@ Möjliga actions:
         selected utökar selektionen.
         --> Lägger till TABS i UndoItemType för att ha detta som en egen entitet.
 
-Börjar med add/del lines, eftersom den koden är klar (i cut() och paste()). Tror att 
-man kanske borde skapa en ny struct som representerar ett block:
-    std::vector<copy_line_t>
-    ivec2_t start_pos
-    ivec2_t end_pos
+Börjar med add/del lines, eftersom den koden är klar (i cut() och paste()). Först LINES,
+LINES_ADD (som i paste). Allt som borde behövas för att ångra (alltså ta bort igen) är
+start_pos och end_pos.
 
 
 För att få till redo skulle man kunna ha en cirkulär buffer, men vi börjar med en stack 

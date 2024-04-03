@@ -15,13 +15,6 @@ void signal_handler(int _sig_num, siginfo_t *_info, void *_ucontext)
     //
     api->shutdown();
 
-    //FILE *f_restore = fopen("stack.backtrace", "w");
-    //if (!f_restore)
-    //{
-    //    fprintf(stderr, "ERROR: could not open stack.backtrace.\n");
-    //    exit(EXIT_FAILURE);
-    //}
-
     sig_ucontext_t *uc = (sig_ucontext_t *)_ucontext;
     void *caller_addr;
     #if defined(__i386__)

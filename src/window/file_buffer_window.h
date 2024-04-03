@@ -17,6 +17,7 @@ class FileBufferWindow : public BufferWindowBase
 public:
     friend class LineNumbers;
     friend class Selection; 
+    friend class UndoBuffer;
 
 public:
 
@@ -56,9 +57,8 @@ public:
 
     //
     virtual void updateCursor() override;
-    virtual void copySelection() override;
+    virtual void copySelection(std::vector<copy_line_t> *_store_buffer=NULL) override;
     virtual void deleteSelection() override;
-    void __delete_mline_block(const mline_block_t &_mline_block);
     virtual void cutSelection() override;
     virtual void paste() override;
 
@@ -158,7 +158,6 @@ protected:
     int m_dirOfSelection = FORWARD;
 
     std::vector<copy_line_t> m_copyBuffer;
-    mline_block_t m_copyBuffer2;
     UndoBuffer m_undoBuffer;
 
     // Line numbers window accompanying this one

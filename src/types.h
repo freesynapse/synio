@@ -107,6 +107,8 @@ line_t *copy_line(line_t *_line);
 struct copy_line_t
 {
     char *line_chars = NULL;
+    size_t offset0 = 0;
+    size_t offset1 = 0;
     size_t len = 0;
     bool newline = false;
 
@@ -115,9 +117,12 @@ struct copy_line_t
     copy_line_t(const copy_line_t &_rhs);           // copy ctor
     copy_line_t &operator=(const copy_line_t &_rhs) // copy assignment operator
     {
+        offset0 = _rhs.offset0;
+        offset1 = _rhs.offset1;
         len = _rhs.len;
-        line_chars = (char *)malloc(len);
+        line_chars = (char *)malloc(len + 1);
         memcpy(line_chars, _rhs.line_chars, len);
+        line_chars[len] = 0;
         newline = _rhs.newline;
         return *this;
 
@@ -163,8 +168,14 @@ struct ivec2_t
     ivec2_t(int _i) : x(_i), y(_i) {}
     ivec2_t(int _x, int _y) : x(_x), y(_y) {}
 
-    // operators
+    // copy ctor
+    ivec2_t(const ivec2_t &_v)              { x = _v.x; y = _v.y;                   }
+    // copy assignment
     ivec2_t &operator=(const ivec2_t &_v)   { x = _v.x; y =_v.y; return *this;      }
+    // move ctor
+    ivec2_t(ivec2_t &&_v)                   { x = _v.x; y = _v.y;                   }
+
+    // operators
     bool operator==(const ivec2_t &_v)      { return (x == _v.x && y == _v.y);      }
     bool operator!=(const ivec2_t &_v)      { return (x != _v.x || y != _v.y);      }
     ivec2_t operator+(const ivec2_t &_v)    { return ivec2_t(x + _v.x, y + _v.y);   }
