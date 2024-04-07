@@ -115,6 +115,7 @@ struct copy_line_t
     copy_line_t() {}
     copy_line_t(line_t *_line, bool _newline, bool _use_sel_offsets=true);
     copy_line_t(const copy_line_t &_rhs);           // copy ctor
+    copy_line_t(copy_line_t &&_rhs);                // move ctor
     copy_line_t &operator=(const copy_line_t &_rhs) // copy assignment operator
     {
         offset0 = _rhs.offset0;
@@ -127,13 +128,9 @@ struct copy_line_t
         return *this;
 
     }
-    copy_line_t(copy_line_t &&_rhs);                // move ctor
-    // TODO :   implement a proper copy constructor and copy assignment operator for this
-    //          class since we use a vector to store it, and a (default) shallow copy will
-    //          copy pointers but not allocate the content, and when the vector is 
-    //          destroyed, a double free operation is done on the same pointer.
-    // strike that: we need the move constructor
+    //
     ~copy_line_t() { free(line_chars); }
+
 };
 
 // helper function for line_t realloc assertions
@@ -205,6 +202,51 @@ struct mline_block_t
     void setStart(const ivec2_t &_start) { start_pos = _start; }
     void setEnd(const ivec2_t &_end) { end_pos = _end; }
 
+};
+
+// single line exerpt, used by the undo buffer
+struct line_chars_t
+{
+    ivec2_t start_pos = { 0 };
+    size_t len = 0;
+    char *chars = NULL;
+
+    line_chars_t() {}
+    line_chars_t(const ivec2_t _start_pos, char *_chars, size_t _len) :
+        start_pos(_start_pos), len(_len)
+    {
+        malloc_and_copy_(_chars);
+    }
+    // copy ctor
+    line_chars_t(const line_chars_t &_rhs) : 
+        start_pos(_rhs.start_pos), len(_rhs.len)
+    {
+        malloc_and_copy_(_rhs.chars);
+    }
+    // move ctor
+    line_chars_t(line_chars_t &&_rhs) :
+        start_pos(_rhs.start_pos), len(_rhs.len)
+    {
+        malloc_and_copy_(_rhs.chars);
+    }
+    // copy assignment operator
+    line_chars_t &operator=(const line_chars_t &_rhs)
+    {
+        start_pos = _rhs.start_pos;
+        len = _rhs.len;
+        malloc_and_copy_(_rhs.chars);
+        return *this;
+    }
+    //
+    ~line_chars_t() { free(chars); }
+
+    //
+    void malloc_and_copy_(char *_chars)
+    {
+        chars = (char *)malloc(len + 1);
+        memcpy(chars, _chars, len);
+        chars[len] = 0;
+    }
 };
 
 //

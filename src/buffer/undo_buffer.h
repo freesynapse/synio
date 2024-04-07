@@ -7,12 +7,6 @@
 
 #include "../types.h"
 
-enum class UndoItemType
-{
-    LINES,
-    STRING,
-    TABS,
-};
 
 //
 enum class UndoAction
@@ -34,34 +28,36 @@ struct undo_item_t
 {
     undo_item_t() {}
     ~undo_item_t() = default;
-    undo_item_t(/*UndoItemType _type, */UndoAction _action, const mline_block_t &_mline_block) :
-        /*type(_type), */action(_action), mline_block(_mline_block)
+    undo_item_t(UndoAction _action, const mline_block_t &_mline_block) :
+        action(_action), mline_block(_mline_block)
     {}    
-    undo_item_t(/*UndoItemType _type,*/
-                UndoAction _action,
+    undo_item_t(UndoAction _action,
                 const ivec2_t &_start_pos,
                 const ivec2_t &_end_pos) :
-        /*type(_type), */action(_action)
+        action(_action)
     {
         mline_block.setStart(_start_pos);
         mline_block.setEnd(_end_pos);
     }
-    undo_item_t(/*UndoItemType _type,*/
-                UndoAction _action,
+    undo_item_t(UndoAction _action,
                 const ivec2_t &_start_pos,
                 const ivec2_t &_end_pos,
                 const std::vector<copy_line_t> &_lines) :
-        /*type(_type), */action(_action)
+        action(_action)
     {
         mline_block.setStart(_start_pos);
         mline_block.setEnd(_end_pos);
         mline_block.copy_lines = _lines;
     }
 
-    // UndoItemType type;
+    undo_item_t(UndoAction _action,
+                const line_chars_t &_sline) :
+        action(_action), sline(_sline)
+    {}
+
     UndoAction action;
     mline_block_t mline_block;  // multi-line actions
-    copy_line_t sline;          // single line actions
+    line_chars_t sline;         // single line actions
 
 };
 
@@ -83,6 +79,8 @@ private:
     // action functions
     void deleteLines(const undo_item_t &_item);
     void addLines(const undo_item_t &_item);
+    void deleteStrFromLine(const undo_item_t &_item);
+    void addStrToLine(const undo_item_t &_item);
 
 private:
     std::stack<undo_item_t> m_stack;

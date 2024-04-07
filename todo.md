@@ -38,6 +38,18 @@ Börjar med add/del lines, eftersom den koden är klar (i cut() och paste()). F�
 LINES_ADD (som i paste). Allt som borde behövas för att ångra (alltså ta bort igen) är
 start_pos och end_pos.
 
+2. Lägga till push() undo_item_t:s i följande
+    FileBufferWindow::insertCharAtPos
+    FileBufferWindow::insertStrAtCursor
+    FileBufferWindow::insertNewLine
+    FileBufferWindow::insertTab
+    FileBufferWindow::removeLeadingTab
+    FileBufferWindow::insertStructuralLiteral
+    FileBufferWindow::deleteCharAtCursor
+    FileBufferWindow::deleteToNextColDelim
+    FileBufferWindow::deleteCharBeforeCursor
+    FileBufferWindow::deleteToPrevColDelim
+    
 
 För att få till redo skulle man kunna ha en cirkulär buffer, men vi börjar med en stack 
 för undo.

@@ -159,6 +159,9 @@ protected:
 
     std::vector<copy_line_t> m_copyBuffer;
     UndoBuffer m_undoBuffer;
+    bool m_storeActions = true; // flag set by undo buffer to NOT store intermediate 
+                                // commands to the undo buffer (e.g. inserts when undoing
+                                // a delete command).
 
     // Line numbers window accompanying this one
     LineNumbers *m_lineNumbers = NULL;

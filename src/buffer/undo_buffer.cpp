@@ -31,27 +31,33 @@ void UndoBuffer::undo()
     m_stack.pop();
 
     #ifdef DEBUG
-    LOG_RAW("[undo_item_t] %p", &item);
+    LOG_RAW("=== [undo_item_t] %p ===", &item);
     // LOG_RAW("type   = %s", UndoItemType2Str(_item.type));
     LOG_RAW("action = %s", UndoAction2Str(item.action));
-    LOG_RAW("mblock:");
-    LOG_RAW("\tstart_pos = %d, %d", item.mline_block.start_pos.x, item.mline_block.start_pos.y);
-    LOG_RAW("\tend_pos   = %d, %d", item.mline_block.end_pos.x, item.mline_block.end_pos.y);
-    LOG_RAW("\tmlines:")
-    LOG_RAW("\tsline = '%s' (%zu) [%zu : %zu] (newline: %s)", 
-            item.sline.line_chars,
-            item.sline.len,
-            item.sline.offset0,
-            item.sline.offset1,
-            item.sline.newline ? "true" : "false");
-    for (auto &it : item.mline_block.copy_lines)
-        LOG_RAW("\t\t'%s' (%zu) [%zu : %zu] (newline: %s)",
-                it.line_chars,
-                it.len,
-                it.offset0,
-                it.offset1,
-                it.newline ? "true" : "false");
+    if (item.mline_block.size())
+    {
+        LOG_RAW("mblock:");
+        LOG_RAW("\tstart_pos = %d, %d", item.mline_block.start_pos.x, item.mline_block.start_pos.y);
+        LOG_RAW("\tend_pos   = %d, %d", item.mline_block.end_pos.x, item.mline_block.end_pos.y);
+        LOG_RAW("\tmlines:")
+        for (auto &it : item.mline_block.copy_lines)
+            LOG_RAW("\t\t'%s' (%zu) [%zu : %zu] (newline: %s)",
+                    it.line_chars,
+                    it.len,
+                    it.offset0,
+                    it.offset1,
+                    it.newline ? "true" : "false");
+    }
+    else    // single line
+    {
+        LOG_RAW("sline:");
+        LOG_RAW("\tstart_pos = %d, %d", item.sline.start_pos.x, item.sline.start_pos.y);
+        LOG_RAW("\tchars = %s (%zu)", item.sline.chars, item.sline.len);
+    }
     #endif
+
+    // prevent new commands of being recorded as undoable
+    m_window->m_storeActions = false;
 
     //
     switch (item.action)
@@ -64,8 +70,14 @@ void UndoBuffer::undo()
             // add lines back in
             addLines(item);
             break;
+        case UndoAction::STRING_ADD:
+            deleteStrFromLine(item);
+            break;
         default: LOG_WARNING("how?!"); break;
     }
+
+    // go back to recording actions as undoable
+    m_window->m_storeActions = true;
 
     m_window->update_lines_after_y_(m_window->m_cursor.cy());
     m_window->refresh_next_frame_();
@@ -75,6 +87,7 @@ void UndoBuffer::undo()
 }
 
 //---------------------------------------------------------------------------------------
+// TODO : essentially a copy of FileBufferWindow::deleteSelection(). Merge!
 void UndoBuffer::deleteLines(const undo_item_t &_item)
 {
     auto &start = _item.mline_block.start_pos;
@@ -111,6 +124,7 @@ void UndoBuffer::deleteLines(const undo_item_t &_item)
 }
 
 //---------------------------------------------------------------------------------------
+// TODO : essentially a copy of FileBufferWindow::paste(). Merge!
 void UndoBuffer::addLines(const undo_item_t &_item)
 {
     auto &start = _item.mline_block.start_pos;
@@ -149,21 +163,23 @@ void UndoBuffer::addLines(const undo_item_t &_item)
 }
 
 //---------------------------------------------------------------------------------------
-/*
-const char *UndoItemType2Str(UndoItemType _t)
+void UndoBuffer::deleteStrFromLine(const undo_item_t &_item)
 {
-    #ifdef DEBUG
-    switch (_t)
-    {
-        case UndoItemType::LINES:   return "LINES";
-        case UndoItemType::STRING:  return "STRING";
-        case UndoItemType::TABS:    return "TABS";
-        default: return "UNKNOWN";
-    }
-    #endif    
+    const line_chars_t *sline = &_item.sline;
+    FileBufferWindow *w = m_window;
 
+    w->gotoBufferCursorPos(sline->start_pos);
+    for (int i = 0; i < sline->len; i++)
+        w->deleteCharAtCursor();
 }
-*/
+
+//---------------------------------------------------------------------------------------
+void UndoBuffer::addStrToLine(const undo_item_t &_item)
+{
+    FileBufferWindow *w = m_window;
+    w->gotoBufferCursorPos(_item.sline.start_pos);
+    // w->insertCharAtPos()
+}
 
 //---------------------------------------------------------------------------------------
 const char *UndoAction2Str(UndoAction _a)

@@ -49,7 +49,15 @@ FileBufferWindow::~FileBufferWindow()
 #ifdef DEBUG
 void FileBufferWindow::__debug_fnc()
 {
+    const char *cstr = "|test_insert|";
+    auto len = strlen(cstr);
+    char *str = (char *)malloc(len);
+    memcpy(str, cstr, len);
+
+    insertStrAtCursor(str, len);
     
+    free(str);
+
 }
 #endif
 //---------------------------------------------------------------------------------------
@@ -406,13 +414,17 @@ void FileBufferWindow::moveFileEnd()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::insertCharAtCursor(char _c)
 {
-    insertCharAtPos(_c, m_cursor.cx());
-    //m_currentLine->insert_char(_c, m_cursor.cx());
-    //moveCursor(1, 0);
+    ivec2_t start_pos = m_bufferCursorPos;
 
-    //refresh_next_frame_();
-    //buffer_changed_();
-    //syntax_highlight_buffer_();
+    insertCharAtPos(_c, m_cursor.cx());
+
+    //
+    if (m_storeActions)
+    {
+        // really not interested in content since undo is delete, but let's copy anyways
+        line_chars_t chars(start_pos, m_currentLine->__debug_str+start_pos.x, 1);
+        m_undoBuffer.push(undo_item_t(UndoAction::STRING_ADD, chars));
+    }
 
 }
 
@@ -444,10 +456,12 @@ void FileBufferWindow::insertStrAtCursor(char *_str, size_t _len)
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::insertStrAtCursor(CHTYPE_PTR _str, size_t _len)
 {
+    ivec2_t start_pos = m_bufferCursorPos;
+
     m_currentLine->insert_str(_str, _len, m_cursor.cx());
     moveCursor(_len, 0);
 
-    // if tabs or spaces needs update
+    // if tabs or spaces needs update -- rendering-related only!
     for (size_t i = 0; i < _len; i++)
     {
         if (_str[i] == '\t' || _str[i] == ' ')
@@ -455,6 +469,13 @@ void FileBufferWindow::insertStrAtCursor(CHTYPE_PTR _str, size_t _len)
             m_windowLinesUpdateList.insert(m_cursor.cy());
             break;
         }
+    }
+
+    if (m_storeActions)
+    {
+        // really not interested in content since undo is delete, but let's copy anyways
+        line_chars_t chars(start_pos, m_currentLine->__debug_str+start_pos.x, _len);
+        m_undoBuffer.push(undo_item_t(UndoAction::STRING_ADD, chars));
     }
 
     refresh_next_frame_();
@@ -511,6 +532,12 @@ void FileBufferWindow::insertNewLine(bool _auto_align)
     else
         moveCursor(-cx, 1);
     
+    // TODO : undo me!
+    if (m_storeActions)
+    {
+        
+    }
+
     //
     update_lines_after_y_(cy - 1);
     refresh_next_frame_();
@@ -534,6 +561,8 @@ void FileBufferWindow::insertTab()
         }
         update_lines_after_y_(cy_start);
 
+        // upon recall, the cursor stays in place where it was
+
     }
     else
     {
@@ -542,6 +571,12 @@ void FileBufferWindow::insertTab()
         m_currentLine->insert_str(buffer, Config::TAB_SIZE, m_cursor.cx());
         moveCursor(Config::TAB_SIZE, 0);
         m_windowLinesUpdateList.insert(m_cursor.cy());
+    }
+
+    // TODO : undo me!
+    if (m_storeActions)
+    {
+        
     }
 
     refresh_next_frame_();
@@ -592,6 +627,12 @@ void FileBufferWindow::removeLeadingTab()
         m_windowLinesUpdateList.insert(m_cursor.cy());
     }
 
+    // TODO : undo me!
+    if (m_storeActions)
+    {
+        
+    }
+
     refresh_next_frame_();
     buffer_changed_();
     syntax_highlight_buffer_();
@@ -632,13 +673,22 @@ void FileBufferWindow::insertStructuralLiteral(char _c)
                 bline->insert_char(b[1], bpos.x);
                 moveCursor(1, 0);
                 deselect_(FORWARD);
+
+                // TODO : undo me!
+                if (m_storeActions)
+                {
+                    
+                }
             }
             else
             {
                 if (sspos.x > m_bufferCursorPos.x)
                     std::swap(sspos, bpos);
+                // TODO : undo me! 
+                // prevent storing this action?
                 insertCharAtPos(b[0], sspos.x, false);
                 insertCharAtPos(b[1], bpos.x + 1);
+                
                 deselect_(FORWARD);
             }
 
