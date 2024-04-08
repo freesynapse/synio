@@ -486,6 +486,14 @@ void FileBufferWindow::insertStrAtCursor(CHTYPE_PTR _str, size_t _len)
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::insertNewLine(bool _auto_align)
 {
+    ivec2_t start_pos = m_bufferCursorPos;
+
+    // undo item -- mline_block_t.start_pos stores the cursor position at newline nad
+    // mline_block_t.end_pos stores the indent level. mline_block_t.copy_lines stores 
+    // the content of the newly formed lines so they may be concatenated upon undo
+    mline_block_t undo_block;
+    undo_block.setStart(start_pos);
+
     // need to check if this is a newline between two structural literals
     int cx = m_cursor.cx();
     int cy = m_cursor.cy();
@@ -498,6 +506,9 @@ void FileBufferWindow::insertNewLine(bool _auto_align)
     line_t *new_line = m_currentLine->split_at_pos(m_cursor.cx());
     m_lineBuffer.insertAtPtr(m_currentLine, INSERT_AFTER, new_line);
 
+    // store the current line (all inserted spaces will be removed upon undo concat)
+    undo_block.copy_lines.push_back(copy_line_t(m_currentLine, false, false));
+
     // find correct indentation -- use spaces, not tabs
     // TODO :   1.  Use TabsOrSpaces Config::USE_TABS_OR_SPACES to determine tabs or
     //              spaces, for now, use spaces.
@@ -505,6 +516,9 @@ void FileBufferWindow::insertNewLine(bool _auto_align)
     if (_auto_align)
     {
         int white_spaces = find_indentation_level_(m_currentLine);
+        
+        undo_block.setEnd(ivec2_t(white_spaces, 0));
+
         for (int i = 0; i < white_spaces; i++)
             new_line->insert_char(' ', 0);
         if (new_empty_line)
@@ -514,6 +528,9 @@ void FileBufferWindow::insertNewLine(bool _auto_align)
             int next_tab = find_next_tab_stop_(white_spaces);
             for (int i = 0; i < next_tab; i++)
                 m_currentLine->next->insert_char(' ', 0);
+            
+            // store this new line
+            undo_block.copy_lines.push_back(copy_line_t(NULL, false, false));
         }
 
         int dy = m_frame.nrows - cy;
@@ -531,12 +548,13 @@ void FileBufferWindow::insertNewLine(bool _auto_align)
     }
     else
         moveCursor(-cx, 1);
-    
-    // TODO : undo me!
+
+    // store last line    
+    undo_block.copy_lines.push_back(copy_line_t(new_line, false, false));
+
+    //
     if (m_storeActions)
-    {
-        
-    }
+        m_undoBuffer.push(undo_item_t(UndoAction::NEWLINE, undo_block));
 
     //
     update_lines_after_y_(cy - 1);
@@ -549,34 +567,58 @@ void FileBufferWindow::insertNewLine(bool _auto_align)
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::insertTab()
 {
+    ivec2_t start_pos = m_bufferCursorPos;
+
     if (m_selection->lineCount())
     {
-        int cy_start = m_bufferCursorPos.y - m_selection->startingBufferPos().y;
+        int cy_start = m_selection->startingBufferPos().y - m_scrollPos.y;
+        // store start position in mline_block_t.start_pos, using the 
+        // std::vector<copy_lint_t> for the size of the selection. mline_block_t.end_pos
+        // is used to mark the selection start (i.e. the first line)
+        mline_block_t undo_block;
+        undo_block.setStart(start_pos);
+        undo_block.setEnd(m_selection->startingBufferPos());
+
         for (line_t *line : m_selection->getSelectedLines())
         {
             if (line->sel_end - line->sel_start == 0)
+            {
+                undo_block.copy_lines.insert(undo_block.copy_lines.begin(), copy_line_t(NULL, false, false));
                 continue;
+            }
+            undo_block.copy_lines.insert(undo_block.copy_lines.begin(), copy_line_t(line, false, false));
             insert_leading_tab_(line);
             m_selection->expandSelection(line, 0, Config::TAB_SIZE);
         }
         update_lines_after_y_(cy_start);
 
-        // upon recall, the cursor stays in place where it was
+        //
+        if (m_storeActions)
+            m_undoBuffer.push(undo_item_t(UndoAction::MTABS_ADD, undo_block));
 
     }
     else
     {
+        int cx = m_cursor.cx();
+
         char buffer[Config::TAB_SIZE];
         memset(buffer, ' ', Config::TAB_SIZE);
-        m_currentLine->insert_str(buffer, Config::TAB_SIZE, m_cursor.cx());
-        moveCursor(Config::TAB_SIZE, 0);
-        m_windowLinesUpdateList.insert(m_cursor.cy());
-    }
 
-    // TODO : undo me!
-    if (m_storeActions)
-    {
-        
+        int next_stop = find_next_tab_stop_(cx);
+        int n = next_stop - cx;
+
+        m_currentLine->insert_str(buffer, n, cx);
+        moveCursor(n, 0);
+
+        m_windowLinesUpdateList.insert(m_cursor.cy());
+
+        if (m_storeActions)
+        {
+            // really not interested in content since undo is delete, but let's copy anyways
+            line_chars_t chars(start_pos, m_currentLine->__debug_str+start_pos.x, n);
+            m_undoBuffer.push(undo_item_t(UndoAction::STRING_ADD, chars));
+
+        }
     }
 
     refresh_next_frame_();
@@ -588,25 +630,49 @@ void FileBufferWindow::insertTab()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::removeLeadingTab()
 {
+    ivec2_t start_pos = m_bufferCursorPos;
+
     if (m_selection->lineCount())
     {
-        int cy_start = m_bufferCursorPos.y - m_selection->startingBufferPos().y;
+        int cy_start = m_selection->startingBufferPos().y - m_scrollPos.y;
+        // store start position in mline_block_t.start_pos, using the 
+        // std::vector<copy_lint_t> for the size of the selection. mline_block_t.end_pos
+        // is used to mark the selection start (i.e. the first line)
+        mline_block_t undo_block;
+        undo_block.setStart(start_pos);
+        undo_block.setEnd(m_selection->startingBufferPos());
+
         for (line_t *line : m_selection->getSelectedLines())
         {
             if (line->sel_end - line->sel_start == 0)
+            {
+                undo_block.copy_lines.insert(undo_block.copy_lines.begin(), copy_line_t(NULL, false, false));
                 continue;
+            }
+
             int first_char = find_first_non_empty_char_(line);
             if (!first_char)
+            {
+                undo_block.copy_lines.insert(undo_block.copy_lines.begin(), copy_line_t(NULL, false, false));
                 continue;
+            }
             // find previous tab stop before first char
             int steps = first_char - find_prev_tab_stop_(first_char);
-            for (int i = 0; i < steps; i++)
-                line->delete_at(0);
+            line->delete_n_at(0, steps);
+            // for (int i = 0; i < steps; i++)
+                // line->delete_at(0);
+            undo_block.copy_lines.insert(undo_block.copy_lines.begin(), copy_line_t(line, false, false));
+
             // update selection
             line->sel_end -= steps;
 
         }
         update_lines_after_y_(cy_start);
+
+        //
+        if (m_storeActions)
+            m_undoBuffer.push(undo_item_t(UndoAction::MTABS_DEL, undo_block));
+
     }
     else
     {
@@ -663,34 +729,37 @@ void FileBufferWindow::insertStructuralLiteral(char _c)
             ivec2_t bpos = m_bufferCursorPos;
             ivec2_t sspos = m_selection->startingBufferPos();
 
+            mline_block_t undo_block;
+            undo_block.setStart(bpos);
+            undo_block.setEnd(sspos);
+
             if (bpos.y != sspos.y)
-            {
+            {                             
                 if (sspos.y > bpos.y)
                     std::swap(sspos, bpos);
+
                 line_t *ssline = m_lineBuffer.ptrFromIdx(sspos.y);
                 ssline->insert_char(b[0], sspos.x);
                 line_t *bline = m_lineBuffer.ptrFromIdx(bpos.y);
                 bline->insert_char(b[1], bpos.x);
                 moveCursor(1, 0);
-                deselect_(FORWARD);
 
-                // TODO : undo me!
-                if (m_storeActions)
-                {
-                    
-                }
+                deselect_(FORWARD);
             }
             else
             {
                 if (sspos.x > m_bufferCursorPos.x)
                     std::swap(sspos, bpos);
-                // TODO : undo me! 
-                // prevent storing this action?
+
                 insertCharAtPos(b[0], sspos.x, false);
                 insertCharAtPos(b[1], bpos.x + 1);
                 
                 deselect_(FORWARD);
             }
+
+            //
+            if (m_storeActions)
+                m_undoBuffer.push(undo_item_t(UndoAction::LITERAL_MADD, undo_block));
 
         }
         else

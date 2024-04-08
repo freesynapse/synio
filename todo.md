@@ -39,12 +39,6 @@ LINES_ADD (som i paste). Allt som borde behövas för att ångra (alltså ta bor
 start_pos och end_pos.
 
 2. Lägga till push() undo_item_t:s i följande
-    FileBufferWindow::insertCharAtPos
-    FileBufferWindow::insertStrAtCursor
-    FileBufferWindow::insertNewLine
-    FileBufferWindow::insertTab
-    FileBufferWindow::removeLeadingTab
-    FileBufferWindow::insertStructuralLiteral
     FileBufferWindow::deleteCharAtCursor
     FileBufferWindow::deleteToNextColDelim
     FileBufferWindow::deleteCharBeforeCursor

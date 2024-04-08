@@ -11,16 +11,15 @@
 //
 enum class UndoAction
 {
+    // for multiple cursors; probably just adding an undo item per edit
     STRING_ADD,
-    STRING_MADD,    // for multiple cursors; TODO : implement
     STRING_DEL,
-    STRING_MDEL,    // for multiple cursors; TODO : implement
+    LITERAL_MADD,
     LINES_ADD,
     LINES_DEL,
-    TAB_INSERT,
     MTABS_ADD,
-    TAB_DEL,
     MTABS_DEL,
+    NEWLINE,
 };
 
 //
@@ -81,6 +80,10 @@ private:
     void addLines(const undo_item_t &_item);
     void deleteStrFromLine(const undo_item_t &_item);
     void addStrToLine(const undo_item_t &_item);
+    void deleteTabs(const undo_item_t &_item);
+    void addTabs(const undo_item_t &_item);
+    void revertNewLine(const undo_item_t &_item);
+    void deleteMLiteral(const undo_item_t &_item);
 
 private:
     std::stack<undo_item_t> m_stack;

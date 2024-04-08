@@ -78,6 +78,9 @@ line_t *copy_line(line_t *_line)
 //---------------------------------------------------------------------------------------
 copy_line_t::copy_line_t(line_t *_line, bool _newline, bool _use_sel_offsets)
 {
+    if (_line == NULL)
+        return;
+        
     // fow now, lets use __debug_str
     offset0 = (_use_sel_offsets ? _line->sel_start : 0);
     offset1 = (_use_sel_offsets ? _line->sel_end : _line->len);
@@ -85,7 +88,6 @@ copy_line_t::copy_line_t(line_t *_line, bool _newline, bool _use_sel_offsets)
     // len = _line->sel_end - _line->sel_start;
     len = offset1 - offset0;
     line_chars = (char *)malloc(len + 1);
-    // memcpy(line_chars, _line->__debug_str+_line->sel_start, len);
     memcpy(line_chars, _line->__debug_str+offset0, len);
     line_chars[len] = 0;
 

@@ -87,7 +87,7 @@ public:
     line_t *currentLine() { return m_currentLine; }
 
 private:
-    //
+    // (includes y)
     __always_inline void update_lines_after_y_(int _y)
     {
         for (int i = _y; i < m_frame.nrows; i++)
