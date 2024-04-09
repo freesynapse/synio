@@ -222,10 +222,12 @@ void LineBufferWindow::insertCharAtCursor(char _c)
 }
 
 //---------------------------------------------------------------------------------------
-void LineBufferWindow::insertStrAtCursor(char *_str, size_t _len)
+void LineBufferWindow::insertStrAtCursor(char *_str, size_t _len, bool _update_cursor)
 {
     m_currentLine->insert_str(_str, _len, m_cursor.cpos().x);
-    moveCursor(_len, 0);
+    
+    if (_update_cursor)
+        moveCursor(_len, 0);
 
     refresh_next_frame_();
 

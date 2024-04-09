@@ -44,8 +44,8 @@ public:
     virtual void moveFileEnd() override;
     virtual void insertCharAtCursor(char _c) override;
     virtual void insertCharAtPos(char _c, size_t _pos, bool _update_cursor=true) override;
-    virtual void insertStrAtCursor(char *_str, size_t _len) override;
-    virtual void insertStrAtCursor(CHTYPE_PTR _str, size_t _len) override;
+    virtual void insertStrAtCursor(char *_str, size_t _len, bool _update_cursor=true) override;
+    virtual void insertStrAtCursor(CHTYPE_PTR _str, size_t _len, bool _update_cursor=true) override;
     virtual void insertNewLine(bool _auto_align=true) override;
     virtual void insertTab() override;
     virtual void removeLeadingTab() override;
@@ -114,7 +114,7 @@ private:
     // deletes selected text, for standard keypresses. Returns number of deleted lines
     __always_inline int delete_selection_()
     {
-        int deleted = m_selection->lineCount();
+        int deleted = m_selection->lineCount(m_bufferCursorPos);
         if (deleted)
             deleteSelection();
         return deleted;
@@ -128,8 +128,6 @@ private:
         memset(buffer, ' ', Config::TAB_SIZE);
         _line->insert_str(buffer, Config::TAB_SIZE, 0);        
     }
-    // removes a leading tab from line
-    __always_inline void remove_leading_tab_(line_t *_line) {}
 
 protected:
     std::string m_filename = "";

@@ -12,14 +12,18 @@
 enum class UndoAction
 {
     // for multiple cursors; probably just adding an undo item per edit
+    CHAR_ADD,
+    CHAR_DEL,
     STRING_ADD,
     STRING_DEL,
     LITERAL_MADD,
-    LINES_ADD,
-    LINES_DEL,
     MTABS_ADD,
     MTABS_DEL,
-    NEWLINE,
+    LINE_NEW,
+    LINE_COLLAPSE_NEXT,
+    LINE_COLLAPSE_PREV,
+    LINES_ADD,
+    LINES_DEL,
 };
 
 //
@@ -27,9 +31,11 @@ struct undo_item_t
 {
     undo_item_t() {}
     ~undo_item_t() = default;
+    //
     undo_item_t(UndoAction _action, const mline_block_t &_mline_block) :
         action(_action), mline_block(_mline_block)
-    {}    
+    {}
+    //    
     undo_item_t(UndoAction _action,
                 const ivec2_t &_start_pos,
                 const ivec2_t &_end_pos) :
@@ -38,6 +44,7 @@ struct undo_item_t
         mline_block.setStart(_start_pos);
         mline_block.setEnd(_end_pos);
     }
+    //
     undo_item_t(UndoAction _action,
                 const ivec2_t &_start_pos,
                 const ivec2_t &_end_pos,
@@ -48,15 +55,19 @@ struct undo_item_t
         mline_block.setEnd(_end_pos);
         mline_block.copy_lines = _lines;
     }
-
+    //
     undo_item_t(UndoAction _action,
                 const line_chars_t &_sline) :
         action(_action), sline(_sline)
     {}
 
+    //
     UndoAction action;
     mline_block_t mline_block;  // multi-line actions
     line_chars_t sline;         // single line actions
+    char ch;                    // single char actions
+    bool move_cursor = false;   // to diff between STRING_DEL prev and next
+    int sel_start_y = 0;
 
 };
 
@@ -76,14 +87,24 @@ public:
 
 private:
     // action functions
-    void deleteLines(const undo_item_t &_item);
-    void addLines(const undo_item_t &_item);
+    void deleteCharFromLine(const undo_item_t &_item);
+    void addCharToLine(const undo_item_t &_item);
+
     void deleteStrFromLine(const undo_item_t &_item);
     void addStrToLine(const undo_item_t &_item);
+
+    void deleteMLiteral(const undo_item_t &_item);
+
     void deleteTabs(const undo_item_t &_item);
     void addTabs(const undo_item_t &_item);
+
     void revertNewLine(const undo_item_t &_item);
-    void deleteMLiteral(const undo_item_t &_item);
+    void addNewLineAfter(const undo_item_t &_item);
+    void addNewLineBefore(const undo_item_t &_item);
+
+    void deleteLines(const undo_item_t &_item);
+    void addLines(const undo_item_t &_item);
+
 
 private:
     std::stack<undo_item_t> m_stack;
@@ -91,18 +112,8 @@ private:
 
 };
 
-//extern const char *UndoItemType2Str(UndoItemType _t);
-extern const char *UndoAction2Str(UndoAction _a);
-
-// TODO :   these should be moved to the ReplayBuffer class, since each file buffer  
-//          window should have its own ReplayBuffer.
-// map for mapping lines to line_t pointers (mostly for the replay buffer)
-//static std::unordered_map<int, line_t *> s_lineToPtrMap;
-// updating (and adding) line_t ptr to map
-//extern void update_replay_map(line_t *_line_ptr);
-// tracking current line number
-//static int s_nextRegretLineNo = 0;
-//extern size_t get_next_regret_line_no();
+// debug function
+extern const char *__debug_undoAction2Str(UndoAction _a);
 
 
 

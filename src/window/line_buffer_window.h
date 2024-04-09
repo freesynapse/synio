@@ -32,7 +32,7 @@ public:
     virtual void moveCursorToLineEnd() override;
     virtual int findColDelim(int _dir, bool _move_cursor=true) override;
     virtual void insertCharAtCursor(char _c) override;
-    virtual void insertStrAtCursor(char *_str, size_t _len) override;
+    virtual void insertStrAtCursor(char *_str, size_t _len, bool _update_cursor=true) override;
     // TODO : implement this!
     //virtual void insertStrAtCursor(CHTYPE_PTR _str, size_t _len) override;
     virtual void deleteCharAtCursor() override;

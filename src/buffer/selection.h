@@ -23,11 +23,11 @@ public:
     void expandSelection(line_t *_line, size_t _start_expand, size_t _end_expand);
 
     // accessors
-    size_t lineCount() { return m_entries.size(); }
+    size_t lineCount(const ivec2_t &_curr_pos);
     void setStartingBufferPos(const ivec2_t &_start_pos) { m_startingBufferPos = _start_pos; }
     const ivec2_t &startingBufferPos() { return m_startingBufferPos; }
     bool isLineEntry(line_t *_line) { return (m_entries.find(_line) != m_entries.end()); }
-    std::unordered_set<line_t *> getSelectedLines() { return m_entries; }
+    const std::unordered_set<line_t *> &getSelectedLines() { return m_entries; }
 
 private:
     void select_(line_t *_line, size_t _start, size_t _end);

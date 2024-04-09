@@ -68,6 +68,10 @@ void Selection::select_(line_t *_line, size_t _start, size_t _end)
     //
     m_entries.insert(_line);
 
+    // remove untoggled line
+    //if (_line->sel_end - _line->sel_start == 0 && _line->len != 0)
+    //    m_entries.erase(_line);
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -77,4 +81,19 @@ void Selection::expandSelection(line_t *_line, size_t _start_expand, size_t _end
     ncurses_find_selected_offsets(_line, &_line->sel_start, &_line->sel_end);
     m_entries.insert(_line);
 
+}
+
+//---------------------------------------------------------------------------------------
+size_t Selection::lineCount(const ivec2_t &_curr_pos)
+{
+    if (m_startingBufferPos.x == -1)
+        return 0;
+
+    int count = 0;
+    if (m_startingBufferPos.y != _curr_pos.y)
+        count = abs(m_startingBufferPos.y - _curr_pos.y);
+    if (m_startingBufferPos.x != _curr_pos.x)
+        count += 1;
+    assert(count >= 0);
+    return (size_t)count;
 }

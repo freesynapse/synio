@@ -49,14 +49,7 @@ FileBufferWindow::~FileBufferWindow()
 #ifdef DEBUG
 void FileBufferWindow::__debug_fnc()
 {
-    const char *cstr = "|test_insert|";
-    auto len = strlen(cstr);
-    char *str = (char *)malloc(len);
-    memcpy(str, cstr, len);
-
-    insertStrAtCursor(str, len);
-    
-    free(str);
+    deleteToNextColDelim();
 
 }
 #endif
@@ -228,7 +221,7 @@ void FileBufferWindow::scroll_(int _axis, int _dir, int _steps, bool _update_cur
     if (_update_current_line)
         updateCurrentLinePtr(scroll.y);
 
-    // update scroll position (cursor updated in )
+    // update scroll position
     m_scrollPos += scroll;
     
     clear_next_frame_();
@@ -423,7 +416,7 @@ void FileBufferWindow::insertCharAtCursor(char _c)
     {
         // really not interested in content since undo is delete, but let's copy anyways
         line_chars_t chars(start_pos, m_currentLine->__debug_str+start_pos.x, 1);
-        m_undoBuffer.push(undo_item_t(UndoAction::STRING_ADD, chars));
+        m_undoBuffer.push(undo_item_t(UndoAction::CHAR_ADD, chars));
     }
 
 }
@@ -441,25 +434,27 @@ void FileBufferWindow::insertCharAtPos(char _c, size_t _pos, bool _update_cursor
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::insertStrAtCursor(char *_str, size_t _len)
+void FileBufferWindow::insertStrAtCursor(char *_str, size_t _len, bool _update_cursor)
 {
     CHTYPE_PTR str_ = (CHTYPE_PTR)malloc(CHTYPE_SIZE * _len);
     for (size_t i = 0; i < _len; i++)
         str_[i] = _str[i];
 
-    insertStrAtCursor(str_, _len);
+    insertStrAtCursor(str_, _len, _update_cursor);
 
     free(str_);
 
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::insertStrAtCursor(CHTYPE_PTR _str, size_t _len)
+void FileBufferWindow::insertStrAtCursor(CHTYPE_PTR _str, size_t _len, bool _update_cursor)
 {
     ivec2_t start_pos = m_bufferCursorPos;
 
     m_currentLine->insert_str(_str, _len, m_cursor.cx());
-    moveCursor(_len, 0);
+    
+    if (_update_cursor)
+        moveCursor(_len, 0);
 
     // if tabs or spaces needs update -- rendering-related only!
     for (size_t i = 0; i < _len; i++)
@@ -554,7 +549,7 @@ void FileBufferWindow::insertNewLine(bool _auto_align)
 
     //
     if (m_storeActions)
-        m_undoBuffer.push(undo_item_t(UndoAction::NEWLINE, undo_block));
+        m_undoBuffer.push(undo_item_t(UndoAction::LINE_NEW, undo_block));
 
     //
     update_lines_after_y_(cy - 1);
@@ -569,27 +564,40 @@ void FileBufferWindow::insertTab()
 {
     ivec2_t start_pos = m_bufferCursorPos;
 
-    if (m_selection->lineCount())
+    if (m_selection->lineCount(m_bufferCursorPos))
     {
-        int cy_start = m_selection->startingBufferPos().y - m_scrollPos.y;
+        int cy_start = (m_bufferCursorPos.y <  m_selection->startingBufferPos().y ? 
+                        m_bufferCursorPos.y : m_selection->startingBufferPos().y);
+        int sel_start_y = cy_start;
+        cy_start -= m_scrollPos.y;
         // store start position in mline_block_t.start_pos, using the 
         // std::vector<copy_lint_t> for the size of the selection. mline_block_t.end_pos
         // is used to mark the selection start (i.e. the first line)
         mline_block_t undo_block;
         undo_block.setStart(start_pos);
-        undo_block.setEnd(m_selection->startingBufferPos());
+        undo_block.setEnd(ivec2_t(m_selection->lineCount(m_bufferCursorPos), sel_start_y));
 
-        for (line_t *line : m_selection->getSelectedLines())
+        line_t *line = m_lineBuffer.ptrFromIdx(sel_start_y);
+        size_t i = 0;
+        size_t sel_count = m_selection->lineCount(m_bufferCursorPos);
+        while (i < sel_count && line != NULL)
         {
             if (line->sel_end - line->sel_start == 0)
             {
-                undo_block.copy_lines.insert(undo_block.copy_lines.begin(), copy_line_t(NULL, false, false));
+                undo_block.copy_lines.push_back(copy_line_t(NULL, false, false));
+                line = line->next;
+                i++;
                 continue;
             }
-            undo_block.copy_lines.insert(undo_block.copy_lines.begin(), copy_line_t(line, false, false));
+            
+            undo_block.copy_lines.push_back(copy_line_t(line, false, false));
             insert_leading_tab_(line);
             m_selection->expandSelection(line, 0, Config::TAB_SIZE);
+
+            line = line->next;
+            i++;
         }
+
         update_lines_after_y_(cy_start);
 
         //
@@ -632,46 +640,68 @@ void FileBufferWindow::removeLeadingTab()
 {
     ivec2_t start_pos = m_bufferCursorPos;
 
-    if (m_selection->lineCount())
+    if (m_selection->lineCount(m_bufferCursorPos))
     {
-        int cy_start = m_selection->startingBufferPos().y - m_scrollPos.y;
-        // store start position in mline_block_t.start_pos, using the 
-        // std::vector<copy_lint_t> for the size of the selection. mline_block_t.end_pos
-        // is used to mark the selection start (i.e. the first line)
+        int cy_start = (m_bufferCursorPos.y <  m_selection->startingBufferPos().y ? 
+                        m_bufferCursorPos.y : m_selection->startingBufferPos().y);
+        int sel_start_y = cy_start;
+        cy_start -= m_scrollPos.y;
+        // store cursor position in mline_block_t.start_pos, and .end_pos.x to store the
+        // line count and .end_pos.y to store the index of the first line in selection
+        // the std::vector<copy_lint_t> stores the lines
         mline_block_t undo_block;
+        auto &clines = undo_block.copy_lines;
         undo_block.setStart(start_pos);
-        undo_block.setEnd(m_selection->startingBufferPos());
 
-        for (line_t *line : m_selection->getSelectedLines())
+        line_t *line = m_lineBuffer.ptrFromIdx(sel_start_y);
+        size_t i = 0;
+        size_t sel_count = m_selection->lineCount(m_bufferCursorPos);
+        while (i < sel_count && line != NULL)
         {
             if (line->sel_end - line->sel_start == 0)
             {
-                undo_block.copy_lines.insert(undo_block.copy_lines.begin(), copy_line_t(NULL, false, false));
+                clines.push_back(copy_line_t(NULL, false, false));
+                line = line->next;
+                i++;
                 continue;
             }
 
             int first_char = find_first_non_empty_char_(line);
             if (!first_char)
             {
-                undo_block.copy_lines.insert(undo_block.copy_lines.begin(), copy_line_t(NULL, false, false));
+                clines.push_back(copy_line_t(NULL, false, false));
+                line = line->next;
+                i++;
                 continue;
             }
+
             // find previous tab stop before first char
             int steps = first_char - find_prev_tab_stop_(first_char);
             line->delete_n_at(0, steps);
-            // for (int i = 0; i < steps; i++)
-                // line->delete_at(0);
-            undo_block.copy_lines.insert(undo_block.copy_lines.begin(), copy_line_t(line, false, false));
+
+            if (steps == 0)
+                clines.push_back(copy_line_t(NULL, false, false));
+            else
+                clines.push_back(copy_line_t(line, false, false));
 
             // update selection
             line->sel_end -= steps;
+
+            //
+            line = line->next;
+            i++;
 
         }
         update_lines_after_y_(cy_start);
 
         //
         if (m_storeActions)
+        {
+            // int sel_start_y = (m_selection->startingBufferPos().y < m_bufferCursorPos.y ? 
+            //                    m_selection->startingBufferPos().y : m_bufferCursorPos.y);
+            undo_block.setEnd(ivec2_t(m_selection->lineCount(m_bufferCursorPos), sel_start_y));
             m_undoBuffer.push(undo_item_t(UndoAction::MTABS_DEL, undo_block));
+        }
 
     }
     else
@@ -688,15 +718,10 @@ void FileBufferWindow::removeLeadingTab()
         int steps = first_char - find_prev_tab_stop_(first_char);
         for (int i = 0; i < steps; i++)
             m_currentLine->delete_at(0);
-        moveCursor(-steps, 0);
+        if (m_cursor.cx() >= steps)
+            moveCursor(-steps, 0);
 
         m_windowLinesUpdateList.insert(m_cursor.cy());
-    }
-
-    // TODO : undo me!
-    if (m_storeActions)
-    {
-        
     }
 
     refresh_next_frame_();
@@ -709,7 +734,7 @@ void FileBufferWindow::removeLeadingTab()
 void FileBufferWindow::insertStructuralLiteral(char _c)
 {
     char next_char = m_currentLine->__debug_str[m_cursor.cx() + 1];
-    if (next_char == ' ' || next_char == 0 || !m_currentLine->len || m_selection->lineCount())
+    if (next_char == ' ' || next_char == 0 || !m_currentLine->len || m_selection->lineCount(m_bufferCursorPos))
         // (m_selection->lineCount()) &&
         //  m_selection->startingBufferPos().y == m_bufferCursorPos.y)  
     {
@@ -724,7 +749,7 @@ void FileBufferWindow::insertStructuralLiteral(char _c)
             case '[':   b[0] = '[';  b[1] = ']';    break;
             case '(':   b[0] = '(';  b[1] = ')';    break;
         }
-        if (m_selection->lineCount())
+        if (m_selection->lineCount(m_bufferCursorPos))
         {
             ivec2_t bpos = m_bufferCursorPos;
             ivec2_t sspos = m_selection->startingBufferPos();
@@ -790,6 +815,8 @@ void FileBufferWindow::deleteCharAtCursor()
     if (delete_selection_())
         return;
 
+    ivec2_t start_pos = m_bufferCursorPos;
+
     int cx = m_cursor.cx();
 
     //
@@ -803,15 +830,33 @@ void FileBufferWindow::deleteCharAtCursor()
     // in line
     else if (cx < m_currentLine->len)
     {
+        line_chars_t ch(start_pos, &m_currentLine->__debug_str[cx], 1);
+
         m_currentLine->delete_at(cx);
         m_windowLinesUpdateList.insert(m_cursor.cy());
+
+        if (m_storeActions)
+            m_undoBuffer.push(undo_item_t(UndoAction::CHAR_DEL, ch));
+
     }
     // end of line (with len > 0)
     else
     {
+        mline_block_t undo_block;
+        undo_block.setStart(start_pos);
+        // using mline_block_t.end_pos.x to store len of current line
+        undo_block.setEnd(ivec2_t(m_currentLine->len, 0));
+        //
+        // undo_block.copy_lines.push_back(copy_line_t(m_currentLine->next, false, false));
+        // undo_block.copy_lines.push_back(copy_line_t(m_currentLine, false, false));
+        
         m_lineBuffer.appendNextToThis(m_currentLine);
         // redraw lines
         update_lines_after_y_(m_cursor.cy());
+
+        if (m_storeActions)
+            m_undoBuffer.push(undo_item_t(UndoAction::LINE_COLLAPSE_NEXT, undo_block));
+
     }
 
     refresh_next_frame_();
@@ -828,6 +873,8 @@ void FileBufferWindow::deleteToNextColDelim()
     if (delete_selection_())
         return;
 
+    ivec2_t start_pos = m_bufferCursorPos;
+
     int nspaces = find_empty_chars_from_pos_(m_cursor.cx(), FORWARD);
     int next_delim_pos_dx = findColDelim(FORWARD, false);
     
@@ -835,8 +882,19 @@ void FileBufferWindow::deleteToNextColDelim()
     if (nspaces < next_delim_pos_dx && nspaces > 0)
         ndels = nspaces;
     
-    for (int i = 0; i < ndels; i++)
-        deleteCharAtCursor();
+    //
+    if (m_storeActions)
+    {
+        line_chars_t str(start_pos, &m_currentLine->__debug_str[m_cursor.cx()], ndels);
+        m_undoBuffer.push(undo_item_t(UndoAction::STRING_DEL, str));
+    }
+
+    m_currentLine->delete_n_at(m_cursor.cx(), ndels);
+    m_windowLinesUpdateList.insert(m_cursor.cy());
+
+    refresh_next_frame_();
+    buffer_changed_();
+    syntax_highlight_buffer_();
 
 }
 
@@ -847,6 +905,8 @@ void FileBufferWindow::deleteCharBeforeCursor()
     
     if (delete_selection_())
         return;
+
+    ivec2_t start_pos = m_bufferCursorPos;
 
     int cx = m_cursor.cx();
 
@@ -863,9 +923,23 @@ void FileBufferWindow::deleteCharBeforeCursor()
         if (m_cursor.cy() == 0)
             scroll_(Y_AXIS, -1, 1, false);
 
+        mline_block_t undo_block;
+        undo_block.setStart(start_pos);
+
+        //
         size_t prev_len = m_currentLine->prev->len;
+
+        // store prev len for undo in mline_block_t.end_pos.x
+        undo_block.setEnd(ivec2_t(prev_len, 0));
+
+        // coalesce lines
         m_currentLine = m_lineBuffer.appendThisToPrev(m_currentLine);
         m_cursor.set_cpos(prev_len, m_cursor.cy() - 1);
+
+        //
+        // undo_block.copy_lines.push_back(copy_line_t(m_currentLine, false, false));
+        if (m_storeActions)
+            m_undoBuffer.push(undo_item_t(UndoAction::LINE_COLLAPSE_PREV, undo_block));
 
         // redraw lines
         update_lines_after_y_(m_cursor.cy());
@@ -917,6 +991,8 @@ void FileBufferWindow::deleteToPrevColDelim()
         deleteCharBeforeCursor();
         return;
     }
+
+    ivec2_t start_pos = m_bufferCursorPos;
     
     int prev_delim_pos_dx = findColDelim(BACKWARD, false);
     int cx = m_cursor.cx();
@@ -929,8 +1005,16 @@ void FileBufferWindow::deleteToPrevColDelim()
     if (nspaces < abs(prev_delim_pos_dx) && nspaces > 0)
         ndels = nspaces;
     
-    for (int i = 0; i < ndels; i++)
-        m_currentLine->delete_at(cx - ndels);
+    if (m_storeActions)
+    {
+        start_pos.x -= ndels;
+        line_chars_t str(start_pos, &m_currentLine->__debug_str[cx - ndels], ndels);
+        undo_item_t undo(UndoAction::STRING_DEL, str);
+        undo.move_cursor = true;
+        m_undoBuffer.push(undo);
+    }
+
+    m_currentLine->delete_n_at(cx - ndels, ndels);
 
     moveCursor(-ndels, 0);
     m_windowLinesUpdateList.insert(m_cursor.cy());
@@ -960,7 +1044,7 @@ void FileBufferWindow::updateCursor()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::copySelection(std::vector<copy_line_t> *_store_buffer)
 {
-    if (!m_selection->lineCount())
+    if (!m_selection->lineCount(m_bufferCursorPos))
         return;
 
     if (_store_buffer == NULL)
@@ -999,7 +1083,7 @@ void FileBufferWindow::copySelection(std::vector<copy_line_t> *_store_buffer)
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::deleteSelection()
 {
-    if (!m_selection->lineCount())
+    if (!m_selection->lineCount(m_bufferCursorPos))
         return;
     
     ivec2_t start = m_selection->startingBufferPos();
@@ -1341,7 +1425,7 @@ void FileBufferWindow::redraw()
     y++;
     __debug_print(x, y++, "selecting: %s", m_isSelecting ? "true" : "false");
     if (m_selection != NULL)
-       __debug_print(x, y++, "selected line count = %zu", m_selection->lineCount());
+       __debug_print(x, y++, "selected line count = %zu", m_selection->lineCount(m_bufferCursorPos));
 
     #endif
     
