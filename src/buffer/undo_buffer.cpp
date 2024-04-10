@@ -79,8 +79,8 @@ void UndoBuffer::deleteCharFromLine(const undo_item_t &_item)
 
     w->m_windowLinesUpdateList.insert(sline->start_pos.y);
 
-    if (_item.deleted_selection)
-        next_LINES_DEL_();
+    // if (_item.deleted_selection)
+        // next_LINES_DEL_();
 
 }
 
@@ -285,27 +285,22 @@ void UndoBuffer::deleteLines(const undo_item_t &_item)
 
     line_t *line_ptr = w->m_lineBuffer.ptrFromIdx(start.y);
     int nlines = end.y - start.y;
-    // bool merge_after = (lines[0].offset0 != 0 && nlines != 0);
+    line_t *llast = w->m_lineBuffer.ptrFromIdx(end.y);
 
-    int i = 0;
-    while (i <= nlines && line_ptr != NULL)
+    int i = lines.size() - 1;
+    line_ptr = llast;
+    while (i >= 0 && line_ptr != NULL)
     {
-        line_t *lnext = line_ptr->next;
-        if (lines[i].len == line_ptr->len && i != nlines)
-            w->m_lineBuffer.deleteAtPtr(line_ptr);
-        else
-            line_ptr->delete_n_at(lines[i].offset0, lines[i].len);
-
-        i++;
-        line_ptr = lnext;
+        line_ptr->delete_n_at(lines[i].offset0, lines[i].len);
+        
+        if (i > 0)
+            line_ptr = w->m_lineBuffer.appendThisToPrev(line_ptr);
+        
+        i--;
     }
 
     w->m_currentLine = w->m_lineBuffer.ptrFromIdx(start.y);
     w->m_pageFirstLine = w->m_lineBuffer.ptrFromIdx(w->m_scrollPos.y);
-
-    //
-    //if (merge_after)
-    //    w->m_lineBuffer.appendNextToThis(w->m_currentLine);
 
     w->update_lines_after_y_(start.y);
     
