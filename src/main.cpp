@@ -8,6 +8,7 @@ int main(int argc, char *argv[])
 {
     // std::string filename = "short.cpp";
     std::string filename = "test.cpp";
+    // std::string filename = "scroll.txt";
     // std::string filename = "tabbed_file.txt";
 
     if (argc > 1)

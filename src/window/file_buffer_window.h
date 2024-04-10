@@ -74,7 +74,7 @@ public:
 
     // load/save buffer
     void readFileToBuffer(const std::string &_filename);
-    void saveBufferToFile();
+    void writeBufferToFile();
 
     // Window class overrides
     virtual void resize(frame_t _new_frame, int _left_reserved=-1);

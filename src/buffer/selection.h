@@ -34,7 +34,7 @@ private:
 
 
 private:
-    ivec2_t m_startingBufferPos;
+    ivec2_t m_startingBufferPos = ivec2_t(-1);
     std::unordered_set<line_t *> m_entries;
 
 };

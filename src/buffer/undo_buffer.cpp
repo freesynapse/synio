@@ -31,30 +31,8 @@ void UndoBuffer::undo()
     m_stack.pop();
 
     #ifdef DEBUG
-    LOG_RAW("=== [undo_item_t] %p ===", &item);
-    LOG_RAW("action = %s", __debug_undoAction2Str(item.action));
-    if (item.mline_block.size() ||
-        item.mline_block.start_pos != ivec2_t(0) ||
-        item.mline_block.end_pos != ivec2_t(0))
-    {
-        LOG_RAW("mblock:");
-        LOG_RAW("\tstart_pos = %d, %d", item.mline_block.start_pos.x, item.mline_block.start_pos.y);
-        LOG_RAW("\tend_pos   = %d, %d", item.mline_block.end_pos.x, item.mline_block.end_pos.y);
-        LOG_RAW("\tmlines:")
-        for (auto &it : item.mline_block.copy_lines)
-            LOG_RAW("\t\t'%s' (%zu) [%zu : %zu] (newline: %s)",
-                    it.line_chars,
-                    it.len,
-                    it.offset0,
-                    it.offset1,
-                    it.newline ? "true" : "false");
-    }
-    else    // single line
-    {
-        LOG_RAW("sline:");
-        LOG_RAW("\tstart_pos = %d, %d", item.sline.start_pos.x, item.sline.start_pos.y);
-        LOG_RAW("\tchars = %s (%zu)", item.sline.chars, item.sline.len);
-    }
+    LOG_RAW("stack size = %zu", m_stack.size());
+    __debug_print_item(item);
     #endif
 
     // prevent new commands of being recorded as undoable actions
@@ -95,8 +73,14 @@ void UndoBuffer::deleteCharFromLine(const undo_item_t &_item)
     FileBufferWindow *w = m_window;
 
     w->gotoBufferCursorPos(sline->start_pos);
+    line_t *line = w->m_lineBuffer.ptrFromIdx(sline->start_pos.y);
+    line->delete_at(sline->start_pos.x);
+    // w->deleteCharAtCursor();
 
-    w->deleteCharAtCursor();
+    w->m_windowLinesUpdateList.insert(sline->start_pos.y);
+
+    if (_item.deleted_selection)
+        next_LINES_DEL_();
 
 }
 
@@ -230,7 +214,7 @@ void UndoBuffer::revertNewLine(const undo_item_t &_item)
     auto &lines = mblock.copy_lines;
 
     w->gotoBufferCursorPos(mblock.start_pos);
-
+    
     line_t *lfirst = w->m_lineBuffer.ptrFromIdx(mblock.start_pos.y);
     line_t *llast = w->m_lineBuffer.ptrFromIdx(mblock.start_pos.y + lines.size() - 1);
     
@@ -247,6 +231,8 @@ void UndoBuffer::revertNewLine(const undo_item_t &_item)
     lfirst->insert_str(llast->content, llast->len, lfirst->len);
     // delete last line
     w->m_lineBuffer.deleteAtPtr(llast);
+
+    w->update_lines_after_y_(mblock.start_pos.y - w->m_scrollPos.y);    
 
 }
 
@@ -299,7 +285,8 @@ void UndoBuffer::deleteLines(const undo_item_t &_item)
 
     line_t *line_ptr = w->m_lineBuffer.ptrFromIdx(start.y);
     int nlines = end.y - start.y;
-    bool merge_after = (lines[0].offset0 != 0 && nlines != 0);
+    // bool merge_after = (lines[0].offset0 != 0 && nlines != 0);
+
     int i = 0;
     while (i <= nlines && line_ptr != NULL)
     {
@@ -317,10 +304,11 @@ void UndoBuffer::deleteLines(const undo_item_t &_item)
     w->m_pageFirstLine = w->m_lineBuffer.ptrFromIdx(w->m_scrollPos.y);
 
     //
-    if (merge_after)
-        w->m_lineBuffer.appendNextToThis(w->m_currentLine);
+    //if (merge_after)
+    //    w->m_lineBuffer.appendNextToThis(w->m_currentLine);
 
-
+    w->update_lines_after_y_(start.y);
+    
 }
 
 //---------------------------------------------------------------------------------------
@@ -360,6 +348,50 @@ void UndoBuffer::addLines(const undo_item_t &_item)
     w->m_currentLine = w->m_lineBuffer.ptrFromIdx(w->m_cursor.cy() + w->m_scrollPos.y);
     w->m_pageFirstLine = w->m_lineBuffer.ptrFromIdx(w->m_scrollPos.y);
 
+}
+
+//---------------------------------------------------------------------------------------
+void UndoBuffer::__debug_print_stack(std::stack<undo_item_t> &_stack, size_t _n)
+{
+    if (_stack.empty() || _n == 0)
+        return;
+    
+    undo_item_t item = _stack.top();
+    _stack.pop();
+    __debug_print_stack(_stack, _n-1);
+    _stack.push(item);
+    __debug_print_item(item, _n);
+
+}
+
+//---------------------------------------------------------------------------------------
+void UndoBuffer::__debug_print_item(undo_item_t &_item, size_t _n)
+{
+    LOG_RAW("=== [undo_item_t] %p (%d) ===", &_item, _n);
+    LOG_RAW("action = %s", __debug_undoAction2Str(_item.action));
+    if (_item.mline_block.size() ||
+        _item.mline_block.start_pos != ivec2_t(0) ||
+        _item.mline_block.end_pos != ivec2_t(0))
+    {
+        LOG_RAW("mblock:");
+        LOG_RAW("\tstart_pos = %d, %d", _item.mline_block.start_pos.x, _item.mline_block.start_pos.y);
+        LOG_RAW("\tend_pos   = %d, %d", _item.mline_block.end_pos.x, _item.mline_block.end_pos.y);
+        LOG_RAW("\tmlines:")
+        for (auto &it : _item.mline_block.copy_lines)
+            LOG_RAW("\t\t'%s' (%zu) [%zu : %zu] (newline: %s)",
+                    it.line_chars,
+                    it.len,
+                    it.offset0,
+                    it.offset1,
+                    it.newline ? "true" : "false");
+    }
+    else    // single line
+    {
+        LOG_RAW("sline:");
+        LOG_RAW("\tstart_pos = %d, %d", _item.sline.start_pos.x, _item.sline.start_pos.y);
+        LOG_RAW("\tchars = %s (%zu)", _item.sline.chars, _item.sline.len);
+    }
+    
 }
 
 //---------------------------------------------------------------------------------------

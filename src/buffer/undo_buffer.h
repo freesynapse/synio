@@ -68,6 +68,7 @@ struct undo_item_t
     char ch;                    // single char actions
     bool move_cursor = false;   // to diff between STRING_DEL prev and next
     int sel_start_y = 0;
+    bool deleted_selection = false;
 
 };
 
@@ -84,6 +85,11 @@ public:
 
     void push(const undo_item_t &_item);
     void undo();
+
+    //
+    void __debug_print_stack(std::stack<undo_item_t> &_stack, size_t _n=0);
+    void __debug_print_stack() { LOG_INFO("printing undo stack"); __debug_print_stack(m_stack, m_stack.size()); }
+    void __debug_print_item(undo_item_t &_item, size_t _n=0);
 
 private:
     // action functions
@@ -105,6 +111,19 @@ private:
     void deleteLines(const undo_item_t &_item);
     void addLines(const undo_item_t &_item);
 
+    //
+    __always_inline void next_LINES_DEL_()
+    {
+        if (m_stack.size() == 0)
+            return;
+            
+        undo_item_t next_item = m_stack.top();
+        if (next_item.action == UndoAction::LINES_DEL)
+        {
+            addLines(next_item);
+            m_stack.pop();
+        }
+    }
 
 private:
     std::stack<undo_item_t> m_stack;

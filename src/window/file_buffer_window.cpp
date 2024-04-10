@@ -49,7 +49,7 @@ FileBufferWindow::~FileBufferWindow()
 #ifdef DEBUG
 void FileBufferWindow::__debug_fnc()
 {
-    deleteToNextColDelim();
+    m_undoBuffer.__debug_print_stack();
 
 }
 #endif
@@ -99,7 +99,7 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case KEY_DC:        deleteCharAtCursor();                               break;
             case KEY_BACKSPACE: deleteCharBeforeCursor();                           break;
             case KEY_ENTER:
-            case 10:            delete_selection_();  insertNewLine();              break;
+            case 10:            insertNewLine();                                    break;
 
             // for some reason, ctrl+backspace maps to 8
             case 8:             deleteToPrevColDelim();                             break;
@@ -137,7 +137,7 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
 
             // save file -- TODO: move to commands
             case CTRL('s'):
-                saveBufferToFile();
+                writeBufferToFile();
                 break;
 
             #ifdef DEBUG
@@ -166,7 +166,6 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                 break;
             
             default:
-                delete_selection_();
                 insertCharAtCursor((char)_c);
                 break;
 
@@ -407,6 +406,11 @@ void FileBufferWindow::moveFileEnd()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::insertCharAtCursor(char _c)
 {
+    // check if we delete a selection as part of this insert
+    int deleted = delete_selection_();
+    if (deleted)
+        updateBufferCursorPos();
+
     ivec2_t start_pos = m_bufferCursorPos;
 
     insertCharAtPos(_c, m_cursor.cx());
@@ -416,7 +420,10 @@ void FileBufferWindow::insertCharAtCursor(char _c)
     {
         // really not interested in content since undo is delete, but let's copy anyways
         line_chars_t chars(start_pos, m_currentLine->__debug_str+start_pos.x, 1);
-        m_undoBuffer.push(undo_item_t(UndoAction::CHAR_ADD, chars));
+        undo_item_t undo(UndoAction::CHAR_ADD, chars);
+        if (deleted)
+            undo.deleted_selection = true;
+        m_undoBuffer.push(undo);
     }
 
 }
@@ -481,6 +488,9 @@ void FileBufferWindow::insertStrAtCursor(CHTYPE_PTR _str, size_t _len, bool _upd
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::insertNewLine(bool _auto_align)
 {
+    if (delete_selection_())
+        return;
+
     ivec2_t start_pos = m_bufferCursorPos;
 
     // undo item -- mline_block_t.start_pos stores the cursor position at newline nad
@@ -539,7 +549,8 @@ void FileBufferWindow::insertNewLine(bool _auto_align)
             moveCursor(0, 1);
 
         }
-        moveCursorToLineBegin();
+        moveCursor(-(m_cursor.cx() - white_spaces), 0);
+        
     }
     else
         moveCursor(-cx, 1);
@@ -1160,6 +1171,12 @@ void FileBufferWindow::paste()
     if (m_copyBuffer.size() == 0)
         return;
 
+    if (m_selection->lineCount(m_bufferCursorPos))
+        deleteSelection();
+
+    bool was_storing_actions = m_storeActions;
+    m_storeActions = false;
+
     //
     ivec2_t pre_paste = m_bufferCursorPos;
     int cy = m_cursor.cy();
@@ -1191,11 +1208,17 @@ void FileBufferWindow::paste()
     m_pageFirstLine = m_lineBuffer.ptrFromIdx(m_scrollPos.y);
 
     updateCursor();
-    ivec2_t post_paste = m_bufferCursorPos;
-    m_undoBuffer.push(undo_item_t(UndoAction::LINES_ADD,
-                                  pre_paste,
-                                  post_paste,
-                                  m_copyBuffer));
+    
+    m_storeActions = was_storing_actions;
+
+    if (m_storeActions)
+    {
+        ivec2_t post_paste = m_bufferCursorPos;
+        m_undoBuffer.push(undo_item_t(UndoAction::LINES_ADD,
+                                    pre_paste,
+                                    post_paste,
+                                    m_copyBuffer));
+    }
 
     //
     update_lines_after_y_(cy);
@@ -1300,7 +1323,7 @@ void FileBufferWindow::readFileToBuffer(const std::string &_filename)
     // apply syntax highlighting
     // TODO :   inherit lexer base class and intiialize here depending on filetype
     //          i.e. LexerC_CPP, LexerSH, LexerPY etc.
-    if (FileIO::s_lastFileType == C_CPP)
+    // if (FileIO::s_lastFileType == C_CPP)
         m_lexer.parseBuffer(&m_lineBuffer);
         // m_syntaxHLNextFrame = true;
     
@@ -1326,7 +1349,7 @@ void FileBufferWindow::readFileToBuffer(const std::string &_filename)
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::saveBufferToFile()
+void FileBufferWindow::writeBufferToFile()
 {
     // m_filename = get_filename() something;
     // needs something to open a dialog for a  filename
@@ -1338,8 +1361,13 @@ void FileBufferWindow::saveBufferToFile()
         // some sort of recursion to again find if the new filename exists
     }
 
-    FileIO::write_buffer_to_file(m_filename, &m_lineBuffer);
-    m_isDirty = false;
+    if (m_isDirty)
+    {
+        FileIO::write_buffer_to_file(m_filename, &m_lineBuffer);
+        m_isDirty = false;
+    }
+    else
+        LOG_INFO("no changes to file.");
 
     //
     moveCursor(0, 0);
@@ -1408,11 +1436,11 @@ void FileBufferWindow::redraw()
         __debug_print(x, y++, "this line: '%s'", m_currentLine->__debug_str);
         __debug_print(x, y++, "this len:  %zu", m_currentLine->len);
     }
-    if (m_prevLine != NULL)
-    {
-        __debug_print(x, y++, "prev line: '%s'", m_prevLine->__debug_str);
-        __debug_print(x, y++, "prev len:  %zu", m_prevLine->len);
-    }
+    //if (m_prevLine != NULL)
+    //{
+    //    __debug_print(x, y++, "prev line: '%s'", m_prevLine->__debug_str);
+    //    __debug_print(x, y++, "prev len:  %zu", m_prevLine->len);
+    //}
     y++;
     if (m_pageFirstLine != NULL)    __debug_print(x, y++, "page[ 0]: '%s'", m_pageFirstLine->__debug_str);
     else                            __debug_print(x, y++, "page[ 0]: NULL");
