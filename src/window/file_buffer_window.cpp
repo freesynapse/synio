@@ -1215,8 +1215,7 @@ void FileBufferWindow::paste()
     {
         ivec2_t post_paste = m_bufferCursorPos;
         auto copy_buffer = m_copyBuffer;
-        if (pre_paste.x == 0)
-            copy_buffer[0].offset0 = 0;
+        copy_buffer[0].offset0 = pre_paste.x;
         m_undoBuffer.push(undo_item_t(UndoAction::LINES_ADD,
                                       pre_paste,
                                       post_paste,
