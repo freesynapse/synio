@@ -210,10 +210,10 @@ void line_t::delete_at(size_t _pos)
 //---------------------------------------------------------------------------------------
 void line_t::delete_n_at(size_t _pos, size_t _n)
 {
-    if (!_n)
+    if (!_n || _pos + _n > len)
         return;
     
-    assert(_pos + _n <= len);
+    // assert(_pos + _n <= len);
 
     size_t bytes_to_move = (len - (_pos + _n)) * CHTYPE_SIZE;
     memmove(content + _pos, content + _pos + _n, bytes_to_move);

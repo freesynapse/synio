@@ -43,6 +43,7 @@ typedef void* API_WINDOW_PTR;
 #define CHTYPE_COLOR_MASK 0x000000000000ff00
 #define CHTYPE_ATTR_MASK  0x00000000ffff0000
 #define CHTYPE_SELECTION_BIT 32
+#define CHTYPE_HLROW_BIT 31
 // #elif defined (GLFW_IMPL)
 #else
 #define CHTYPE uint32_t
@@ -50,7 +51,8 @@ typedef void* API_WINDOW_PTR;
 #define CHTYPE_CHAR_MASK  0x000000ff
 #define CHTYPE_COLOR_MASK 0x0000ff00
 #define CHTYPE_ATTR_MASK  0xffff0000
-#define CHTYPE_SELECTION_BIT 31
+#define CHTYPE_SELECTION_BIT 32
+#define CHTYPE_HLROW_BIT 31
 #endif
 #define CHTYPE_SIZE sizeof(CHTYPE)
 #define CHTYPE_PTR_SIZE sizeof(CHTYPE_PTR)
@@ -173,12 +175,12 @@ struct ivec2_t
     ivec2_t(ivec2_t &&_v)                   { x = _v.x; y = _v.y;                   }
 
     // operators
-    bool operator==(const ivec2_t &_v)      { return (x == _v.x && y == _v.y);      }
-    bool operator!=(const ivec2_t &_v)      { return (x != _v.x || y != _v.y);      }
-    ivec2_t operator+(const ivec2_t &_v)    { return ivec2_t(x + _v.x, y + _v.y);   }
-    void operator+=(const ivec2_t &_v)      { x += _v.x; y += _v.y;                 }
-    ivec2_t operator-(const ivec2_t &_v)    { return ivec2_t(x - _v.x, y - _v.y);   }
-    void operator-=(const ivec2_t &_v)      { x -= _v.x; y -= _v.y;                 }
+    bool operator==(const ivec2_t &_v)          { return (x == _v.x && y == _v.y);      }
+    bool operator!=(const ivec2_t &_v)          { return (x != _v.x || y != _v.y);      }
+    ivec2_t operator+(const ivec2_t &_v) const  { return ivec2_t(x + _v.x, y + _v.y);   }
+    void operator+=(const ivec2_t &_v)          { x += _v.x; y += _v.y;                 }
+    ivec2_t operator-(const ivec2_t &_v)        { return ivec2_t(x - _v.x, y - _v.y);   }
+    void operator-=(const ivec2_t &_v)          { x -= _v.x; y -= _v.y;                 }
 
 };
 

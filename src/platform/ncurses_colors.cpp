@@ -27,9 +27,10 @@ void ncurses_init_colors(API_WINDOW_PTR _w)
     //        below.
     
     // background colors
-    init_color(SYN_COLOR_BKGD,             0,    0,    0);
-    init_color(SYN_COLOR_SEL_BKGD,  300,  300,  300);
-    init_color(SYN_COLOR_STATUS_BKGD,    900,  900,  900);
+    init_color(SYN_COLOR_BKGD,            0,    0,    0);
+    init_color(SYN_COLOR_SEL_BKGD,      300,  300,  300);
+    init_color(SYN_COLOR_HLROW_BKGD,    250,  250,  250);
+    init_color(SYN_COLOR_STATUS_BKGD,   900,  900,  900);
 
     // foreground colors
     init_color(SYN_COLOR_TEXT_FGD,             1000, 1000, 1000);
@@ -70,6 +71,20 @@ void ncurses_init_colors(API_WINDOW_PTR _w)
     init_pair(SYN_COLOR_SEL_MCOMMENT,       SYN_COLOR_COMMENT_FGD,        SYN_COLOR_SEL_BKGD);
     init_pair(SYN_COLOR_SEL_PREPROC,        SYN_COLOR_PREPROC_FGD,        SYN_COLOR_SEL_BKGD);
     init_pair(SYN_COLOR_SEL_STATUS,         SYN_COLOR_BLACK,              SYN_COLOR_SEL_BKGD);
+
+    // row highlight color pairs
+    init_pair(SYN_COLOR_HLROW_TEXT,           SYN_COLOR_TEXT_FGD,           SYN_COLOR_HLROW_BKGD);
+    init_pair(SYN_COLOR_HLROW_KEYWORD,        SYN_COLOR_KEYWORD_FGD,        SYN_COLOR_HLROW_BKGD);
+    init_pair(SYN_COLOR_HLROW_STRING,         SYN_COLOR_STRING_FGD,         SYN_COLOR_HLROW_BKGD);
+    init_pair(SYN_COLOR_HLROW_MSTRING,        SYN_COLOR_STRING_FGD,         SYN_COLOR_HLROW_BKGD);
+    init_pair(SYN_COLOR_HLROW_NUMBER,         SYN_COLOR_NUMBER_FGD,         SYN_COLOR_HLROW_BKGD);
+    init_pair(SYN_COLOR_HLROW_LITERAL_STRUCT, SYN_COLOR_LITERAL_STRUCT_FGD, SYN_COLOR_HLROW_BKGD);
+    init_pair(SYN_COLOR_HLROW_LITERAL_OP,     SYN_COLOR_LITERAL_OP_FGD,     SYN_COLOR_HLROW_BKGD);
+    init_pair(SYN_COLOR_HLROW_LITERAL_DELIM,  SYN_COLOR_LITERAL_DELIM_FGD,  SYN_COLOR_HLROW_BKGD);
+    init_pair(SYN_COLOR_HLROW_COMMENT,        SYN_COLOR_COMMENT_FGD,        SYN_COLOR_HLROW_BKGD);
+    init_pair(SYN_COLOR_HLROW_MCOMMENT,       SYN_COLOR_COMMENT_FGD,        SYN_COLOR_HLROW_BKGD);
+    init_pair(SYN_COLOR_HLROW_PREPROC,        SYN_COLOR_PREPROC_FGD,        SYN_COLOR_HLROW_BKGD);
+    init_pair(SYN_COLOR_HLROW_STATUS,         SYN_COLOR_BLACK,              SYN_COLOR_HLROW_BKGD);
 
     bkgd(COLOR_PAIR(SYN_COLOR_TEXT));   // set background color of window (stdscr?)
     
@@ -153,6 +168,36 @@ void ncurses_color_substr(line_t *_line, size_t _start, size_t _end, short _pair
 
     }
 
+}
+
+//---------------------------------------------------------------------------------------
+void ncurses_highlight_line(line_t *_line, size_t _line_len)
+{
+    if (_line == NULL)
+        return;
+
+    // current row can not be highlighted per definition
+    for (size_t i = 0; i < _line->len; i++)
+    {
+        int16_t cp_idx = (_line->content[i] & CHTYPE_COLOR_MASK) >> 8;
+        int hl = (CHECK_BIT(_line->content[i], CHTYPE_HLROW_BIT) ? 0 : HLROW_OFFSET);
+        _line->content[i] = ((_line->content[i] & ~CHTYPE_COLOR_MASK) | COLOR_PAIR(cp_idx + hl));
+    }        
+}
+
+//---------------------------------------------------------------------------------------
+void ncurses_dehighlight_line(line_t *_line, size_t _line_len)
+{
+    if (_line == NULL)
+        return;
+
+    // current row can not be highlighted per definition
+    for (size_t i = 0; i < _line->len; i++)
+    {
+        int16_t cp_idx = (_line->content[i] & CHTYPE_COLOR_MASK) >> 8;
+        int hl = (CHECK_BIT(_line->content[i], CHTYPE_HLROW_BIT) ? 0 : HLROW_OFFSET);
+        _line->content[i] = ((_line->content[i] & ~CHTYPE_COLOR_MASK) | COLOR_PAIR(cp_idx - hl));
+    }
 }
 
 //---------------------------------------------------------------------------------------

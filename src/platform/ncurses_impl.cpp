@@ -41,6 +41,8 @@ int Ncurses_Impl::initialize()
 //---------------------------------------------------------------------------------------
 int Ncurses_Impl::shutdown()
 {
+    echo();
+    noraw();
     endwin();
 
     LOG_INFO("ncurses shutdown gracefully.");
@@ -198,7 +200,7 @@ int Ncurses_Impl::printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PT
         if ((_line[i] & A_CHARTEXT) == '\t')
         {
             x = (x + (Config::TAB_SIZE - (x % Config::TAB_SIZE)));
-            waddch(w, 'T' | A_BOLD);
+            waddch(w, '|' | A_BOLD);
             wmove(w, _cy, x);
         }
         else
@@ -206,6 +208,16 @@ int Ncurses_Impl::printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PT
 
         x++;
     }
+
+    return RETURN_SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+int Ncurses_Impl::printString(API_WINDOW_PTR _w, int _cx, int _cy, const CHTYPE_PTR _str, size_t _len)
+{
+    WINDOW *w = (WINDOW *)_w;
+    wmove(w, _cy, _cx);
+    waddchnstr(w, (const chtype *)_str, _len);
 
     return RETURN_SUCCESS;
 }

@@ -17,14 +17,18 @@ class Config
 public:
     static bool SHOW_LINE_NUMBERS;
     static int LINE_NUMBERS_MIN_WIDTH;
-    static int PAGE_SIZE;
+    
+    static bool HIGHLIGHT_CURRENT_LINE;
 
+    static int PAGE_SIZE;
     static int TAB_SIZE;
     static TabsOrSpaces USE_TABS_OR_SPACES;
 
     static const char *COL_DELIMITERS;
     static const char *FILE_PATH_DELIMITERS;
     static const char *STRUCTURAL_LITERALS;
+
+    static std::unordered_set<char> ALLOWED_CHARACTERS;
 
     //
     static void readConfigFile(const std::string &_filename="");

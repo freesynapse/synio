@@ -406,6 +406,13 @@ void FileBufferWindow::moveFileEnd()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::insertCharAtCursor(char _c)
 {
+    // only allowed characters (for now)
+    if (Config::ALLOWED_CHARACTERS.find(_c) == Config::ALLOWED_CHARACTERS.end())
+    {
+        moveCursor(0, 0);
+        return;
+    }
+
     // check if we delete a selection as part of this insert
     int deleted = delete_selection_();
     if (deleted)
@@ -521,7 +528,7 @@ void FileBufferWindow::insertNewLine(bool _auto_align)
     if (_auto_align)
     {
         int white_spaces = find_indentation_level_(m_currentLine);
-        
+        int next_tab = 0;
         undo_block.setEnd(ivec2_t(white_spaces, 0));
 
         for (int i = 0; i < white_spaces; i++)
@@ -529,8 +536,9 @@ void FileBufferWindow::insertNewLine(bool _auto_align)
         if (new_empty_line)
         {
             m_lineBuffer.insertAtPtr(m_currentLine, INSERT_AFTER, "");
-            int white_spaces = find_indentation_level_(m_currentLine);
-            int next_tab = find_next_tab_stop_(white_spaces);
+            white_spaces = find_indentation_level_(m_currentLine);
+            next_tab = find_next_tab_stop_(white_spaces);
+            white_spaces = next_tab;
             for (int i = 0; i < next_tab; i++)
                 m_currentLine->next->insert_char(' ', 0);
             
@@ -746,11 +754,7 @@ void FileBufferWindow::insertStructuralLiteral(char _c)
 {
     char next_char = m_currentLine->__debug_str[m_cursor.cx() + 1];
     if (next_char == ' ' || next_char == 0 || !m_currentLine->len || m_selection->lineCount(m_bufferCursorPos))
-        // (m_selection->lineCount()) &&
-        //  m_selection->startingBufferPos().y == m_bufferCursorPos.y)  
     {
-        // TODO :   remove condition to be on the same line in a selection, allowing
-        //          to select over multiple rows
         char b[2];
         switch (_c)
         {
@@ -857,17 +861,13 @@ void FileBufferWindow::deleteCharAtCursor()
         undo_block.setStart(start_pos);
         // using mline_block_t.end_pos.x to store len of current line
         undo_block.setEnd(ivec2_t(m_currentLine->len, 0));
-        //
-        // undo_block.copy_lines.push_back(copy_line_t(m_currentLine->next, false, false));
-        // undo_block.copy_lines.push_back(copy_line_t(m_currentLine, false, false));
         
         m_lineBuffer.appendNextToThis(m_currentLine);
-        // redraw lines
-        update_lines_after_y_(m_cursor.cy());
 
         if (m_storeActions)
             m_undoBuffer.push(undo_item_t(UndoAction::LINE_COLLAPSE_NEXT, undo_block));
 
+        update_lines_after_y_(m_cursor.cy());
     }
 
     refresh_next_frame_();
@@ -886,7 +886,9 @@ void FileBufferWindow::deleteToNextColDelim()
 
     ivec2_t start_pos = m_bufferCursorPos;
 
-    int nspaces = find_empty_chars_from_pos_(m_cursor.cx(), FORWARD);
+    int cx = m_cursor.cx();
+
+    int nspaces = find_empty_chars_from_pos_(cx, FORWARD);
     int next_delim_pos_dx = findColDelim(FORWARD, false);
     
     int ndels = next_delim_pos_dx;
@@ -894,13 +896,21 @@ void FileBufferWindow::deleteToNextColDelim()
         ndels = nspaces;
     
     //
-    if (m_storeActions)
+    if (cx + ndels <= m_currentLine->len)
     {
-        line_chars_t str(start_pos, &m_currentLine->__debug_str[m_cursor.cx()], ndels);
-        m_undoBuffer.push(undo_item_t(UndoAction::STRING_DEL, str));
-    }
+        if (m_storeActions)
+        {
+            line_chars_t str(start_pos, &m_currentLine->__debug_str[cx], ndels);
+            m_undoBuffer.push(undo_item_t(UndoAction::STRING_DEL, str));
+        }
 
-    m_currentLine->delete_n_at(m_cursor.cx(), ndels);
+        m_currentLine->delete_n_at(cx, ndels);
+
+    }
+    // if at end of line, collapse lines
+    else
+        deleteCharAtCursor();        
+
     m_windowLinesUpdateList.insert(m_cursor.cy());
 
     refresh_next_frame_();
@@ -960,24 +970,41 @@ void FileBufferWindow::deleteCharBeforeCursor()
     else if (cx > 0)
     {
         // if before printed chars remove spaces one tabstop at the time
-        if (cx <= find_first_non_empty_char_(m_currentLine))
+        if (find_empty_chars_from_pos_(cx, BACKWARD) > 1)
         {
             int dx = 0;
-            int nspaces = find_empty_chars_from_pos_(cx, BACKWARD);
-            if (nspaces > 1)
+            int steps = 0;
+            // find previous tab stop
+            dx = find_prev_tab_stop_(cx);
+            steps = cx - dx;
+
+            if (m_storeActions)
             {
-                // find previous tab stop
-                dx = find_prev_tab_stop_(cx);
-                int steps = cx - dx;
-                for (int i = 0; i < steps; i++)
-                    m_currentLine->delete_at(cx - steps);
-                m_cursor.move(-steps, 0);
+               start_pos.x -= steps;
+               line_chars_t str(start_pos, &m_currentLine->__debug_str[cx - steps], steps);
+               undo_item_t undo(UndoAction::STRING_ERASE, str);
+               undo.move_cursor = false;
+               m_undoBuffer.push(undo);
             }
+
+            // delete the characters
+            for (int i = 0; i < steps; i++)
+                m_currentLine->delete_at(cx - steps);
+            m_cursor.move(-steps, 0);
+
         }
         else
         {
+            if (m_storeActions)
+            {
+                start_pos.x -= 1;
+                line_chars_t ch(start_pos, &m_currentLine->__debug_str[cx - 1], 1);
+                m_undoBuffer.push(undo_item_t(UndoAction::CHAR_ERASE, ch));
+            }
+
             m_currentLine->delete_at(cx - 1);
             m_cursor.move(-1, 0);
+
         }
         m_windowLinesUpdateList.insert(m_cursor.cy());
 
@@ -1466,13 +1493,21 @@ void FileBufferWindow::redraw()
             m_lexer.parseBuffer(&m_lineBuffer);
             m_syntaxHLNextFrame = false;
         }
+        
         // check for lines that have been changed
-    for (auto &line_y : m_windowLinesUpdateList)
+        for (auto &line_y : m_windowLinesUpdateList)
             api->clearBufferLine(m_apiWindowPtr, line_y, m_frame.ncols);
+
+        // highlight current line
+        if (Config::HIGHLIGHT_CURRENT_LINE && !m_isSelecting)
+        {
+            ncurses_dehighlight_line(m_prevLine, m_frame.v1.x);
+            ncurses_highlight_line(m_currentLine, m_frame.v1.x);
+        }
 
         m_windowLinesUpdateList.clear();
 
-        m_formatter.render(m_apiWindowPtr, m_pageFirstLine, NULL);
+        m_formatter.render(m_apiWindowPtr, m_pageFirstLine, m_currentLine);
     }
 
     updateCursor();

@@ -30,10 +30,10 @@ void UndoBuffer::undo()
     undo_item_t item = m_stack.top();
     m_stack.pop();
 
-    #ifdef DEBUG
-    LOG_RAW("stack size = %zu", m_stack.size());
-    __debug_print_item(item);
-    #endif
+    //#ifdef DEBUG
+    //LOG_RAW("stack size = %zu", m_stack.size());
+    //__debug_print_item(item);
+    //#endif
 
     // prevent new commands of being recorded as undoable actions
     m_window->m_storeActions = false;
@@ -41,10 +41,12 @@ void UndoBuffer::undo()
     //
     switch (item.action)
     {
-        case UndoAction::CHAR_DEL:              addCharToLine(item);        break;
         case UndoAction::CHAR_ADD:              deleteCharFromLine(item);   break;
-        case UndoAction::STRING_DEL:            addStrToLine(item);         break;
+        case UndoAction::CHAR_DEL:              addCharToLine(item, false); break;
+        case UndoAction::CHAR_ERASE:            addCharToLine(item, true);  break;
         case UndoAction::STRING_ADD:            deleteStrFromLine(item);    break;
+        case UndoAction::STRING_DEL:            addStrToLine(item, false);  break;
+        case UndoAction::STRING_ERASE:          addStrToLine(item, true);   break;
         case UndoAction::LITERAL_MADD:          deleteMLiteral(item);       break;
         case UndoAction::MTABS_ADD:             deleteTabs(item);           break;
         case UndoAction::MTABS_DEL:             addTabs(item);              break;
@@ -75,23 +77,29 @@ void UndoBuffer::deleteCharFromLine(const undo_item_t &_item)
     w->gotoBufferCursorPos(sline->start_pos);
     line_t *line = w->m_lineBuffer.ptrFromIdx(sline->start_pos.y);
     line->delete_at(sline->start_pos.x);
-    // w->deleteCharAtCursor();
 
     w->m_windowLinesUpdateList.insert(sline->start_pos.y);
 
-    // if (_item.deleted_selection)
-        // next_LINES_DEL_();
+    if (_item.deleted_selection)
+    {
+        w->updateCursor();
+        next_LINES_DEL_();
+    }
 
 }
 
 //---------------------------------------------------------------------------------------
-void UndoBuffer::addCharToLine(const undo_item_t &_item)
+void UndoBuffer::addCharToLine(const undo_item_t &_item, bool _erase)
 {
     const line_chars_t *sline = &_item.sline;
     FileBufferWindow *w = m_window;
 
-    w->gotoBufferCursorPos(sline->start_pos);
-    w->insertCharAtPos(sline->chars[0], sline->start_pos.x, false);
+    int offset = _erase ? 1 : 0;
+
+    line_t *line = w->m_lineBuffer.ptrFromIdx(sline->start_pos.y);
+    line->insert_char(sline->chars[0], sline->start_pos.x);
+
+    w->gotoBufferCursorPos(sline->start_pos + ivec2_t(offset, 0));
 
 }
 
@@ -108,13 +116,16 @@ void UndoBuffer::deleteStrFromLine(const undo_item_t &_item)
 }
 
 //---------------------------------------------------------------------------------------
-void UndoBuffer::addStrToLine(const undo_item_t &_item)
+void UndoBuffer::addStrToLine(const undo_item_t &_item, bool _erase)
 {
     auto &sline = _item.sline;
     FileBufferWindow *w = m_window;
     
-    w->gotoBufferCursorPos(sline.start_pos);
+    int offset = _erase ? sline.len : 0;
+
     w->insertStrAtCursor(sline.chars, sline.len, _item.move_cursor);
+
+    w->gotoBufferCursorPos(sline.start_pos + ivec2_t(offset, 0));
     
 }
 
@@ -397,8 +408,10 @@ const char *__debug_undoAction2Str(UndoAction _a)
     {
         case UndoAction::CHAR_ADD:              return "CHAR_ADD";
         case UndoAction::CHAR_DEL:              return "CHAR_DEL";
+        case UndoAction::CHAR_ERASE:            return "CHAR_ERASE";
         case UndoAction::STRING_ADD:            return "STRING_ADD";
         case UndoAction::STRING_DEL:            return "STRING_DEL";
+        case UndoAction::STRING_ERASE:          return "STRING_ERASE";
         case UndoAction::LITERAL_MADD:          return "LITERAL_MADD";
         case UndoAction::MTABS_ADD:             return "MTABS_ADD";
         case UndoAction::MTABS_DEL:             return "MTABS_DEL";

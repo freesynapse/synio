@@ -7,7 +7,7 @@
 //
 void BufferFormatter::render(API_WINDOW_PTR _api_window, 
                              line_t *_first,
-                             line_t *_last)
+                             line_t *_current_line) // for row highlight
 {
     // coordinates is relative to window, so we need to start at (0, 0)
     int x = 0;
@@ -20,10 +20,15 @@ void BufferFormatter::render(API_WINDOW_PTR _api_window,
 
     while (line != NULL && y < m_windowRect->nrows)// && line != _last)
     {
-        //LOG_INFO("len of line=%d", line->len);
-        //if ((line->content[0] & CHTYPE_CHAR_MASK) == '\t')
-        //    LOG_INFO("found a tab!");
-        api->printBufferLine(_api_window, x, y++, line->content, line->len);
+        api->printBufferLine(_api_window, x, y, line->content, line->len);
+        
+        if (line == _current_line)
+        {
+            api->printString(_api_window, line->len, y, m_whiteSpaceBuffer, m_windowRect->v1.x - line->len);
+            // ny funktion behövs här, typ printStr(_api_window, x=line->len, y, space_buffer -- kan vara del av klassen och vara jättestor)
+        }
+
+        y++;
         line = line->next;
     }
 

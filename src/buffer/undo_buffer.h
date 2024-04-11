@@ -13,9 +13,11 @@ enum class UndoAction
 {
     // for multiple cursors; probably just adding an undo item per edit
     CHAR_ADD,
-    CHAR_DEL,
+    CHAR_DEL,       // delete
+    CHAR_ERASE,     // backspace
     STRING_ADD,
     STRING_DEL,
+    STRING_ERASE,
     LITERAL_MADD,
     MTABS_ADD,
     MTABS_DEL,
@@ -88,16 +90,25 @@ public:
 
     //
     void __debug_print_stack(std::stack<undo_item_t> &_stack, size_t _n=0);
-    void __debug_print_stack() { LOG_INFO("printing undo stack"); __debug_print_stack(m_stack, m_stack.size()); }
+    void __debug_print_stack()
+    {
+        if (m_stack.size() == 0)
+        {
+            LOG_INFO("undo stack is empty.");
+            return;
+        }
+        LOG_INFO("printing undo stack");
+        __debug_print_stack(m_stack, m_stack.size());
+    }
     void __debug_print_item(undo_item_t &_item, size_t _n=0);
 
 private:
     // action functions
     void deleteCharFromLine(const undo_item_t &_item);
-    void addCharToLine(const undo_item_t &_item);
+    void addCharToLine(const undo_item_t &_item, bool _erase);
 
     void deleteStrFromLine(const undo_item_t &_item);
-    void addStrToLine(const undo_item_t &_item);
+    void addStrToLine(const undo_item_t &_item, bool _erase);
 
     void deleteMLiteral(const undo_item_t &_item);
 

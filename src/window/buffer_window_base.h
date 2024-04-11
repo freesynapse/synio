@@ -96,17 +96,10 @@ protected:
 
     //
     __always_inline int find_next_tab_stop_(int _pos) { return (_pos + (Config::TAB_SIZE - (_pos % Config::TAB_SIZE))); }
-    __always_inline int find_prev_tab_stop_(int _pos) { return (_pos - (Config::TAB_SIZE - (_pos % Config::TAB_SIZE))); }
+    __always_inline int find_prev_tab_stop_(int _pos) { return (_pos - (Config::TAB_SIZE + (_pos % Config::TAB_SIZE))) + (_pos % Config::TAB_SIZE ? Config::TAB_SIZE : 0); }
     
     //
-    int find_indentation_level_(line_t *_line)
-    {
-        //int first_char_idx = find_first_non_empty_char_(_line);
-        //if ((_line->content[first_char_idx] & CHTYPE_CHAR_MASK) == '{')
-        //    return find_next_tab_stop_(first_char_idx);
-        //return first_char_idx;
-        return find_first_non_empty_char_(_line);
-    }
+    int find_indentation_level_(line_t *_line) { return find_first_non_empty_char_(_line); }
 
     //
     int find_first_non_empty_char_(line_t *_line)
