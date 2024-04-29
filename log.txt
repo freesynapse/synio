@@ -1,0 +1,13 @@
+[32m[INFO][0m static void Log::open(const char *): log file 'log.txt' created.
+[32m[INFO][0m void set_backend(): NCURSES_IMPL defined.
+[32m[INFO][0m void ncurses_init_colors(API_WINDOW_PTR): max COLORS=256
+[32m[INFO][0m void ncurses_init_colors(API_WINDOW_PTR): max PAIRS=256
+[32m[INFO][0m virtual int Ncurses_Impl::initialize(): ncurses initialized.
+[32m[INFO][0m static void EventHandler::initialize(): listening.
+[32m[INFO][0m Window::Window(const frame_t &, const std::string &, bool): Window 'buffer_window' [0x63a6bd72d0d0] created [(8, 0), (190, 54)].
+[32m[INFO][0m Window::Window(const frame_t &, const std::string &, bool): Window 'buffer_window_line_numbers' [0x63a6bd738300] created [(0, 0), (8, 54)].
+[32m[INFO][0m static int FileIO::read_file_to_buffer(const std::string &, LineBuffer *): file type deduced as TXT
+[32m[INFO][0m Window::Window(const frame_t &, const std::string &, bool): Window 'command_window' [0x63a6bd758f10] created [(0, 52), (190, 54)].
+[32m[INFO][0m static void EventHandler::shutdown(): clearing event queue.
+[32m[INFO][0m virtual int Ncurses_Impl::shutdown(): ncurses shutdown gracefully.
+[32m[INFO][0m static void Log::close(): closing log.

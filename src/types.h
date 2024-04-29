@@ -42,8 +42,7 @@ typedef void* API_WINDOW_PTR;
 #define CHTYPE_CHAR_MASK  0x00000000000000ff
 #define CHTYPE_COLOR_MASK 0x000000000000ff00
 #define CHTYPE_ATTR_MASK  0x00000000ffff0000
-#define CHTYPE_SELECTION_BIT 32
-#define CHTYPE_HLROW_BIT 31
+#define CHTYPE_SELECTION_BIT 32 // first bit after the first 4 bytes used by ncurses
 // #elif defined (GLFW_IMPL)
 #else
 #define CHTYPE uint32_t
@@ -52,7 +51,6 @@ typedef void* API_WINDOW_PTR;
 #define CHTYPE_COLOR_MASK 0x0000ff00
 #define CHTYPE_ATTR_MASK  0xffff0000
 #define CHTYPE_SELECTION_BIT 32
-#define CHTYPE_HLROW_BIT 31
 #endif
 #define CHTYPE_SIZE sizeof(CHTYPE)
 #define CHTYPE_PTR_SIZE sizeof(CHTYPE_PTR)

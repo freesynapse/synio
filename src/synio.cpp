@@ -44,8 +44,8 @@ Synio::~Synio()
 void Synio::initialize()
 {
     api->getRenderSize(&m_screenSize);
-    frame_t buffer_window_rect(ivec2_t(8, 0), ivec2_t(m_screenSize.x, m_screenSize.y - 1));
-    m_bufferWindow = new FileBufferWindow(buffer_window_rect, "buffer_window", false);
+    frame_t buffer_wnd_rect(ivec2_t(8, 0), ivec2_t(m_screenSize.x, m_screenSize.y));
+    m_bufferWindow = new FileBufferWindow(buffer_wnd_rect, "buffer_window", false);
     m_bufferWindow->readFileToBuffer(m_filename);
     
     // -- DEBUG
@@ -62,6 +62,12 @@ void Synio::initialize()
     //m_currentWindow = m_commandWindow;
 
     // clear_redraw_refresh_window_();
+
+    // TEST -- command window
+    frame_t command_wnd_rect = frame_t(ivec2_t(0, m_screenSize.y - 2),
+                                       ivec2_t(m_screenSize.x, m_screenSize.y));
+    m_commandWindow = new LineBufferWindow(command_wnd_rect, "command_window");
+    m_commandWindow->setVisibility(true);
 
 }
 
@@ -92,11 +98,17 @@ void Synio::mainLoop()
         
         // command mode
         //
-        // if (key == CTRL('x')) m_commandMode = !m_commandMode;
-        // some kind of stack of windows maybe?
-        if (m_commandMode)
+        if (key == CTRL('x') && !m_commandMode)
         {
+            m_commandMode = !m_commandMode;
             m_currentWindow = m_commandWindow;
+            clear_redraw_refresh_window_();
+        }
+
+        else if (key == CTRL('x') && m_commandMode)
+        {
+            m_commandMode = !m_commandMode;
+            m_currentWindow = m_bufferWindow;
             clear_redraw_refresh_window_();
         }
         

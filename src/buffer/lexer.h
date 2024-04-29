@@ -76,19 +76,20 @@ typedef struct token_t
 
 } token_t;
 
-//
-class Lexer
+class LexerBase
 {
 public:
-    Lexer() {}
-    ~Lexer() = default;
+    LexerBase() {}
+    ~LexerBase() = default;
 
-    void parseBuffer(LineBuffer *_buffer);
-    void parseBufferFromLine(line_t *_line, LineBuffer *_buffer);
-    void parseLine(line_t *_line);
-    token_t nextLineToken(line_t *_line);
+    //
+    virtual void parseBuffer(LineBuffer *_buffer) {}
+    virtual void parseBufferFromLine(line_t *_line, LineBuffer *_buffer) {}
+    virtual void parseLine(line_t *_line) {}
+    virtual token_t nextLineToken(line_t *_line) { return token_t(0, 0, TOKEN_IDENTIFIER); }
 
-    void colorToken(line_t *_line, token_t *_t);
+    virtual void colorToken(line_t *_line, token_t *_t) {}
+
     __always_inline TokenKind tokenFromColor(int16_t _color)
     {
         if (m_colorTokenMapping.find(_color) != m_colorTokenMapping.end())
@@ -96,11 +97,16 @@ public:
         return TOKEN_INVALID;
     }
 
+    //
     void setInMComment(bool _b) { m_inMComment = _b; }
     void setInMString(bool _b) { m_inMString = _b; }
 
 protected:
-    void trim_whitespace_left_();
+    void trim_whitespace_left_()
+    {
+        while (m_cursor < m_line->len && isspace(m_line->__debug_str[m_cursor]))
+            m_cursor++;
+    }
     __always_inline bool is_literal_(char _c) { return m_literals.find(_c) != m_literals.end(); }
     __always_inline bool is_keyword_(const char *_s) { return m_keywords.find(_s) != m_keywords.end(); }
 
@@ -120,22 +126,7 @@ protected:
     // to compare pointers and instead use pointer contents (ie the strings).
     struct unordered_cmp    { bool operator()(const char *_a, const char *_b) const noexcept { return strcmp(_a, _b) == 0; } };
     struct unordered_deref  { size_t operator()(const char *_s) const noexcept { return std::hash<std::string>()(_s); } };
-    std::unordered_set<const char *, unordered_deref, unordered_cmp> m_keywords = {
-        "alignas", "alignof", "and", "and_eq", "asm", "atomic_cancel", "atomic_commit", 
-        "atomic_noexcept", "auto", "bitand", "bitor", "bool", "break", "case", "catch", 
-        "char", "char8_t", "char16_t", "char32_t", "class", "compl", "concept", "const", 
-        "consteval", "constexpr", "constinit", "const_cast", "continue", "co_await", 
-        "co_return", "co_yield", "decltype", "default", "delete", "do", "double", 
-        "dynamic_cast", "else", "enum", "explicit", "export", "extern", "false", "float", 
-        "for", "friend", "goto", "if", "inline", "int", "long", "mutable", "namespace", 
-        "new", "noexcept", "not", "not_eq", "nullptr", "operator", "or", "or_eq", 
-        "private", "protected", "public", "reflexpr", "register", "reinterpret_cast", 
-        "requires", "return", "short", "signed", "sizeof", "static", "static_assert", 
-        "static_cast", "struct", "switch", "synchronized", "template", "this", 
-        "thread_local", "throw", "true", "try", "typedef", "typeid", "typename", "union", 
-        "unsigned", "using", "virtual", "void", "volatile", "wchar_t", "while", "xor", 
-        "xor_eq", "NULL",
-    };
+    std::unordered_set<const char *, unordered_deref, unordered_cmp> m_keywords;
 
     // literals
     std::unordered_map<char, TokenKind> m_literals = {
@@ -184,8 +175,49 @@ protected:
 };
 
 //
-extern const char *token2str(TokenKind _kind);
+class Lexer_C_CPP : public LexerBase
+{
+public:
+    Lexer_C_CPP() {}
+    ~Lexer_C_CPP() = default;
 
+    virtual void parseBuffer(LineBuffer *_buffer) override;
+    virtual void parseBufferFromLine(line_t *_line, LineBuffer *_buffer) override;
+    virtual void parseLine(line_t *_line) override;
+    virtual token_t nextLineToken(line_t *_line) override;
+
+    virtual void colorToken(line_t *_line, token_t *_t) override;
+
+protected:
+    std::unordered_set<const char *, unordered_deref, unordered_cmp> m_keywords = {
+        "alignas", "alignof", "and", "and_eq", "asm", "atomic_cancel", "atomic_commit", 
+        "atomic_noexcept", "auto", "bitand", "bitor", "bool", "break", "case", "catch", 
+        "char", "char8_t", "char16_t", "char32_t", "class", "compl", "concept", "const", 
+        "consteval", "constexpr", "constinit", "const_cast", "continue", "co_await", 
+        "co_return", "co_yield", "decltype", "default", "delete", "do", "double", 
+        "dynamic_cast", "else", "enum", "explicit", "export", "extern", "false", "float", 
+        "for", "friend", "goto", "if", "inline", "int", "long", "mutable", "namespace", 
+        "new", "noexcept", "not", "not_eq", "nullptr", "operator", "or", "or_eq", 
+        "private", "protected", "public", "reflexpr", "register", "reinterpret_cast", 
+        "requires", "return", "short", "signed", "sizeof", "static", "static_assert", 
+        "static_cast", "struct", "switch", "synchronized", "template", "this", 
+        "thread_local", "throw", "true", "try", "typedef", "typeid", "typename", "union", 
+        "unsigned", "using", "virtual", "void", "volatile", "wchar_t", "while", "xor", 
+        "xor_eq", "NULL",
+    };
+
+};
+
+//
+class Lexer_TXT : public LexerBase
+{
+public:
+    Lexer_TXT() {}
+    ~Lexer_TXT() = default;
+
+    virtual void parseBuffer(LineBuffer *_buffer) override { return; }
+    
+};
 //
 extern const char *token2str(TokenKind _kind);
 

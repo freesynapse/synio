@@ -25,6 +25,7 @@ private:
         if (!m_currentWindow) 
             return;
             
+        m_currentWindow->updateCursor();
         m_currentWindow->clear();
         m_currentWindow->redraw();
         m_currentWindow->refresh();

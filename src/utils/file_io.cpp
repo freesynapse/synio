@@ -11,7 +11,7 @@
 // static decls
 std::string FileIO::s_lastReadFile = "";
 std::string FileIO::s_lastWrittenFile = "";
-FileType FileIO::s_lastFileType = TXT;
+FileType FileIO::s_lastFileType = DEFAULT;
 
 //---------------------------------------------------------------------------------------
 int FileIO::read_file_to_buffer(const std::string &_filename, LineBuffer *_buffer)
@@ -20,6 +20,7 @@ int FileIO::read_file_to_buffer(const std::string &_filename, LineBuffer *_buffe
 
     // filetype -- only deduced from file extension
     size_t pos = _filename.find_last_of('.') + 1;
+    
     std::string file_ext = _filename.substr(pos, std::string::npos);
     // convert to lower case
     std::transform(file_ext.begin(),
@@ -28,10 +29,12 @@ int FileIO::read_file_to_buffer(const std::string &_filename, LineBuffer *_buffe
                    [](unsigned char c){ return std::tolower(c); });
 
     // ifs for now
-    s_lastFileType = TXT;
-    if (file_ext == "cpp" || file_ext == "c" || file_ext == "cxx" || file_ext == "h" || file_ext == "hpp")
+    s_lastFileType = DEFAULT;
+    if (pos == 0)
+        s_lastFileType = TXT;
+    else if (file_ext == "cpp" || file_ext == "c" || file_ext == "cxx" || file_ext == "h" || file_ext == "hpp")
         s_lastFileType = C_CPP;
-    LOG_INFO("file_ext %s", FileType2Str(s_lastFileType));
+    LOG_INFO("file type deduced as %s", FileType2Str(s_lastFileType));
 
     //
     std::ifstream file;
@@ -88,8 +91,9 @@ const char *FileType2Str(FileType _ft)
 {
     switch (_ft)
     {
-        case C_CPP: return "C_CPP";
-        default: return "TXT";
+        case C_CPP:     return "C_CPP";
+        case TXT:       return "TXT";
+        default:        return "TXT";
     }
 
 }

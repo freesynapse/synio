@@ -12,7 +12,8 @@ Window::Window(const frame_t &_frame, const std::string &_id, bool _border)
    if (_border)
        m_apiBorderWindowPtr = api->newBorderWindow(&m_frame);
 
-   LOG_INFO("Window '%s' [%p] created.", m_ID.c_str(), this);
+   LOG_INFO("Window '%s' [%p] created [(%d, %d), (%d, %d)].", 
+            m_ID.c_str(), this, m_frame.v0.x, m_frame.v0.y, m_frame.v1.x, m_frame.v1.y);
 
 
 }

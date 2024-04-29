@@ -148,7 +148,7 @@ protected:
 
     // output and syntax highlighting
     BufferFormatter m_formatter;
-    Lexer m_lexer;
+    LexerBase *m_lexer = NULL;
 
     // TODO : selections; one (1) for now, could be array later? Or put in Selection class (probably not though)
     Selection *m_selection = NULL;

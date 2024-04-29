@@ -18,8 +18,6 @@ public:
     static bool SHOW_LINE_NUMBERS;
     static int LINE_NUMBERS_MIN_WIDTH;
     
-    static bool HIGHLIGHT_CURRENT_LINE;
-
     static int PAGE_SIZE;
     static int TAB_SIZE;
     static TabsOrSpaces USE_TABS_OR_SPACES;

@@ -10,21 +10,20 @@
 // individual color ids
 #define SYN_COLOR_BKGD                  -1  // assumes use_default_colors() is called
 #define SYN_COLOR_SEL_BKGD               0
-#define SYN_COLOR_HLROW_BKGD             1
 // #define SYN_COLOR_MENU_BKGD           1  // TODO : implement me (?)
-#define SYN_COLOR_STATUS_BKGD            2
-#define SYN_COLOR_TEXT_FGD               3
-#define SYN_COLOR_KEYWORD_FGD            4
-#define SYN_COLOR_STRING_FGD             5
-#define SYN_COLOR_NUMBER_FGD             6
-#define SYN_COLOR_LITERAL_STRUCT_FGD     7
-#define SYN_COLOR_LITERAL_OP_FGD         8
-#define SYN_COLOR_LITERAL_DELIM_FGD      9
-#define SYN_COLOR_COMMENT_FGD           10
-#define SYN_COLOR_PREPROC_FGD           11
-#define SYN_COLOR_BLACK                 12
+#define SYN_COLOR_STATUS_BKGD            1
+#define SYN_COLOR_TEXT_FGD               2
+#define SYN_COLOR_KEYWORD_FGD            3
+#define SYN_COLOR_STRING_FGD             4
+#define SYN_COLOR_NUMBER_FGD             5
+#define SYN_COLOR_LITERAL_STRUCT_FGD     6
+#define SYN_COLOR_LITERAL_OP_FGD         7
+#define SYN_COLOR_LITERAL_DELIM_FGD      8
+#define SYN_COLOR_COMMENT_FGD            9
+#define SYN_COLOR_PREPROC_FGD           10
+#define SYN_COLOR_BLACK                 11
 
-#define SYN_COLOR_COUNT                 13
+#define SYN_COLOR_COUNT                 12
 
 // color pair ids
 #define SYN_COLOR_TEXT                   0
@@ -39,9 +38,8 @@
 #define SYN_COLOR_MCOMMENT               9
 #define SYN_COLOR_PREPROC               10
 #define SYN_COLOR_STATUS                11
-#define SYN_COLOR_HLROW                 12
 
-#define COLOR_PAIR_COUNT                13
+#define COLOR_PAIR_COUNT                12
 
 // selection color pair ids
 #define SELECTION_OFFSET                (255 - COLOR_PAIR_COUNT)
@@ -58,20 +56,6 @@
 #define SYN_COLOR_SEL_PREPROC           (SYN_COLOR_PREPROC        + SELECTION_OFFSET)
 #define SYN_COLOR_SEL_STATUS            (SYN_COLOR_STATUS         + SELECTION_OFFSET)
 
-// row highlight offsets
-#define HLROW_OFFSET                    (SELECTION_OFFSET - COLOR_PAIR_COUNT)
-#define SYN_COLOR_HLROW_TEXT            (SYN_COLOR_TEXT           + HLROW_OFFSET)
-#define SYN_COLOR_HLROW_KEYWORD         (SYN_COLOR_KEYWORD        + HLROW_OFFSET)
-#define SYN_COLOR_HLROW_STRING          (SYN_COLOR_STRING         + HLROW_OFFSET)
-#define SYN_COLOR_HLROW_MSTRING         (SYN_COLOR_MSTRING        + HLROW_OFFSET)
-#define SYN_COLOR_HLROW_NUMBER          (SYN_COLOR_NUMBER         + HLROW_OFFSET)
-#define SYN_COLOR_HLROW_LITERAL_STRUCT  (SYN_COLOR_LITERAL_STRUCT + HLROW_OFFSET)
-#define SYN_COLOR_HLROW_LITERAL_OP      (SYN_COLOR_LITERAL_OP     + HLROW_OFFSET)
-#define SYN_COLOR_HLROW_LITERAL_DELIM   (SYN_COLOR_LITERAL_DELIM  + HLROW_OFFSET)
-#define SYN_COLOR_HLROW_COMMENT         (SYN_COLOR_COMMENT        + HLROW_OFFSET)
-#define SYN_COLOR_HLROW_MCOMMENT        (SYN_COLOR_MCOMMENT       + HLROW_OFFSET)
-#define SYN_COLOR_HLROW_PREPROC         (SYN_COLOR_PREPROC        + HLROW_OFFSET)
-#define SYN_COLOR_HLROW_STATUS          (SYN_COLOR_STATUS         + HLROW_OFFSET)
 
 //
 extern void ncurses_init_colors(API_WINDOW_PTR _w);
@@ -80,10 +64,6 @@ extern void ncurses_init_colors(API_WINDOW_PTR _w);
 extern void ncurses_find_selected_offsets(line_t *_line, size_t *start, size_t *end);
 extern void ncurses_deselect_substr(line_t *_line, size_t _start, size_t _end);
 extern void ncurses_toggle_selection_substr(line_t *_line, size_t _start, size_t _end);
-
-// row highlight
-extern void ncurses_highlight_line(line_t *_line, size_t _line_len);
-extern void ncurses_dehighlight_line(line_t *_line, size_t _line_len);
 
 // keeps background for selection 
 extern void ncurses_color_substr(line_t *_line, size_t _start, size_t _end, short _pair_index);

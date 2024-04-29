@@ -213,11 +213,13 @@ int Ncurses_Impl::printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PT
 }
 
 //---------------------------------------------------------------------------------------
-int Ncurses_Impl::printString(API_WINDOW_PTR _w, int _cx, int _cy, const CHTYPE_PTR _str, size_t _len)
+int Ncurses_Impl::printString(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _str, size_t _len)
 {
     WINDOW *w = (WINDOW *)_w;
     wmove(w, _cy, _cx);
-    waddchnstr(w, (const chtype *)_str, _len);
+    // waddchstr(w, (const chtype *)_str);
+    for (size_t i = 0; i < _len; i++)
+        waddch(w, _str[i]);
 
     return RETURN_SUCCESS;
 }

@@ -10,8 +10,9 @@
 enum FileType
 {
     C_CPP = 0,
-    
     TXT,
+
+    DEFAULT
 };
 
 //

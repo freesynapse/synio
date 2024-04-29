@@ -42,7 +42,7 @@ FileBufferWindow::FileBufferWindow(const frame_t &_frame,
 FileBufferWindow::~FileBufferWindow()
 {
     delete m_lineNumbers;
-
+    delete m_lexer;
 }
 
 //---------------------------------------------------------------------------------------
@@ -1350,11 +1350,18 @@ void FileBufferWindow::readFileToBuffer(const std::string &_filename)
         m_lineBuffer.push_front("");
     
     // apply syntax highlighting
-    // TODO :   inherit lexer base class and intiialize here depending on filetype
+    // TODO :   inherit lexer base class and intialize here depending on filetype
     //          i.e. LexerC_CPP, LexerSH, LexerPY etc.
-    // if (FileIO::s_lastFileType == C_CPP)
-        m_lexer.parseBuffer(&m_lineBuffer);
-        // m_syntaxHLNextFrame = true;
+    switch (FileIO::s_lastFileType)
+    {
+        case C_CPP:     m_lexer = new Lexer_C_CPP;  break;
+        case TXT:       m_lexer = new Lexer_TXT;    break;
+        default:        m_lexer = new Lexer_TXT;    break;
+    }
+
+    //    
+    m_lexer->parseBuffer(&m_lineBuffer);
+    m_syntaxHLNextFrame = true;
     
     // line pointers
     m_currentLine = m_lineBuffer.m_head;
@@ -1455,9 +1462,9 @@ void FileBufferWindow::redraw()
     {
         CHTYPE c = m_currentLine->content[m_cursor.cx()];
         __debug_print(x, y++, "is_delim: %s", is_col_delimiter_(c) ? "true" : "false");
-        int16_t color = ncurses_get_CHTYPE_color(c);
-        TokenKind tk = m_lexer.tokenFromColor(color);
-        __debug_print(x, y++, "cpos HL:  %s", token2str(tk));
+        // int16_t color = ncurses_get_CHTYPE_color(c);
+        // TokenKind tk = dynamic_cast<Lexer_C_CPP *>(m_lexer)->tokenFromColor(color);
+        // __debug_print(x, y++, "cpos HL:  %s", token2str(tk));
     }
     y++;
     if (m_currentLine != NULL)
@@ -1490,20 +1497,13 @@ void FileBufferWindow::redraw()
     {
         if (m_syntaxHLNextFrame)
         {
-            m_lexer.parseBuffer(&m_lineBuffer);
+            m_lexer->parseBuffer(&m_lineBuffer);
             m_syntaxHLNextFrame = false;
         }
         
         // check for lines that have been changed
         for (auto &line_y : m_windowLinesUpdateList)
             api->clearBufferLine(m_apiWindowPtr, line_y, m_frame.ncols);
-
-        // highlight current line
-        if (Config::HIGHLIGHT_CURRENT_LINE && !m_isSelecting)
-        {
-            ncurses_dehighlight_line(m_prevLine, m_frame.v1.x);
-            ncurses_highlight_line(m_currentLine, m_frame.v1.x);
-        }
 
         m_windowLinesUpdateList.clear();
 

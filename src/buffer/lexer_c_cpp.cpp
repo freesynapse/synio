@@ -51,7 +51,7 @@ const char *token2str(TokenKind _kind)
 
 }
 //---------------------------------------------------------------------------------------
-void Lexer::colorToken(line_t *_line, token_t *_t)
+void Lexer_C_CPP::colorToken(line_t *_line, token_t *_t)
 {
     // color parsed tokens
     switch (_t->kind)
@@ -97,7 +97,7 @@ void Lexer::colorToken(line_t *_line, token_t *_t)
 
 
 //---------------------------------------------------------------------------------------
-void Lexer::parseBuffer(LineBuffer *_buffer)
+void Lexer_C_CPP::parseBuffer(LineBuffer *_buffer)
 {
     m_inMString = false;
     m_inMComment = false;
@@ -112,7 +112,7 @@ void Lexer::parseBuffer(LineBuffer *_buffer)
 }
 
 //---------------------------------------------------------------------------------------
-void Lexer::parseBufferFromLine(line_t *_line, LineBuffer *_buffer)
+void Lexer_C_CPP::parseBufferFromLine(line_t *_line, LineBuffer *_buffer)
 {
     line_t *p = _line;
     line_t *end_condition = _line->next;
@@ -148,7 +148,7 @@ void Lexer::parseBufferFromLine(line_t *_line, LineBuffer *_buffer)
 }
 
 //---------------------------------------------------------------------------------------
-void Lexer::parseLine(line_t *_line)
+void Lexer_C_CPP::parseLine(line_t *_line)
 {
     m_cursor = 0;
     while (m_cursor < _line->len)
@@ -160,7 +160,7 @@ void Lexer::parseLine(line_t *_line)
 }
 
 //---------------------------------------------------------------------------------------
-token_t Lexer::nextLineToken(line_t *_line)
+token_t Lexer_C_CPP::nextLineToken(line_t *_line)
 {
     m_line = _line;
 
@@ -340,14 +340,6 @@ token_t Lexer::nextLineToken(line_t *_line)
     token = token_t(m_cursor, m_cursor+1, TOKEN_INVALID);
     m_cursor++;
     return token;
-
-}
-
-//---------------------------------------------------------------------------------------
-void Lexer::trim_whitespace_left_()
-{
-    while (m_cursor < m_line->len && isspace(m_line->__debug_str[m_cursor]))
-        m_cursor++;
 
 }
 
