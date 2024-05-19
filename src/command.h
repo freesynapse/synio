@@ -7,6 +7,11 @@
 #include "utils/log.h"
 
 
+enum class CommandID
+{
+    
+};
+
 //
 class Command
 {

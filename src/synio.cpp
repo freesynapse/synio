@@ -44,30 +44,36 @@ Synio::~Synio()
 void Synio::initialize()
 {
     api->getRenderSize(&m_screenSize);
-    frame_t buffer_wnd_rect(ivec2_t(8, 0), ivec2_t(m_screenSize.x, m_screenSize.y));
+    frame_t buffer_wnd_rect(ivec2_t(8, 0), ivec2_t(m_screenSize.x, m_screenSize.y - 1));
     m_bufferWindow = new FileBufferWindow(buffer_wnd_rect, "buffer_window", false);
     m_bufferWindow->readFileToBuffer(m_filename);
     
     // -- DEBUG
-    m_currentWindow = m_bufferWindow;
+    m_focusWindow = m_bufferWindow;
     //m_bufferWindow->clear();
     //m_bufferWindow->redraw();
     //m_bufferWindow->refresh();
-    //m_currentWindow->updateCursor();
+    //m_focusWindow->updateCursor();
 
     // -- DEBUG -- working
     //frame_t f = frame_t(ivec2_t(0, m_screenSize.y - 1), m_screenSize);
     //m_commandWindow = new LineBufferWindow(f, "test_dialog");
     //m_commandWindow->setQuery("test query: ", ivec2_t(0, 0));
-    //m_currentWindow = m_commandWindow;
+    //m_focusWindow = m_commandWindow;
 
     // clear_redraw_refresh_window_();
 
     // TEST -- command window
-    frame_t command_wnd_rect = frame_t(ivec2_t(0, m_screenSize.y - 2),
+    frame_t command_wnd_rect = frame_t(ivec2_t(0, m_screenSize.y - 1),
                                        ivec2_t(m_screenSize.x, m_screenSize.y));
     m_commandWindow = new LineBufferWindow(command_wnd_rect, "command_window");
-    m_commandWindow->setVisibility(true);
+    m_commandWindow->setVisibility(false);
+
+    // TEST -- status window
+    frame_t status_wnd_rect = frame_t(ivec2_t(0, m_screenSize.y - 1),
+                                      ivec2_t(m_screenSize.x, m_screenSize.y));
+    // TODO : implement me
+    // m_statusWindow = new StatusWindow(status_wnd_rect, m_bufferWindow, "status_window");
 
 }
 
@@ -79,9 +85,9 @@ void Synio::mainLoop()
         // --- BEGIN DRAWING : order matters!
         //
 
-        m_currentWindow->clear();
-        m_currentWindow->redraw();
-        m_currentWindow->refresh();
+        m_focusWindow->clear();
+        m_focusWindow->redraw();
+        m_focusWindow->refresh();
 
         // actually swap the buffers
         api->redrawScreen();
@@ -100,15 +106,18 @@ void Synio::mainLoop()
         //
         if (key == CTRL('x') && !m_commandMode)
         {
-            m_commandMode = !m_commandMode;
-            m_currentWindow = m_commandWindow;
+            m_commandMode = true;
+            m_focusWindow = m_commandWindow;
+            m_commandWindow->setQueryPrefix("C-x");
+            m_commandWindow->setVisibility(true);
             clear_redraw_refresh_window_();
         }
 
         else if (key == CTRL('x') && m_commandMode)
         {
-            m_commandMode = !m_commandMode;
-            m_currentWindow = m_bufferWindow;
+            m_commandMode = false;
+            m_focusWindow = m_bufferWindow;
+            m_commandWindow->setVisibility(false);
             clear_redraw_refresh_window_();
         }
         
@@ -116,7 +125,7 @@ void Synio::mainLoop()
         //
         else
         {
-            m_currentWindow->handleInput(key, ctrl_action);
+            m_focusWindow->handleInput(key, ctrl_action);
 
             // TODO : move to command mode
             if (key == CTRL('q'))

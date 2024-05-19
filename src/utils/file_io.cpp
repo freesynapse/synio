@@ -34,11 +34,12 @@ int FileIO::read_file_to_buffer(const std::string &_filename, LineBuffer *_buffe
         s_lastFileType = TXT;
     else if (file_ext == "cpp" || file_ext == "c" || file_ext == "cxx" || file_ext == "h" || file_ext == "hpp")
         s_lastFileType = C_CPP;
-    LOG_INFO("file type deduced as %s", FileType2Str(s_lastFileType));
-
+    
     //
     std::ifstream file;
     file.open(_filename, std::ios::in);
+
+    LOG_INFO("opened file '%s' (%s).", _filename.c_str(), FileType2Str(s_lastFileType));
 
     //
     std::string line;

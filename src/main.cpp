@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
         filename = std::string(argv[1]);
 
     //
-    Log::open("log.txt");
+    Log::open("/home/iomanip/source/synio/build/log.txt");
 
     set_backend();
     api->initialize();

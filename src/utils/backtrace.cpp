@@ -6,7 +6,7 @@
 #include "log.h"
 #include "../core.h"
 
-#define BACKTRACE_LOG(...) { fprintf(stderr, __VA_ARGS__); fprintf(Log::file_handle, __VA_ARGS__); }
+#define BACKTRACE_LOG(...) { fprintf(stderr, __VA_ARGS__); fprintf(Log::s_file_handle, __VA_ARGS__); }
 
 void signal_handler(int _sig_num, siginfo_t *_info, void *_ucontext)
 {

@@ -22,13 +22,15 @@ public:
 private:
     void clear_redraw_refresh_window_()
     {
-        if (!m_currentWindow) 
+        if (!m_focusWindow) 
             return;
             
-        m_currentWindow->updateCursor();
-        m_currentWindow->clear();
-        m_currentWindow->redraw();
-        m_currentWindow->refresh();
+        m_focusWindow->updateCursor();
+        m_focusWindow->clear();
+        m_focusWindow->refresh_next_frame_();
+        m_focusWindow->refresh();
+        m_focusWindow->redraw();
+        api->redrawScreen();
     }
 
 private:
@@ -37,10 +39,11 @@ private:
     bool m_commandMode = false;
     
     // windows
-    FileBufferWindow *m_bufferWindow = NULL;      // TODO : to become an undordered map of windows?
+    FileBufferWindow *m_bufferWindow = NULL;    // TODO : to become an undordered map of windows, allowing multiple buffers?
     LineBufferWindow *m_commandWindow = NULL;
+    LineBufferWindow *m_statusWindow = NULL;
 
-    BufferWindowBase *m_currentWindow = NULL;     // indicating use of multiple buffers...
+    BufferWindowBase *m_focusWindow = NULL;     // status, command, dialog, buffer, etc
     
     //
     ivec2_t m_screenSize;

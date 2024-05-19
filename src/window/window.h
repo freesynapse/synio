@@ -37,6 +37,8 @@ public:
     // Platform interactions
     virtual void resize(frame_t _new_frame);
     virtual void redraw() = 0;
+    // virtual void gotFocus() = 0;
+    // virtual void lostFocus() = 0;
     virtual void clear()
     { 
         // clear() clears the borders...

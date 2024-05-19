@@ -10,11 +10,11 @@
 #define __func__ __PRETTY_FUNCTION__
 
 #ifdef DEBUG
-    #define LOG_RAW(...) { Log::open(); Log::log_("", "", __VA_ARGS__); fclose(Log::file_handle); }
-    #define LOG_INFO(...) { Log::open(); Log::log_("\x1b[32m[INFO]\x1b[0m ", __func__, __VA_ARGS__); fclose(Log::file_handle); }
-    #define LOG_WARNING(...) { Log::open(); Log::log_("\x1b[33m[WARN]\x1b[0m ", __func__, __VA_ARGS__); fclose(Log::file_handle); }
-    #define LOG_ERROR(...) { Log::open(); Log::log_("\x1b[31m[ERR]\x1b[0m  ", __func__, __VA_ARGS__); fclose(Log::file_handle); }
-    #define LOG_CRITICAL_ERROR(...) { Log::open(); Log::log_("\x1b[31m[CERR]\x1b[0m ", __func__, __VA_ARGS__); fclose(Log::file_handle); int *a = NULL; *a = 1; }
+    #define LOG_RAW(...) { Log::open(); Log::log_("", "", __VA_ARGS__); fclose(Log::s_file_handle); }
+    #define LOG_INFO(...) { Log::open(); Log::log_("\x1b[32m[INFO]\x1b[0m ", __func__, __VA_ARGS__); fclose(Log::s_file_handle); }
+    #define LOG_WARNING(...) { Log::open(); Log::log_("\x1b[33m[WARN]\x1b[0m ", __func__, __VA_ARGS__); fclose(Log::s_file_handle); }
+    #define LOG_ERROR(...) { Log::open(); Log::log_("\x1b[31m[ERR]\x1b[0m  ", __func__, __VA_ARGS__); fclose(Log::s_file_handle); }
+    #define LOG_CRITICAL_ERROR(...) { Log::open(); Log::log_("\x1b[31m[CERR]\x1b[0m ", __func__, __VA_ARGS__); fclose(Log::s_file_handle); int *a = NULL; *a = 1; }
 #else
     #define LOG_RAW(...)
     #define LOG_INFO(...)
@@ -30,15 +30,15 @@ public:
     //
     static void open(const char *_filename="")
     {
-        if (filename == "")
+        if (s_filename == "")
         {
-            filename = std::string(_filename);
-            file_handle = fopen(_filename, "w");
+            s_filename = std::string(_filename);
+            s_file_handle = fopen(_filename, "w");
             log_("\x1b[32m[INFO]\x1b[0m ", __func__, "log file '%s' created.", _filename);
-            fclose(file_handle);
+            fclose(s_file_handle);
         }
         else
-            file_handle = fopen(filename.c_str(), "a");
+            s_file_handle = fopen(s_filename.c_str(), "a");
     }
 
     //    
@@ -55,7 +55,7 @@ public:
     static void log_(const char *_prefix, const char *_func, const char *_fmt, ...)
     {
         char *p = write_meta_to_buffer_ptr_(_prefix, _func);
-        if (p - log_buffer_ptr != 0)
+        if (p - s_log_buffer_ptr != 0)
         {
             sprintf(p, ": ");
             p += 2;
@@ -67,7 +67,7 @@ public:
         va_end(arg_list);
      
         sprintf(p+n, "\n");
-        fprintf(file_handle, "%s", log_buffer_ptr);
+        fprintf(s_file_handle, "%s", s_log_buffer_ptr);
 
     }
 
@@ -75,9 +75,9 @@ public:
 
     static char *write_meta_to_buffer_ptr_(const char* _prefix, const char *_func)
     {
-        memset(log_buffer_ptr, 0, 512);
+        memset(s_log_buffer_ptr, 0, 512);
         int n;
-        char *p = log_buffer_ptr;
+        char *p = s_log_buffer_ptr;
         n = sprintf(p, "%s", _prefix);
         p += n;
         n = sprintf(p, "%s", _func);
@@ -88,9 +88,9 @@ public:
 
 // private:
     // member variables
-    static FILE *file_handle;
-    static char log_buffer_ptr[512];
-    static std::string filename;
+    static FILE *s_file_handle;
+    static char s_log_buffer_ptr[512];
+    static std::string s_filename;
 
 };
 

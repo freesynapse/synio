@@ -4,6 +4,7 @@
 #include <assert.h>
 
 #include "../platform/ncurses_colors.h"
+#include "../utils/str_utils.h"
 
 
 //
@@ -19,44 +20,21 @@ LineBufferWindow::LineBufferWindow(const frame_t &_frame,
 //---------------------------------------------------------------------------------------
 LineBufferWindow::LineBufferWindow(const frame_t &_frame,
                                    const std::string &_id,
-                                   const std::string &_query,
+                                   const std::string &_query_prefix,
                                    const ivec2_t &_query_pos,
                                    bool _border) :
     BufferWindowBase(_frame, _id, _border)
 {
-    setQuery(_query, _query_pos);
+    setQueryPrefix(_query_prefix.c_str());
     m_currentLine = create_line("");
+    
 }
 
 //---------------------------------------------------------------------------------------
 LineBufferWindow::~LineBufferWindow()
 { 
     delete m_currentLine;
-    free(m_query);
-}
-
-//---------------------------------------------------------------------------------------
-void LineBufferWindow::setQuery(const std::string &_query, const ivec2_t &_pos)
-{
-    m_queryLen = _query.length();
-    m_queryPos = _pos;
-    
-    if (m_query) free(m_query);
-    m_query = (CHTYPE_PTR)malloc(CHTYPE_SIZE * m_queryLen + 1);
-
-    for (size_t i = 0; i < m_queryLen; i++)
-    {
-        #ifdef NCURSES_IMPL
-        m_query[i] = CHTYPE(_query[i] | COLOR_PAIR(SYN_COLOR_TEXT));
-        #else
-        m_query[i] = _query[i];
-        #endif
-    }
-    m_query[m_queryLen] = 0;
-
-    m_cursor.set_offset(ivec2_t(m_queryLen, 0));
-    //m_cursor.set_cx((int)m_queryLen);
-    //m_cursor.set_cy(m_queryPos.y);
+    delete m_query;
 
 }
 
@@ -71,8 +49,8 @@ void LineBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case CtrlKeyAction::CTRL_RIGHT: findColDelim(1);    break;
             case CtrlKeyAction::CTRL_UP:    moveCursorToRowDelim(-1);   break;
             case CtrlKeyAction::CTRL_DOWN:  moveCursorToRowDelim(1);    break;
-            // default: LOG_INFO("ctrl keycode %d : %s", _c, ctrlActionStr(_ctrl_action)); break;
-            default: break;
+            default: LOG_WARNING("ctrl keycode %d : %s", _c, ctrlActionStr(_ctrl_action)); break;
+            // default: break;
 
         }
     }
@@ -98,6 +76,14 @@ void LineBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                 dispatchEvent();
                 break;
 
+            case CTRL('s'):
+                setQueryPrefix("Save as (filename):");
+                break;
+
+            case CTRL('o'):
+                setQueryPrefix("Open (filename):");
+                break;
+
             default:
                 insertCharAtCursor((char)_c);
                 break;
@@ -110,9 +96,6 @@ void LineBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
 //---------------------------------------------------------------------------------------
 void LineBufferWindow::moveCursor(int _dx, int _dy)
 {
-    if (_dx < 0)
-        LOG_INFO("");
-
     int dx = _dx;
     int cx = m_cursor.cx();
     
@@ -144,7 +127,7 @@ void LineBufferWindow::moveCursorToLineEnd()
 int LineBufferWindow::findColDelim(int _dir, bool _move_cursor)
 {
     // TODO : implement me!
-    assert(1 == 0);
+    // assert(1 == 0);
     return -1;
  
 #if 0
@@ -251,7 +234,7 @@ void LineBufferWindow::deleteCharAtCursor()
 void LineBufferWindow::deleteToNextColDelim()
 {
     // TODO : implement me!
-    assert(1 == 0);
+    // assert(1 == 0);
 }
 
 //---------------------------------------------------------------------------------------
@@ -300,6 +283,41 @@ void LineBufferWindow::updateCursor()
 }
 
 //---------------------------------------------------------------------------------------
+void LineBufferWindow::setQueryPrefix(const char *_prefix)
+{
+    if (strcmp(_prefix, "") == 0)
+    {
+        LOG_WARNING("empty command entered.");
+        return;
+    }
+
+    delete m_query;
+
+    m_query = new CHTYPE_STR(_prefix);
+    assert(m_query->len < m_frame.ncols);
+
+    m_cursor.set_offset(ivec2_t(m_query->len + 1, 0));
+
+}
+
+//---------------------------------------------------------------------------------------
+void LineBufferWindow::appendPrefix(const char *_str)
+{
+    if (m_query->len == 0)
+    {
+        setQueryPrefix(_str);
+        return;
+    }
+
+    // add an extra space
+    m_query->append(" ");
+    m_query->append(_str);
+
+    m_cursor.set_offset(ivec2_t(m_query->len + 1, 0));
+
+}
+
+//---------------------------------------------------------------------------------------
 void LineBufferWindow::dispatchEvent()
 {
     LOG_INFO("pressed enter. hiding window.");
@@ -312,7 +330,10 @@ void LineBufferWindow::redraw()
     if (!m_isWindowVisible)
         return;
 
-    api->printBufferLine(m_apiWindowPtr, m_queryPos.x, m_queryPos.y, m_query, m_queryLen);
+    // print query prefix
+    api->printBufferLine(m_apiWindowPtr, m_queryPos.x, m_queryPos.y, m_query->str, m_query->len);
+    
+    // clear line and draw query
     api->clearSpace(m_apiWindowPtr, m_cursor.offset_x(), m_queryPos.y, m_frame.ncols - 1 - m_cursor.cx());
     api->printBufferLine(m_apiWindowPtr, m_cursor.offset_x(), m_queryPos.y, m_currentLine->content, m_currentLine->len);
 
