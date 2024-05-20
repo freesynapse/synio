@@ -25,11 +25,12 @@ private:
         if (!m_focusWindow) 
             return;
             
-        m_focusWindow->updateCursor();
+        m_focusWindow->clear_next_frame_();
         m_focusWindow->clear();
+        m_focusWindow->updateCursor();
+        m_focusWindow->redraw();
         m_focusWindow->refresh_next_frame_();
         m_focusWindow->refresh();
-        m_focusWindow->redraw();
         api->redrawScreen();
     }
 

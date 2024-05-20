@@ -47,7 +47,9 @@ public:
         if (!m_clearNextFrame)
             return;
 
+        m_clearNextFrame = false;
         api->clearWindow(m_apiWindowPtr);
+        
         if (m_apiBorderWindowPtr)
             api->clearWindow(m_apiBorderWindowPtr);
     }
@@ -56,8 +58,11 @@ public:
         if (!m_refreshNextFrame)
             return;
 
+        m_refreshNextFrame = false;
+
         if (m_apiBorderWindowPtr)
             api->refreshBorder(m_apiBorderWindowPtr);
+        
         api->refreshWindow(m_apiWindowPtr);
     }
 

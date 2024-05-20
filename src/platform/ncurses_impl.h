@@ -30,8 +30,8 @@ public:
     virtual void refreshScreen() override   { wrefresh((WINDOW *)m_screenPtr); }
     virtual void clearWindow(API_WINDOW_PTR _w) override     { wclear((WINDOW *)_w);   }
     // TODO : rename current refreshWindow to updateWindow and keep refreshWindow below
-    // virtual void refreshWindow(API_WINDOW_PTR _w) override   { wrefresh((WINDOW *)_w); }
-    virtual void refreshWindow(API_WINDOW_PTR _w) override   { wnoutrefresh((WINDOW *)_w); }
+    // virtual void refreshWindow(API_WINDOW_PTR _w) override { wrefresh((WINDOW *)_w); }
+    virtual void refreshWindow(API_WINDOW_PTR _w) override { wnoutrefresh((WINDOW *)_w); }
     virtual void redrawScreen() override { doupdate(); }
     virtual void refreshBorder(API_WINDOW_PTR _w) override;
 

@@ -48,8 +48,10 @@ public:
     // accessor
     API_WINDOW_PTR screenPtr() { return m_screenPtr; }
     
-protected:
+public:
     API_WINDOW_PTR m_screenPtr = NULL;
+
+protected:
     char m_clearBuffer[1024] = { 0 };
     
 };
