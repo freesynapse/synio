@@ -39,11 +39,17 @@ public:
     virtual int getKey() override;
     virtual CtrlKeyAction getCtrlKeyAction(int _key) override;
     virtual int moveCursor(API_WINDOW_PTR _w, int _x, int _y) override;
+
+    virtual void enableAttr(API_WINDOW_PTR _w, int _attr) override { wattron((WINDOW *)_w, _attr); };
+    virtual void disableAttr(API_WINDOW_PTR _w, int _attr) override { wattroff((WINDOW *)_w, _attr); };
+   
     virtual int clearBufferLine(API_WINDOW_PTR _w, int _cy, int _win_maxx) override;
     virtual int clearSpace(API_WINDOW_PTR _w, int _cx, int _cy, int _n) override;
     virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _line, size_t _len) override;
     virtual int printString(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _str, size_t _len) override;
     virtual int wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...) override;
+    virtual int vertical_divider(API_WINDOW_PTR _w, int _cx, int _cy, int _n) override;
+    virtual int horizontal_divider(API_WINDOW_PTR _w, int _cx, int _cy, int _n) override;
 
     // ncurses-only functions and variables
     void initKeycodeList();

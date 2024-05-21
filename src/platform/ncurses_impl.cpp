@@ -165,6 +165,7 @@ int Ncurses_Impl::moveCursor(API_WINDOW_PTR _w, int _x, int _y)
 {
     int ret = wmove((WINDOW *)_w, _y, _x);
     // wrefresh((WINDOW *)_w);
+
     return ret;
 
 }
@@ -235,6 +236,21 @@ int Ncurses_Impl::wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, 
 
     int len = mvwprintw((WINDOW *)_w, _cy, _cx, "%s", buffer);
     return len;
+
+}
+
+//---------------------------------------------------------------------------------------
+int Ncurses_Impl::vertical_divider(API_WINDOW_PTR _w, int _cx, int _cy, int _n)
+{
+    mvwvline((WINDOW *)_w, _cy, _cx, ACS_VLINE, _n);
+    return RETURN_SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+int Ncurses_Impl::horizontal_divider(API_WINDOW_PTR _w, int _cx, int _cy, int _n)
+{
+    mvwhline((WINDOW *)_w, _cy, _cx, ACS_HLINE, _n);
+    return RETURN_SUCCESS;
 
 }
 

@@ -16,6 +16,7 @@ public:
     // virtual compulsory functions
     virtual void handleInput(int, CtrlKeyAction) override {}
     virtual void redraw() override;
+    virtual void refresh() override;
 
     // set associated buffer
     void setBuffer(FileBufferWindow *_buffer) { m_associatedBuffer = _buffer; }

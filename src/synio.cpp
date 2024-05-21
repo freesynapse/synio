@@ -87,6 +87,7 @@ void Synio::mainLoop()
 
         m_focusWindow->clear();
         m_focusWindow->redraw();
+        m_focusWindow->updateCursor();
         m_focusWindow->refresh();
 
         // actually swap the buffers
@@ -111,6 +112,7 @@ void Synio::mainLoop()
             m_commandWindow->setQueryPrefix("C-x");
             m_commandWindow->setVisibility(true);
             clear_redraw_refresh_window_();
+            m_focusWindow->refresh_next_frame_();   // needed for correct cursor behaviour
         }
 
         else if (key == CTRL('x') && m_commandMode)
@@ -119,6 +121,7 @@ void Synio::mainLoop()
             m_focusWindow = m_bufferWindow;
             m_commandWindow->setVisibility(false);
             clear_redraw_refresh_window_();
+            m_focusWindow->refresh_next_frame_();   // needed for correct cursor behaviour
         }
         
         // interactive (editing) mode

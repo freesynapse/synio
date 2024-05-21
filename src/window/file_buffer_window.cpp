@@ -1321,6 +1321,8 @@ void FileBufferWindow::updateBufferCursorPos()
 
         //
         refresh_next_frame_();
+        refresh();
+        redraw();
 
     }
 }
@@ -1391,7 +1393,7 @@ void FileBufferWindow::writeBufferToFile()
     // needs something to open a dialog for a  filename
 
     if (FileIO::file_exists(m_filename))
-    {
+    {   // --> move to Save As command
         // overwrite option
         // m_filename = get_filename();
         // some sort of recursion to again find if the new filename exists
@@ -1448,7 +1450,7 @@ void FileBufferWindow::redraw()
     // order matters here
     m_lineNumbers->redraw();
 
-    #if (defined DEBUG) & (defined NCURSES_IMPL)
+    #if (defined DEBUG) & (defined NCURSES_IMPL) & 1
     updateCursor();
     int x = 110;
     int y = 0;
@@ -1492,7 +1494,7 @@ void FileBufferWindow::redraw()
        __debug_print(x, y++, "selected line count = %zu", m_selection->lineCount(m_bufferCursorPos));
 
     #endif
-    
+
     if (m_isWindowVisible)
     {
         if (m_syntaxHLNextFrame)
@@ -1502,11 +1504,15 @@ void FileBufferWindow::redraw()
         }
         
         // check for lines that have been changed
-        for (auto &line_y : m_windowLinesUpdateList)
-            api->clearBufferLine(m_apiWindowPtr, line_y, m_frame.ncols);
+        if (m_windowLinesUpdateList.size() > 0)
+        {
+            for (auto &line_y : m_windowLinesUpdateList)
+                api->clearBufferLine(m_apiWindowPtr, line_y, m_frame.ncols);
 
-        m_windowLinesUpdateList.clear();
+            m_windowLinesUpdateList.clear();
+        }
 
+        // render buffer
         m_formatter.render(m_apiWindowPtr, m_pageFirstLine, m_currentLine);
     }
 

@@ -22,13 +22,13 @@ public:
 private:
     void clear_redraw_refresh_window_()
     {
-        if (!m_focusWindow) 
+        if (m_focusWindow == NULL) 
             return;
             
         m_focusWindow->clear_next_frame_();
         m_focusWindow->clear();
-        m_focusWindow->updateCursor();
         m_focusWindow->redraw();
+        m_focusWindow->updateCursor();
         m_focusWindow->refresh_next_frame_();
         m_focusWindow->refresh();
         api->redrawScreen();

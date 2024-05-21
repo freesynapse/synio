@@ -21,6 +21,7 @@ void LineNumbers::redraw()
         return;
 
     // int width = m_frame.v1.x - 2;
+    api->clearWindow(m_apiWindowPtr);
 
     int y = 0;
     int line_no = m_associatedBuffer->m_scrollPos.y + 1;
@@ -32,8 +33,31 @@ void LineNumbers::redraw()
         curr_line = curr_line->next;
     }
 
-    // TODO : move this into platform_impl and sub-classes thereof
-    mvwvline((WINDOW *)m_apiWindowPtr, 0, m_frame.ncols - 1, ACS_VLINE, m_frame.nrows);
+    // draw blank line numbers
+    if (y < m_frame.nrows)
+    {
+        api->enableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_TEXT_INACTIVE));
+        
+        while (y < m_frame.nrows)
+            api->wprint(m_apiWindowPtr, 0, y++, "%*d", m_width-3, line_no++);
 
+        api->disableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_TEXT_INACTIVE));
+    }
+
+    api->vertical_divider(m_apiWindowPtr, m_frame.ncols - 1, 0, m_frame.nrows);
 }
 
+//---------------------------------------------------------------------------------------
+void LineNumbers::refresh()
+{
+    // TODO : always draw linenumbers? For now, yes.
+    // if (!m_refreshNextFrame)
+    //     return;
+    // m_refreshNextFrame = false;
+    
+    // for LineNumbers, always refresh (!?)
+    if (m_apiBorderWindowPtr)
+        api->refreshBorder(m_apiBorderWindowPtr);
+    
+    api->refreshWindow(m_apiWindowPtr);
+}
