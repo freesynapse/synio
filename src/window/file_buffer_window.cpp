@@ -1389,9 +1389,17 @@ void FileBufferWindow::readFileToBuffer(const std::string &_filename)
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::writeBufferToFile()
 {
+    if (!m_isDirty)
+        LOG_INFO("no changes to file.");
+
     // m_filename = get_filename() something;
     // needs something to open a dialog for a  filename
+    if (strcmp(m_filename.c_str(), "") == 0)
+    {
 
+    }
+
+    // depending on if Save As was used
     if (FileIO::file_exists(m_filename))
     {   // --> move to Save As command
         // overwrite option
@@ -1399,13 +1407,8 @@ void FileBufferWindow::writeBufferToFile()
         // some sort of recursion to again find if the new filename exists
     }
 
-    if (m_isDirty)
-    {
-        FileIO::write_buffer_to_file(m_filename, &m_lineBuffer);
-        m_isDirty = false;
-    }
-    else
-        LOG_INFO("no changes to file.");
+    FileIO::write_buffer_to_file(m_filename, &m_lineBuffer);
+    m_isDirty = false;
 
     //
     moveCursor(0, 0);

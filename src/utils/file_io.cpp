@@ -4,6 +4,7 @@
 #include <fstream>
 #include <algorithm>
 #include <sys/stat.h>
+#include <assert.h>
 
 #include "utils.h"
 
@@ -60,6 +61,8 @@ int FileIO::write_buffer_to_file(const std::string &_filename, LineBuffer *_line
     std::ofstream file;
     file.open(_filename, std::ios::out);
 
+    assert(_filename != "");
+
     std::string line;
     line_t *buffer_line_ptr = _line_buffer->m_head;
     size_t nbytes = 0;
@@ -82,8 +85,8 @@ int FileIO::write_buffer_to_file(const std::string &_filename, LineBuffer *_line
 //---------------------------------------------------------------------------------------
 bool FileIO::file_exists(const std::string &_filename)
 {
-    struct stat buffer;
-    return stat(_filename.c_str(), &buffer) == 0 ? true : false;
+    struct stat st;
+    return stat(_filename.c_str(), &st) == 0 ? true : false;
 
 }
 

@@ -23,8 +23,9 @@
 #define SYN_COLOR_PREPROC_FGD           10
 #define SYN_COLOR_BLACK                 11
 #define SYN_COLOR_GREY                  12
+#define SYN_COLOR_DARK_GREY             13
 
-#define SYN_COLOR_COUNT                 13
+#define SYN_COLOR_COUNT                 14
 
 // color pair ids
 #define SYN_COLOR_TEXT                   0
@@ -39,9 +40,10 @@
 #define SYN_COLOR_MCOMMENT               9
 #define SYN_COLOR_PREPROC               10
 #define SYN_COLOR_STATUS                11
-#define SYN_COLOR_TEXT_INACTIVE         12
+#define SYN_COLOR_LINENO                12
+#define SYN_COLOR_LINENO_INACTIVE       13
 
-#define COLOR_PAIR_COUNT                13
+#define COLOR_PAIR_COUNT                14
 
 // selection color pair ids
 #define SELECTION_OFFSET                (255 - COLOR_PAIR_COUNT)

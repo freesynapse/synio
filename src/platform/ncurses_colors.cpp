@@ -42,22 +42,24 @@ void ncurses_init_colors(API_WINDOW_PTR _w)
     init_color(SYN_COLOR_COMMENT_FGD,           800,  550,  235);
     init_color(SYN_COLOR_PREPROC_FGD,          1000, 1000,    0);
     init_color(SYN_COLOR_BLACK,                   0,    0,    0);
-    init_color(SYN_COLOR_GREY,                  300,  300,  300);
+    init_color(SYN_COLOR_GREY,                  500,  500,  500);
+    init_color(SYN_COLOR_DARK_GREY,             300,  300,  300);
 
     // regular color pairs
-    init_pair(SYN_COLOR_TEXT,           SYN_COLOR_TEXT_FGD,           SYN_COLOR_BKGD        ); // 'standard' color scheme
-    init_pair(SYN_COLOR_KEYWORD,        SYN_COLOR_KEYWORD_FGD,        SYN_COLOR_BKGD        );
-    init_pair(SYN_COLOR_STRING,         SYN_COLOR_STRING_FGD,         SYN_COLOR_BKGD        );
-    init_pair(SYN_COLOR_MSTRING,        SYN_COLOR_STRING_FGD,         SYN_COLOR_BKGD        );
-    init_pair(SYN_COLOR_NUMBER,         SYN_COLOR_NUMBER_FGD,         SYN_COLOR_BKGD        );
-    init_pair(SYN_COLOR_LITERAL_STRUCT, SYN_COLOR_LITERAL_STRUCT_FGD, SYN_COLOR_BKGD        );
-    init_pair(SYN_COLOR_LITERAL_OP,     SYN_COLOR_LITERAL_OP_FGD,     SYN_COLOR_BKGD        );
-    init_pair(SYN_COLOR_LITERAL_DELIM,  SYN_COLOR_LITERAL_DELIM_FGD,  SYN_COLOR_BKGD        );
-    init_pair(SYN_COLOR_COMMENT,        SYN_COLOR_COMMENT_FGD,        SYN_COLOR_BKGD        );
-    init_pair(SYN_COLOR_MCOMMENT,       SYN_COLOR_COMMENT_FGD,        SYN_COLOR_BKGD        );
-    init_pair(SYN_COLOR_PREPROC,        SYN_COLOR_PREPROC_FGD,        SYN_COLOR_BKGD        );
-    init_pair(SYN_COLOR_STATUS,         SYN_COLOR_BLACK,              SYN_COLOR_STATUS_BKGD );
-    init_pair(SYN_COLOR_TEXT_INACTIVE,  SYN_COLOR_GREY,               SYN_COLOR_BKGD        );
+    init_pair(SYN_COLOR_TEXT,               SYN_COLOR_TEXT_FGD,             SYN_COLOR_BKGD          ); // 'standard' color scheme
+    init_pair(SYN_COLOR_KEYWORD,            SYN_COLOR_KEYWORD_FGD,          SYN_COLOR_BKGD          );
+    init_pair(SYN_COLOR_STRING,             SYN_COLOR_STRING_FGD,           SYN_COLOR_BKGD          );
+    init_pair(SYN_COLOR_MSTRING,            SYN_COLOR_STRING_FGD,           SYN_COLOR_BKGD          );
+    init_pair(SYN_COLOR_NUMBER,             SYN_COLOR_NUMBER_FGD,           SYN_COLOR_BKGD          );
+    init_pair(SYN_COLOR_LITERAL_STRUCT,     SYN_COLOR_LITERAL_STRUCT_FGD,   SYN_COLOR_BKGD          );
+    init_pair(SYN_COLOR_LITERAL_OP,         SYN_COLOR_LITERAL_OP_FGD,       SYN_COLOR_BKGD          );
+    init_pair(SYN_COLOR_LITERAL_DELIM,      SYN_COLOR_LITERAL_DELIM_FGD,    SYN_COLOR_BKGD          );
+    init_pair(SYN_COLOR_COMMENT,            SYN_COLOR_COMMENT_FGD,          SYN_COLOR_BKGD          );
+    init_pair(SYN_COLOR_MCOMMENT,           SYN_COLOR_COMMENT_FGD,          SYN_COLOR_BKGD          );
+    init_pair(SYN_COLOR_PREPROC,            SYN_COLOR_PREPROC_FGD,          SYN_COLOR_BKGD          );
+    init_pair(SYN_COLOR_STATUS,             SYN_COLOR_BLACK,                SYN_COLOR_STATUS_BKGD   );
+    init_pair(SYN_COLOR_LINENO,             SYN_COLOR_GREY,                 SYN_COLOR_BKGD          );
+    init_pair(SYN_COLOR_LINENO_INACTIVE,    SYN_COLOR_DARK_GREY,            SYN_COLOR_BKGD          );
     
     // selection color pairs
     init_pair(SYN_COLOR_SEL_TEXT,           SYN_COLOR_TEXT_FGD,           SYN_COLOR_SEL_BKGD);
