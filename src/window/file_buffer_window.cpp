@@ -14,6 +14,7 @@ FileBufferWindow::FileBufferWindow(const frame_t &_frame,
     BufferWindowBase(_frame, _id, _border)
 {
     m_formatter = BufferFormatter(&m_frame);
+    
     m_cursor = Cursor(this);
     
     // Create a line numbers subwindow. In case of reading buffer from file, the width 
@@ -1356,9 +1357,11 @@ void FileBufferWindow::readFileToBuffer(const std::string &_filename)
     //          i.e. LexerC_CPP, LexerSH, LexerPY etc.
     switch (FileIO::s_lastFileType)
     {
-        case C_CPP:     m_lexer = new Lexer_C_CPP;  break;
-        case TXT:       m_lexer = new Lexer_TXT;    break;
-        default:        m_lexer = new Lexer_TXT;    break;
+        case C_CPP:     m_lexer = new Lexer_C_CPP;  m_filetype = "C/C++";       break;
+        case TXT:       m_lexer = new Lexer_TXT;    m_filetype = "TXT";         break;
+        case PY:        m_lexer = new Lexer_TXT;    m_filetype = "Python";      break;
+        case JS:        m_lexer = new Lexer_TXT;    m_filetype = "JavaScript";  break;
+        default:        m_lexer = new Lexer_TXT;    m_filetype = "TXT";         break;
     }
 
     //    

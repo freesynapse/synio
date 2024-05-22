@@ -38,6 +38,8 @@ Synio::~Synio()
     //
     delete m_bufferWindow;
     delete m_commandWindow;
+    delete m_statusWindow;
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -50,30 +52,17 @@ void Synio::initialize()
     
     // -- DEBUG
     m_focusWindow = m_bufferWindow;
-    //m_bufferWindow->clear();
-    //m_bufferWindow->redraw();
-    //m_bufferWindow->refresh();
-    //m_focusWindow->updateCursor();
 
-    // -- DEBUG -- working
-    //frame_t f = frame_t(ivec2_t(0, m_screenSize.y - 1), m_screenSize);
-    //m_commandWindow = new LineBufferWindow(f, "test_dialog");
-    //m_commandWindow->setQuery("test query: ", ivec2_t(0, 0));
-    //m_focusWindow = m_commandWindow;
-
-    // clear_redraw_refresh_window_();
-
-    // TEST -- command window
+    // command window
     frame_t command_wnd_rect = frame_t(ivec2_t(0, m_screenSize.y - 1),
                                        ivec2_t(m_screenSize.x, m_screenSize.y));
-    m_commandWindow = new LineBufferWindow(command_wnd_rect, "command_window");
+    m_commandWindow = new LineBufferWindow(command_wnd_rect, "command_window", false);
     m_commandWindow->setVisibility(false);
 
     // TEST -- status window
     frame_t status_wnd_rect = frame_t(ivec2_t(0, m_screenSize.y - 1),
                                       ivec2_t(m_screenSize.x, m_screenSize.y));
-    // TODO : implement me
-    // m_statusWindow = new StatusWindow(status_wnd_rect, m_bufferWindow, "status_window");
+    m_statusWindow = new StatusWindow(status_wnd_rect, "status_window", false);
 
 }
 
@@ -84,6 +73,16 @@ void Synio::mainLoop()
     {
         // --- BEGIN DRAWING : order matters!
         //
+        if (m_statusWindow)
+        {
+            m_statusWindow->update(m_bufferWindow);
+            if (m_statusWindow->wasUpdated())
+            {
+                m_statusWindow->clear();
+                m_statusWindow->redraw();
+                m_statusWindow->refresh();
+            }            
+        }
 
         m_focusWindow->clear();
         m_focusWindow->redraw();

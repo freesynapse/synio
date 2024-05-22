@@ -4,6 +4,7 @@
 #include "utils/utils.h"
 #include "window/file_buffer_window.h"
 #include "window/line_buffer_window.h"
+#include "window/status_window.h"
 
 //
 class Synio
@@ -42,7 +43,7 @@ private:
     // windows
     FileBufferWindow *m_bufferWindow = NULL;    // TODO : to become an undordered map of windows, allowing multiple buffers?
     LineBufferWindow *m_commandWindow = NULL;
-    LineBufferWindow *m_statusWindow = NULL;
+    StatusWindow *m_statusWindow = NULL;
 
     BufferWindowBase *m_focusWindow = NULL;     // status, command, dialog, buffer, etc
     

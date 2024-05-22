@@ -12,7 +12,8 @@
 //
 enum class EventType
 {
-    BUFFER_SCROLL, SEARCH_QUERY, 
+    BUFFER_SCROLL, BUFFER_SEARCH_QUERY, SAVE, SAVE_AS,
+    EXIT,
 
 };
 
@@ -62,11 +63,21 @@ public:
 
     __always_inline const std::string &query() const { return m_query; }
 
-    EVENT_TYPE(BUFFER_SCROLL)
+    EVENT_TYPE(BUFFER_SEARCH_QUERY)
 
 private:
     std::string m_query;
     
+};
+
+//
+class ExitEvent : public Event
+{
+public:
+    ExitEvent() {}
+
+    EVENT_TYPE(EXIT)
+
 };
 
 

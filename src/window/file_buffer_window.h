@@ -83,8 +83,12 @@ public:
     virtual void refresh() override;
 
     // accessors
-    const char *loadedFile() { return m_filename.c_str(); }
-    line_t *currentLine() { return m_currentLine; }
+    line_t              *currentLine()      { return m_currentLine; }
+    const std::string   &loadedFile()       { return m_filename; }
+    const std::string   &fileType()         { return m_filetype; }
+    const int            lineCount()        { return m_lineBuffer.lineCount(); }
+    const ivec2_t       &bufferCursorPos()  { return m_bufferCursorPos; }
+    const bool           bufferChanged()    { return m_isDirty; }
 
 private:
     // (includes y)
@@ -131,6 +135,7 @@ private:
 
 protected:
     std::string m_filename = "";
+    std::string m_filetype = "";
     bool m_isDirty = false;
     bool m_syntaxHLNextFrame = false;
 

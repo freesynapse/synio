@@ -2,6 +2,7 @@
 #define __STR_UTILS_H
 
 #include <string>
+#include <sstream>
 
 #include "../types.h"
 
@@ -19,6 +20,7 @@ struct CHTYPE_STR
     void append(const char *_str);
     void append(CHTYPE_STR_PTR _str);
 
+    CHTYPE_STR() {}
     CHTYPE_STR(char *_str, size_t _len);
     CHTYPE_STR(const char *_str);
     CHTYPE_STR(const std::string &_str);
@@ -52,5 +54,15 @@ extern CHTYPE_PTR char_to_chtype_ptr(char *_str, size_t _len);
 extern CHTYPE_PTR char_to_chtype_ptr(const char *_str);
 extern CHTYPE_PTR concat_chtype_ptrs(CHTYPE_PTR _s0, size_t _len0, CHTYPE_PTR _s1, size_t _len1,
                               char *_space=NULL, size_t _space_len=0);
+
+// fixed precision for to_string
+template <typename T>
+std::string to_string_n(const T _val, const int _n=2)
+{
+    std::ostringstream ss;
+    ss.precision(_n);
+    ss << std::fixed << _val;
+    return std::move(ss).str();
+}
 
 #endif // __STR_UTILS_H

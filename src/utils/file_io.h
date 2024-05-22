@@ -10,6 +10,8 @@
 enum FileType
 {
     C_CPP = 0,
+    PY,
+    JS,
     TXT,
 
     DEFAULT
