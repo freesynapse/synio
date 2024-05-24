@@ -66,11 +66,11 @@ void Synio::initialize()
 }
 
 //---------------------------------------------------------------------------------------
-LineBufferWindow *Synio::newCommandWindow(int _height)
+CommandWindow *Synio::newCommandWindow()
 {
-    LineBufferWindow *cmd_wnd = new LineBufferWindow(m_commandWndFrame,
-                                                     "command_window",
-                                                     false);
+    CommandWindow *cmd_wnd = new CommandWindow(m_commandWndFrame,
+                                               "command_window",
+                                               false);
     cmd_wnd->setVisibility(true);
     cmd_wnd->setQueryPrefix("C-x");
     cmd_wnd->setVisibility(true);

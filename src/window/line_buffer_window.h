@@ -14,11 +14,6 @@ public:
     LineBufferWindow(const frame_t &_frame,
                      const std::string &_id,
                      bool _border=false);
-    LineBufferWindow(const frame_t &_frame,
-                     const std::string &_id,
-                     const std::string &_query_prefix,
-                     const ivec2_t &_query_pos,
-                     bool _border=false);
     ~LineBufferWindow();
 
     // sets query string before editable line begins
@@ -44,21 +39,8 @@ public:
     // update cursor (called during rendering and after keypress)
     virtual void updateCursor() override;
 
-    // enter prefix (filename input, command etc, before user input)
-    virtual void setQueryPrefix(const char *_prefix="");
-    virtual void appendPrefix(const char *_str);
-
-    // dispatch event based on what kind of window this is, called on <ENTER>
-    virtual void dispatchEvent();
-
     // (Window overrides)
     virtual void redraw() override;
-
-
-protected:
-    //
-    CHTYPE_STR_PTR m_query = NULL;
-    ivec2_t m_queryPos = ivec2_t(0);
 
 };
 

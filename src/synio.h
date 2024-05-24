@@ -3,7 +3,8 @@
 
 #include "utils/utils.h"
 #include "window/file_buffer_window.h"
-#include "window/line_buffer_window.h"
+// #include "window/line_buffer_window.h"
+#include "window/command_window.h"
 #include "window/status_window.h"
 
 //
@@ -15,7 +16,7 @@ public:
 
     //
     void initialize();
-    LineBufferWindow *newCommandWindow(int _height=1);
+    CommandWindow *newCommandWindow();
 
     //
     void adjustBufferWindowFrame(BufferWindowBase *_w, frame_t *_w_frame, int _dx0, 
@@ -47,7 +48,7 @@ private:
     
     // windows
     FileBufferWindow *m_bufferWindow = NULL;    // TODO : to become an undordered map of windows, allowing multiple buffers?
-    LineBufferWindow *m_commandWindow = NULL;
+    CommandWindow *m_commandWindow = NULL;
     StatusWindow *m_statusWindow = NULL;
 
     BufferWindowBase *m_focusedWindow = NULL;     // status, command, dialog, buffer, etc
