@@ -17,7 +17,9 @@ class Config
 public:
     static bool SHOW_LINE_NUMBERS;
     static int LINE_NUMBERS_MIN_WIDTH;
-    
+
+    static int COMMAND_WINDOW_HEIGHT;
+
     static int PAGE_SIZE;
     static int TAB_SIZE;
     static TabsOrSpaces USE_TABS_OR_SPACES;

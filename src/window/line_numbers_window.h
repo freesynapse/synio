@@ -23,6 +23,7 @@ public:
 
     //
     void setWidth(int _w) { m_width = _w; }
+    int getWidth() { return m_width; }
 
 private:
     FileBufferWindow *m_associatedBuffer = NULL;

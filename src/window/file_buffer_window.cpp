@@ -24,9 +24,8 @@ FileBufferWindow::FileBufferWindow(const frame_t &_frame,
     m_lineNumbers = new LineNumbers(line_numbers_rect, _id+"_line_numbers", _border);
     m_lineNumbers->setBuffer(this);
 
-    int width = 5;
-    m_lineNumbers->setWidth(width);
-    resize(m_frame, width);
+    m_lineNumbers->setWidth(Config::LINE_NUMBERS_MIN_WIDTH);
+    resize(m_frame);
 
     if (!Config::SHOW_LINE_NUMBERS)
         m_lineNumbers->setVisibility(false);
@@ -1381,7 +1380,7 @@ void FileBufferWindow::readFileToBuffer(const std::string &_filename)
         // also leave 2 blank spaces left and 1 before the divider
         width += 4;
         m_lineNumbers->setWidth(width);
-        resize(m_frame, width);
+        resize(m_frame);
 
     }
 
@@ -1419,19 +1418,23 @@ void FileBufferWindow::writeBufferToFile()
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::resize(frame_t _new_frame, int _left_reserved)
+void FileBufferWindow::resize(frame_t _new_frame)
 {
     // the _left_reserved argument is used to reserve space of the LineNumbers window
-    // (eg when called from FileBufferWindow::readFileToBuffer when we know the max number of lines in 
-    // the file).
+    // (eg when called from FileBufferWindow::readFileToBuffer when we know the max 
+    // number of lines in the file).
     //
 
     m_frame = _new_frame;
-    if (_left_reserved != -1 && m_frame.v0.x != _left_reserved)
-    {
-        m_frame.v0.x = _left_reserved;
-        m_frame.update_dims();
-    }
+
+    // if (m_frame.v0.x != m_lineNumbers->getWidth())
+    m_frame.v0.x = m_lineNumbers->getWidth();
+
+    //if (_left_reserved != -1 && m_frame.v0.x != _left_reserved)
+    //{
+    //    m_frame.v0.x = _left_reserved;
+    //    m_frame.update_dims();
+    //}
 
     api->clearWindow(m_apiWindowPtr);
     api->deleteWindow(m_apiWindowPtr);
@@ -1456,7 +1459,7 @@ void FileBufferWindow::redraw()
     // order matters here
     m_lineNumbers->redraw();
 
-    #if (defined DEBUG) & (defined NCURSES_IMPL) & 1
+    #if (defined DEBUG) & (defined NCURSES_IMPL) & 0
     updateCursor();
     int x = 110;
     int y = 0;

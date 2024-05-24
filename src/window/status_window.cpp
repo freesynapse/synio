@@ -19,14 +19,14 @@ void StatusWindow::update(FileBufferWindow *_buffer_window)
         // left-aligned status
         bool dirty = _buffer_window->bufferChanged();
         std::string filename = (dirty ? "*" : "") + m_filename + (dirty ? "*" : "");
-        m_statusStr = filename;
+        m_statusStr = " " + filename;
 
         // right-aligned status
         std::string right = "(" + m_filetype + ")  [" + std::to_string(m_bpos.x+1) + ", " + \
                             std::to_string(m_bpos.y+1) + "]  (" + \
                             to_string_n(((float)(m_bpos.y + 1) / m_lineCount) * 100.0f, 0) + "%) ";
         
-        size_t w = (size_t)m_frame.ncols - 1;
+        size_t w = (size_t)m_frame.ncols;
         std::string spacing = std::string(w - m_statusStr.size() - right.size(), ' ');
 
         m_statusStr += spacing;
@@ -35,6 +35,16 @@ void StatusWindow::update(FileBufferWindow *_buffer_window)
         m_wasUpdated = true;
     }
     
+}
+
+//---------------------------------------------------------------------------------------
+void StatusWindow::resize(frame_t _new_frame)
+{
+    m_frame = _new_frame;
+    api->clearWindow(m_apiWindowPtr);
+    api->deleteWindow(m_apiWindowPtr);
+    m_apiWindowPtr = api->newWindow(&m_frame);  // resfresh called by api->newWindow()
+
 }
 
 //---------------------------------------------------------------------------------------

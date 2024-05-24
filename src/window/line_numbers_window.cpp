@@ -9,7 +9,6 @@ void LineNumbers::resize(frame_t _buffer_frame)
     // use parent buffer and width to deduce frame
     frame_t new_frame = frame_t(ivec2_t(0, 0), 
                                 ivec2_t(m_width, _buffer_frame.v1.y));
-
     Window::resize(new_frame);
 
 }

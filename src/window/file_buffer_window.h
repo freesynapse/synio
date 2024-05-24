@@ -77,7 +77,7 @@ public:
     void writeBufferToFile();
 
     // Window class overrides
-    virtual void resize(frame_t _new_frame, int _left_reserved=-1);
+    virtual void resize(frame_t _new_frame) override;
     virtual void redraw() override;
     virtual void clear() override;
     virtual void refresh() override;

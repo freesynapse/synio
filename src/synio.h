@@ -15,23 +15,28 @@ public:
 
     //
     void initialize();
+    LineBufferWindow *newCommandWindow(int _height=1);
+
+    //
+    void adjustBufferWindowFrame(BufferWindowBase *_w, frame_t *_w_frame, int _dx0, 
+                                 int _dy0, int _dx1, int _dy1);
 
     //
     void mainLoop();
 
 
 private:
-    void clear_redraw_refresh_window_()
+    void clear_redraw_refresh_window_ptr_(BufferWindowBase *_w)
     {
-        if (m_focusWindow == NULL) 
+        if (m_focusedWindow == NULL) 
             return;
             
-        m_focusWindow->clear_next_frame_();
-        m_focusWindow->clear();
-        m_focusWindow->redraw();
-        m_focusWindow->updateCursor();
-        m_focusWindow->refresh_next_frame_();
-        m_focusWindow->refresh();
+        _w->clear_next_frame_();
+        _w->clear();
+        _w->redraw();
+        _w->updateCursor();
+        _w->refresh_next_frame_();
+        _w->refresh();
         api->redrawScreen();
     }
 
@@ -45,8 +50,13 @@ private:
     LineBufferWindow *m_commandWindow = NULL;
     StatusWindow *m_statusWindow = NULL;
 
-    BufferWindowBase *m_focusWindow = NULL;     // status, command, dialog, buffer, etc
+    BufferWindowBase *m_focusedWindow = NULL;     // status, command, dialog, buffer, etc
     
+    // window sizes
+    frame_t m_bufferWndFrame;
+    frame_t m_commandWndFrame;
+    frame_t m_statusWndFrame;
+
     //
     ivec2_t m_screenSize;
     std::string m_filename = "";

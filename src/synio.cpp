@@ -20,7 +20,7 @@ Synio::Synio(const std::string &_filename)
 
     // register signal handler
     struct sigaction sa;
-    sa.sa_sigaction = signal_handler;   // in backtrace.h|.cpp
+    sa.sa_sigaction = signal_handler;   // backtrace.h|.cpp
     sa.sa_flags = SA_RESTART | SA_SIGINFO;
     if (sigaction(SIGSEGV, &sa, (struct sigaction *)NULL) != 0)
         fprintf(stderr, "could not set signal handler for %d (%s)", SIGSEGV, strsignal(SIGSEGV));
@@ -46,23 +46,50 @@ Synio::~Synio()
 void Synio::initialize()
 {
     api->getRenderSize(&m_screenSize);
-    frame_t buffer_wnd_rect(ivec2_t(8, 0), ivec2_t(m_screenSize.x, m_screenSize.y - 1));
-    m_bufferWindow = new FileBufferWindow(buffer_wnd_rect, "buffer_window", false);
+    m_bufferWndFrame = frame_t(ivec2_t(8, 0), 
+                               ivec2_t(m_screenSize.x, m_screenSize.y - 1));
+    m_bufferWindow = new FileBufferWindow(m_bufferWndFrame, "buffer_window", false);
     m_bufferWindow->readFileToBuffer(m_filename);
     
-    // -- DEBUG
-    m_focusWindow = m_bufferWindow;
+    //
+    m_focusedWindow = m_bufferWindow;
 
     // command window
-    frame_t command_wnd_rect = frame_t(ivec2_t(0, m_screenSize.y - 1),
-                                       ivec2_t(m_screenSize.x, m_screenSize.y));
-    m_commandWindow = new LineBufferWindow(command_wnd_rect, "command_window", false);
-    m_commandWindow->setVisibility(false);
+    m_commandWndFrame = frame_t(ivec2_t(0, m_screenSize.y - Config::COMMAND_WINDOW_HEIGHT),
+                               ivec2_t(m_screenSize.x, m_screenSize.y));
 
-    // TEST -- status window
-    frame_t status_wnd_rect = frame_t(ivec2_t(0, m_screenSize.y - 1),
-                                      ivec2_t(m_screenSize.x, m_screenSize.y));
-    m_statusWindow = new StatusWindow(status_wnd_rect, "status_window", false);
+    // status window (below buffer, bottom of the screen)
+    m_statusWndFrame = frame_t(ivec2_t(0, m_screenSize.y - 1),
+                               ivec2_t(m_screenSize.x, m_screenSize.y));
+    m_statusWindow = new StatusWindow(m_statusWndFrame, "status_window", false);
+
+}
+
+//---------------------------------------------------------------------------------------
+LineBufferWindow *Synio::newCommandWindow(int _height)
+{
+    LineBufferWindow *cmd_wnd = new LineBufferWindow(m_commandWndFrame,
+                                                     "command_window",
+                                                     false);
+    cmd_wnd->setVisibility(true);
+    cmd_wnd->setQueryPrefix("C-x");
+    cmd_wnd->setVisibility(true);
+    return cmd_wnd;
+    
+}
+
+//---------------------------------------------------------------------------------------
+void Synio::adjustBufferWindowFrame(BufferWindowBase *_w, frame_t *_w_frame, int _dx0, 
+                                    int _dy0, int _dx1, int _dy1)
+{
+    _w_frame->v0.x = MAX(_w_frame->v0.x + _dx0, 0);
+    _w_frame->v0.y = MAX(_w_frame->v0.y + _dy0, 0);
+    _w_frame->v1.x = MAX(_w_frame->v1.x + _dx1, 1);
+    _w_frame->v1.y = MAX(_w_frame->v1.y + _dy1, 1);
+    _w_frame->update_dims();
+
+    _w->resize(*_w_frame);
+    clear_redraw_refresh_window_ptr_(_w);
 
 }
 
@@ -84,10 +111,10 @@ void Synio::mainLoop()
             }            
         }
 
-        m_focusWindow->clear();
-        m_focusWindow->redraw();
-        m_focusWindow->updateCursor();
-        m_focusWindow->refresh();
+        m_focusedWindow->clear();
+        m_focusedWindow->redraw();
+        m_focusedWindow->updateCursor();
+        m_focusedWindow->refresh();
 
         // actually swap the buffers
         api->redrawScreen();
@@ -107,27 +134,43 @@ void Synio::mainLoop()
         if (key == CTRL('x') && !m_commandMode)
         {
             m_commandMode = true;
-            m_focusWindow = m_commandWindow;
-            m_commandWindow->setQueryPrefix("C-x");
-            m_commandWindow->setVisibility(true);
-            clear_redraw_refresh_window_();
-            m_focusWindow->refresh_next_frame_();   // needed for correct cursor behaviour
+            m_commandWindow = newCommandWindow();
+            // make space for the command window
+            adjustBufferWindowFrame(m_bufferWindow, &m_bufferWndFrame, 
+                                    0, 0, 
+                                    0, -Config::COMMAND_WINDOW_HEIGHT);
+            adjustBufferWindowFrame(m_statusWindow, &m_statusWndFrame, 
+                                    0, -Config::COMMAND_WINDOW_HEIGHT, 
+                                    0, -Config::COMMAND_WINDOW_HEIGHT);
+
+            m_focusedWindow = m_commandWindow;
+            clear_redraw_refresh_window_ptr_(m_commandWindow);
+            m_focusedWindow->refresh_next_frame_();   // needed for correct cursor behaviour
         }
 
         else if (key == CTRL('x') && m_commandMode)
         {
             m_commandMode = false;
-            m_focusWindow = m_bufferWindow;
-            m_commandWindow->setVisibility(false);
-            clear_redraw_refresh_window_();
-            m_focusWindow->refresh_next_frame_();   // needed for correct cursor behaviour
+            delete m_commandWindow;
+            m_commandWindow = NULL;
+            // restore buffer and status windows
+            adjustBufferWindowFrame(m_bufferWindow, &m_bufferWndFrame, 
+                                    0, 0, 
+                                    0, Config::COMMAND_WINDOW_HEIGHT);
+            adjustBufferWindowFrame(m_statusWindow, &m_statusWndFrame, 
+                                    0, Config::COMMAND_WINDOW_HEIGHT, 
+                                    0, Config::COMMAND_WINDOW_HEIGHT);
+
+            m_focusedWindow = m_bufferWindow;
+            clear_redraw_refresh_window_ptr_(m_bufferWindow);
+            m_focusedWindow->refresh_next_frame_();   // needed for correct cursor behaviour
         }
         
         // interactive (editing) mode
         //
         else
         {
-            m_focusWindow->handleInput(key, ctrl_action);
+            m_focusedWindow->handleInput(key, ctrl_action);
 
             // TODO : move to command mode
             if (key == CTRL('q'))

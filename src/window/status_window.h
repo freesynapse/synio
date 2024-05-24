@@ -22,9 +22,10 @@ public:
     virtual void update(FileBufferWindow *_buffer_window);
 
     // (Window overrides) -- for the StatusWindow, these should be done each frame
+    virtual void resize(frame_t _new_frame) override;
+    virtual void redraw() override;
     virtual void clear() override { api->clearWindow(m_apiWindowPtr); }
     virtual void refresh() override { api->refreshWindow(m_apiWindowPtr); }
-    virtual void redraw() override;
 
     // accessors
     bool wasUpdated() { return m_wasUpdated; }
