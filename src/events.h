@@ -12,7 +12,7 @@
 //
 enum class EventType
 {
-    BUFFER_SCROLL, BUFFER_SEARCH_QUERY, SAVE, SAVE_AS,
+    BUFFER_SCROLL, BUFFER_SEARCH_QUERY, SAVE, SAVE_AS, ADJUST_BUFFER_WINDOW,
     EXIT,
 
 };
@@ -31,44 +31,55 @@ public:
 
 //
 class Window;
-class BufferScrollEvent : public Event
+//class BufferScrollEvent : public Event
+//{
+//public:
+//    BufferScrollEvent(int _axis, int _dir, int _steps, Window *_window_ptr) :
+//        m_axis(_axis), m_dir(_dir), m_steps(_steps), m_windowPtr(_window_ptr)
+//    {}
+//
+//    __always_inline const int axis() const { return m_axis; }
+//    __always_inline const int dir() const { return m_dir; }
+//    __always_inline const int steps() const { return m_steps; }
+//    __always_inline const Window *windowPtr() const { return m_windowPtr; }
+//
+//    EVENT_TYPE(BUFFER_SCROLL)
+//
+//private:
+//    int m_axis = 0;
+//    int m_dir = 0;
+//    int m_steps = 0;
+//    Window *m_windowPtr = NULL;
+//    
+//};
+
+//
+class AdjustBufferWindowEvent : public Event
 {
 public:
-    BufferScrollEvent(int _axis, int _dir, int _steps, Window *_window_ptr) :
-        m_axis(_axis), m_dir(_dir), m_steps(_steps), m_windowPtr(_window_ptr)
+    AdjustBufferWindowEvent(int _dy) :
+        dy(_dy)
     {}
 
-    __always_inline const int axis() const { return m_axis; }
-    __always_inline const int dir() const { return m_dir; }
-    __always_inline const int steps() const { return m_steps; }
-    __always_inline const Window *windowPtr() const { return m_windowPtr; }
+    EVENT_TYPE(ADJUST_BUFFER_WINDOW);
 
-    EVENT_TYPE(BUFFER_SCROLL)
+    int dy;
 
-private:
-    int m_axis = 0;
-    int m_dir = 0;
-    int m_steps = 0;
-    Window *m_windowPtr = NULL;
-    
 };
 
 //
-class BufferSearchQuery : public Event
-{
-public:
-    BufferSearchQuery(const std::string &_query) :
-        m_query(_query)
-    {}
+// class BufferSearchEvent : public Event
+// {
+// public:
+//     BufferSearchEvent(const std::string &_query) :
+//         query(_query)
+//     {}
 
-    __always_inline const std::string &query() const { return m_query; }
+//     EVENT_TYPE(BUFFER_SEARCH_QUERY)
 
-    EVENT_TYPE(BUFFER_SEARCH_QUERY)
-
-private:
-    std::string m_query;
+//     std::string query;
     
-};
+// };
 
 //
 class ExitEvent : public Event

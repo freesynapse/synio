@@ -15,8 +15,10 @@ Synio::Synio(const std::string &_filename)
     initialize();
 
     // register callbacks
-    // EventHandler::register_callback(EventType::BUFFER_SCROLL, 
-    //                                 EVENT_MEMBER_FNC(Synio::onBufferScroll));
+    EventHandler::register_callback(EventType::EXIT, 
+                                    EVENT_MEMBER_FNC(Synio::onExitEvent));
+    EventHandler::register_callback(EventType::ADJUST_BUFFER_WINDOW,
+                                    EVENT_MEMBER_FNC(Synio::onAdjustBufferWindowEvent));
 
     // register signal handler
     struct sigaction sa;
@@ -90,6 +92,23 @@ void Synio::adjustBufferWindowFrame(BufferWindowBase *_w, frame_t *_w_frame, int
 
     _w->resize(*_w_frame);
     clear_redraw_refresh_window_ptr_(_w);
+
+}
+
+//---------------------------------------------------------------------------------------
+void Synio::onExitEvent(Event *_e)
+{
+    LOG_INFO("app exit event received.");
+    m_shouldClose = true;
+}
+//---------------------------------------------------------------------------------------
+void Synio::onAdjustBufferWindowEvent(Event *_e)
+{
+    AdjustBufferWindowEvent *e = dynamic_cast<AdjustBufferWindowEvent *>(_e);
+    int dy = e->dy;
+
+    adjustBufferWindowFrame(m_bufferWindow, &m_bufferWndFrame, 0, 0, 0, dy);
+    adjustBufferWindowFrame(m_statusWindow, &m_statusWndFrame, 0, dy, 0, dy);
 
 }
 
@@ -173,8 +192,8 @@ void Synio::mainLoop()
             m_focusedWindow->handleInput(key, ctrl_action);
 
             // TODO : move to command mode
-            if (key == CTRL('q'))
-                m_shouldClose = true;
+            // if (key == CTRL('q'))
+                // m_shouldClose = true;
         }
 
         EventHandler::process_events();

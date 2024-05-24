@@ -21,13 +21,24 @@ public:
     virtual void setQueryPrefix(const char *_prefix="");
     virtual void appendPrefix(const char *_str);
 
+    //
+    virtual void showCommands();
+
     // dispatch event based on what kind of window this is, called on <ENTER>
     virtual void dispatchEvent();
 
 protected:
     //
     CHTYPE_STR_PTR m_query = NULL;
-    ivec2_t m_queryPos = ivec2_t(0);
+    ivec2_t m_queryPos = ivec2_t(1, 0);
+
+    #define CMD_UTIL_BUF_SZ 4096
+    char m_utilBuffer[CMD_UTIL_BUF_SZ];
+
+    // state flags
+    bool m_waitNextCommand = true;
+    bool m_waitQuery = false;   // e.g. yes/no, filename etc
+    bool m_showingHelp = false;
 
 };
 

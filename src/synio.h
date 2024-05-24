@@ -3,7 +3,6 @@
 
 #include "utils/utils.h"
 #include "window/file_buffer_window.h"
-// #include "window/line_buffer_window.h"
 #include "window/command_window.h"
 #include "window/status_window.h"
 
@@ -17,10 +16,12 @@ public:
     //
     void initialize();
     CommandWindow *newCommandWindow();
-
-    //
     void adjustBufferWindowFrame(BufferWindowBase *_w, frame_t *_w_frame, int _dx0, 
                                  int _dy0, int _dx1, int _dy1);
+
+    // event callbacks
+    void onExitEvent(Event *_e);
+    void onAdjustBufferWindowEvent(Event *_e);
 
     //
     void mainLoop();
