@@ -5,7 +5,7 @@
 bool            Config::SHOW_LINE_NUMBERS       = true;
 int             Config::LINE_NUMBERS_MIN_WIDTH  = 5;
 
-int             Config::COMMAND_WINDOW_HEIGHT   = 2;    // [1..n]
+int             Config::COMMAND_WINDOW_HEIGHT   = 1;    // [1..n]
 
 int             Config::PAGE_SIZE               = 20;
 int             Config::TAB_SIZE                = 4;

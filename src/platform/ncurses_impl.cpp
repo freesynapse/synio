@@ -214,7 +214,7 @@ int Ncurses_Impl::printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PT
 }
 
 //---------------------------------------------------------------------------------------
-int Ncurses_Impl::printString(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _str, size_t _len)
+int Ncurses_Impl::print_string(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _str, size_t _len)
 {
     WINDOW *w = (WINDOW *)_w;
     wmove(w, _cy, _cx);
@@ -237,6 +237,24 @@ int Ncurses_Impl::wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, 
     int len = mvwprintw((WINDOW *)_w, _cy, _cx, "%s", buffer);
     return len;
 
+}
+
+//---------------------------------------------------------------------------------------
+int Ncurses_Impl::wprintml(API_WINDOW_PTR _w, int _cx0, int _cy0, 
+                           const std::vector<std::string> &_ml_buffer)
+{
+    int len = 0;
+    int y = _cy0;
+    for (size_t i = 0; i < _ml_buffer.size(); i++)
+    {
+        if (i == 0)
+            mvwprintw((WINDOW *)_w, y, _cx0, "%s", _ml_buffer[i].c_str());
+        else
+            mvwprintw((WINDOW *)_w, y, 0, "%s", _ml_buffer[i].c_str());
+        y++;
+    }
+
+    return len;
 }
 
 //---------------------------------------------------------------------------------------

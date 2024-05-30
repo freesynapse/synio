@@ -132,35 +132,59 @@ void CommandWindow::showCommands()
     m_showingHelp = true;
 
     memset(m_utilBuffer, 0, CMD_UTIL_BUF_SZ);
+    m_utilMLBuffer.clear();
 
     size_t n = 0;
-    size_t current_line_width = m_cursor.offset_x();
+    std::string line = "commands: ";
+    size_t current_line_width = m_cursor.offset_x() + line.size();
     int line_count = 0;
 
     //
+    n += sprintf(m_utilBuffer, " ");
+    m_frame.__debug_print();
     for (auto &it : Command::s_commandMap)
     {
-        LOG_INFO("%d : [%s] '%s'", it.first, it.second.id_str.c_str(), it.second.command_str.c_str());
-        if (current_line_width + it.second.id_str.size() > m_frame.v1.x)
+        // if (current_line_width + it.second.id_str.size() > m_frame.ncols)
+        if (line.size() + it.second.id_str.size() > m_frame.ncols)
         {
-            // move this to platform -- e.g. wprintml(m_utilBuffer, &m_frame) (multi-line): returns the number of lines printed
-            n += sprintf(m_utilBuffer + n, "\n");
-            size_t new_line_width = sprintf(m_utilBuffer + n, " %s ", it.second.id_str.c_str());
-            current_line_width = new_line_width;
-            n += new_line_width;
-            line_count++;
+            // n += sprintf(m_utilBuffer + n, "\n");
+            // size_t new_line_width = sprintf(m_utilBuffer + n, " %s |", it.second.id_str.c_str());
+            // current_line_width = new_line_width;
+            // n += new_line_width;
+            m_utilMLBuffer.push_back(line);
+            line = it.second.id_str + " |";
+            // current_line_width = line.size();
+            // line_count++;
         }
         else
         {
-            n += sprintf(m_utilBuffer + n, " %s ", it.second.id_str.c_str());
-            current_line_width += n;
+            // n += sprintf(m_utilBuffer + n, " %s |", it.second.id_str.c_str());
+            // current_line_width += n;
+            line += (" " + it.second.id_str + " |");
+            // current_line_width += line.size();
         }
 
     }
+    m_utilMLBuffer.push_back(line);
 
-    int dy = -(line_count - m_frame.nrows);
+    // LOG_ERROR("%s", m_utilBuffer);
+
+    for (auto &it : m_utilMLBuffer)
+        LOG_ERROR("%s", it.c_str());
+    
+    // TODO : 
+    // in platform_impl, e.g. wprintml(m_utilBuffer, &m_frame) (multi-line): returns the number of lines printed
+    // Maybe: implement the above loop in general functions for printing unordered_map<> (and other objects) somewhere?
+    //
+    
+    // int dy = -(line_count - m_frame.nrows);
+    int dy = -(m_utilMLBuffer.size() - m_frame.nrows);
     m_frame.v0.y += dy;
+    m_frame.update_dims();
+    LOG_ERROR("nlines = %d", m_utilMLBuffer.size());
     resize(m_frame);
+    api->wprintml(m_apiWindowPtr, 0, 0, m_utilMLBuffer);
+    
     clear_next_frame_();
     refresh_next_frame_();
 

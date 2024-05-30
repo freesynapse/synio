@@ -13,11 +13,10 @@ public:
     Synio(const std::string &_filename);
     ~Synio();
 
-    //
+    // some functions
     void initialize();
     CommandWindow *newCommandWindow();
-    void adjustBufferWindowFrame(BufferWindowBase *_w, frame_t *_w_frame, int _dx0, 
-                                 int _dy0, int _dx1, int _dy1);
+    void adjustBufferWindowFrameY(int _dy);
 
     // event callbacks
     void onExitEvent(Event *_e);
@@ -40,6 +39,20 @@ private:
         _w->refresh_next_frame_();
         _w->refresh();
         api->redrawScreen();
+    }
+
+    //
+    void adjustBufferWindowFrame(BufferWindowBase *_w, frame_t *_w_frame, int _dx0, 
+                                 int _dy0, int _dx1, int _dy1)
+    {
+        _w_frame->v0.x = MAX(_w_frame->v0.x + _dx0, 0);
+        _w_frame->v0.y = MAX(_w_frame->v0.y + _dy0, 0);
+        _w_frame->v1.x = MAX(_w_frame->v1.x + _dx1, 1);
+        _w_frame->v1.y = MAX(_w_frame->v1.y + _dy1, 1);
+        _w_frame->update_dims();
+
+        _w->resize(*_w_frame);
+        clear_redraw_refresh_window_ptr_(_w);
     }
 
 private:

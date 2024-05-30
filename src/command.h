@@ -15,6 +15,10 @@ enum class CommandID
     // file managment
     SAVE_BUFFER,
     SAVE_BUFFER_AS,
+    OPEN_BUFFER,
+
+    // workflow
+    SWITCH_TO_BUFFER,
 
     // buffer operations
     BUFFER_SEARCH,

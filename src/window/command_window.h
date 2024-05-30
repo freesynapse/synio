@@ -32,8 +32,9 @@ protected:
     CHTYPE_STR_PTR m_query = NULL;
     ivec2_t m_queryPos = ivec2_t(1, 0);
 
-    #define CMD_UTIL_BUF_SZ 4096
+    #define CMD_UTIL_BUF_SZ 8192
     char m_utilBuffer[CMD_UTIL_BUF_SZ];
+    std::vector<std::string> m_utilMLBuffer;
 
     // state flags
     bool m_waitNextCommand = true;

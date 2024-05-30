@@ -81,17 +81,10 @@ CommandWindow *Synio::newCommandWindow()
 }
 
 //---------------------------------------------------------------------------------------
-void Synio::adjustBufferWindowFrame(BufferWindowBase *_w, frame_t *_w_frame, int _dx0, 
-                                    int _dy0, int _dx1, int _dy1)
+void Synio::adjustBufferWindowFrameY(int _dy)
 {
-    _w_frame->v0.x = MAX(_w_frame->v0.x + _dx0, 0);
-    _w_frame->v0.y = MAX(_w_frame->v0.y + _dy0, 0);
-    _w_frame->v1.x = MAX(_w_frame->v1.x + _dx1, 1);
-    _w_frame->v1.y = MAX(_w_frame->v1.y + _dy1, 1);
-    _w_frame->update_dims();
-
-    _w->resize(*_w_frame);
-    clear_redraw_refresh_window_ptr_(_w);
+    adjustBufferWindowFrame(m_bufferWindow, &m_bufferWndFrame, 0,   0, 0, _dy);
+    adjustBufferWindowFrame(m_statusWindow, &m_statusWndFrame, 0, _dy, 0, _dy);
 
 }
 
@@ -154,13 +147,9 @@ void Synio::mainLoop()
         {
             m_commandMode = true;
             m_commandWindow = newCommandWindow();
+
             // make space for the command window
-            adjustBufferWindowFrame(m_bufferWindow, &m_bufferWndFrame, 
-                                    0, 0, 
-                                    0, -Config::COMMAND_WINDOW_HEIGHT);
-            adjustBufferWindowFrame(m_statusWindow, &m_statusWndFrame, 
-                                    0, -Config::COMMAND_WINDOW_HEIGHT, 
-                                    0, -Config::COMMAND_WINDOW_HEIGHT);
+            adjustBufferWindowFrameY(-Config::COMMAND_WINDOW_HEIGHT);
 
             m_focusedWindow = m_commandWindow;
             clear_redraw_refresh_window_ptr_(m_commandWindow);
@@ -169,16 +158,10 @@ void Synio::mainLoop()
 
         else if (key == CTRL('x') && m_commandMode)
         {
+            adjustBufferWindowFrameY(m_commandWindow->frame().nrows);
             m_commandMode = false;
             delete m_commandWindow;
             m_commandWindow = NULL;
-            // restore buffer and status windows
-            adjustBufferWindowFrame(m_bufferWindow, &m_bufferWndFrame, 
-                                    0, 0, 
-                                    0, Config::COMMAND_WINDOW_HEIGHT);
-            adjustBufferWindowFrame(m_statusWindow, &m_statusWndFrame, 
-                                    0, Config::COMMAND_WINDOW_HEIGHT, 
-                                    0, Config::COMMAND_WINDOW_HEIGHT);
 
             m_focusedWindow = m_bufferWindow;
             clear_redraw_refresh_window_ptr_(m_bufferWindow);

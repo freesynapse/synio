@@ -46,8 +46,9 @@ public:
     virtual int clearBufferLine(API_WINDOW_PTR _w, int _cy, int _win_maxx) = 0;
     virtual int clearSpace(API_WINDOW_PTR _w, int _cx, int _cy, int _n) = 0;
     virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _line, size_t _len) = 0;
-    virtual int printString(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _str, size_t _len) = 0;
+    virtual int print_string(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _str, size_t _len) = 0;
     virtual int wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...) = 0;
+    virtual int wprintml(API_WINDOW_PTR _w, int _cx0, int _cy0, const std::vector<std::string> &_ml_buffer) = 0;
     virtual int vertical_divider(API_WINDOW_PTR _w, int _cx, int _cy, int _n) = 0;
     virtual int horizontal_divider(API_WINDOW_PTR _w, int _cx, int _cy, int _n) = 0;
 
