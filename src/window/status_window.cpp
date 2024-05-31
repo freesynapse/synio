@@ -54,7 +54,7 @@ void StatusWindow::redraw()
     CHTYPE_STR cstr(m_statusStr);
 
     api->enableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_STATUS));
-    api->print_string(m_apiWindowPtr, 0, 0, cstr.str, cstr.len);
+    api->printString(m_apiWindowPtr, 0, 0, cstr.str, cstr.len);
     api->disableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_STATUS));
     
     // reset for next frame

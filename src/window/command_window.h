@@ -22,24 +22,32 @@ public:
     virtual void appendPrefix(const char *_str);
 
     //
-    virtual void showCommands();
+    virtual void tabComplete();
 
     // dispatch event based on what kind of window this is, called on <ENTER>
     virtual void dispatchEvent();
 
 protected:
-    //
-    CHTYPE_STR_PTR m_query = NULL;
-    ivec2_t m_queryPos = ivec2_t(1, 0);
+    __always_inline virtual void show_util_buffer_next_frame_() { m_showTabCompletion = true; }
+    __always_inline virtual void enable_default_state_()
+    {
+        // reset all flags, goto default 'enter query' mode
+        m_showTabCompletion = false;
+    }
 
-    #define CMD_UTIL_BUF_SZ 8192
-    char m_utilBuffer[CMD_UTIL_BUF_SZ];
+
+protected:
+    //
+    CHTYPE_STR_PTR m_cmdPrefix = NULL;  // actually what's printed before the input
+    ivec2_t m_cmdPrefixPos = ivec2_t(1, 0);
+
     std::vector<std::string> m_utilMLBuffer;
 
     // state flags
     bool m_waitNextCommand = true;
     bool m_waitQuery = false;   // e.g. yes/no, filename etc
-    bool m_showingHelp = false;
+    // bool m_showingHelp = false;
+    bool m_showTabCompletion = false;
 
 };
 

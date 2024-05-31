@@ -74,7 +74,7 @@ CommandWindow *Synio::newCommandWindow()
                                                "command_window",
                                                false);
     cmd_wnd->setVisibility(true);
-    cmd_wnd->setQueryPrefix("C-x");
+    cmd_wnd->setQueryPrefix("cmd:");
     cmd_wnd->setVisibility(true);
     return cmd_wnd;
     
@@ -100,9 +100,10 @@ void Synio::onAdjustBufferWindowEvent(Event *_e)
     AdjustBufferWindowEvent *e = dynamic_cast<AdjustBufferWindowEvent *>(_e);
     int dy = e->dy;
 
-    adjustBufferWindowFrame(m_bufferWindow, &m_bufferWndFrame, 0, 0, 0, dy);
-    adjustBufferWindowFrame(m_statusWindow, &m_statusWndFrame, 0, dy, 0, dy);
-
+    // adjustBufferWindowFrame(m_bufferWindow, &m_bufferWndFrame, 0, 0, 0, dy);
+    // adjustBufferWindowFrame(m_statusWindow, &m_statusWndFrame, 0, dy, 0, dy);
+    adjustBufferWindowFrameY(dy);
+    
 }
 
 //---------------------------------------------------------------------------------------

@@ -43,7 +43,7 @@ void LineNumbers::redraw()
         api->disableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_LINENO_INACTIVE));
     }
 
-    api->vertical_divider(m_apiWindowPtr, m_frame.ncols - 1, 0, m_frame.nrows);
+    api->verticalDivider(m_apiWindowPtr, m_frame.ncols - 1, 0, m_frame.nrows);
 }
 
 //---------------------------------------------------------------------------------------

@@ -263,11 +263,11 @@ void LineBufferWindow::redraw()
         return;
 
     // print query prefix
-    // api->printBufferLine(m_apiWindowPtr, m_queryPos.x, m_queryPos.y, m_query->str, m_query->len);
+    // api->printBufferLine(m_apiWindowPtr, m_cmdPrefixPos.x, m_cmdPrefixPos.y, m_cmdPrefix->str, m_cmdPrefix->len);
     
     // clear line and draw query
-    // api->clearSpace(m_apiWindowPtr, m_cursor.offset_x(), m_queryPos.y, m_frame.ncols - 1 - m_cursor.cx());
-    // api->printBufferLine(m_apiWindowPtr, m_cursor.offset_x(), m_queryPos.y, m_currentLine->content, m_currentLine->len);
+    // api->clearSpace(m_apiWindowPtr, m_cursor.offset_x(), m_cmdPrefixPos.y, m_frame.ncols - 1 - m_cursor.cx());
+    // api->printBufferLine(m_apiWindowPtr, m_cursor.offset_x(), m_cmdPrefixPos.y, m_currentLine->content, m_currentLine->len);
 
     // updateCursor();
 
