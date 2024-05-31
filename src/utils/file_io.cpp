@@ -5,14 +5,63 @@
 #include <algorithm>
 #include <sys/stat.h>
 #include <assert.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "utils.h"
+#include "../buffer/line_buffer.h"
 
 
 // static decls
 std::string FileIO::s_lastReadFile = "";
 std::string FileIO::s_lastWrittenFile = "";
 FileType FileIO::s_lastFileType = DEFAULT;
+std::set<std::string> FileIO::s_tempFileList = {};
+
+//---------------------------------------------------------------------------------------
+const std::string &FileIO::create_temp_file()
+{
+    std::string temp_fn = "#temp" + std::to_string(s_tempFileList.size()) + "#";
+    s_tempFileList.insert(temp_fn);
+
+    int fd = creat(temp_fn.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+    if (fd == -1)
+        LOG_CRITICAL_ERROR("couldn't create temporary file using regular permissions.");
+
+    close(fd);
+
+    s_lastReadFile = temp_fn;
+
+    return s_lastReadFile;
+
+}
+
+//---------------------------------------------------------------------------------------
+int FileIO::delete_temp_files()
+{
+    int n_deleted = 0;
+    for (auto &file : s_tempFileList)
+    {
+        if (does_file_exists(file))
+        {
+            // LOG_INFO("deleting file '%s'.", file.c_str());
+            remove(file.c_str());
+            n_deleted++;
+        }
+    }
+
+    s_tempFileList.clear();
+
+    return n_deleted;
+
+}
+
+//---------------------------------------------------------------------------------------
+int FileIO::remove_temp_file(const std::string &_filename)
+{
+    s_tempFileList.erase(_filename);
+    
+}
 
 //---------------------------------------------------------------------------------------
 int FileIO::read_file_to_buffer(const std::string &_filename, LineBuffer *_buffer)
@@ -29,12 +78,17 @@ int FileIO::read_file_to_buffer(const std::string &_filename, LineBuffer *_buffe
                    file_ext.begin(),
                    [](unsigned char c){ return std::tolower(c); });
 
-    // ifs for now
     s_lastFileType = DEFAULT;
-    if (pos == 0)
-        s_lastFileType = TXT;
-    else if (file_ext == "cpp" || file_ext == "c" || file_ext == "cxx" || file_ext == "h" || file_ext == "hpp")
+
+    // ifs for now -- replace with map of filetype extensions per language?
+    if(file_ext == "cpp" || file_ext == "c" || file_ext == "cxx" || file_ext == "h" || file_ext == "hpp")
         s_lastFileType = C_CPP;
+    else if (file_ext == "py" || file_ext == "pyx" || file_ext == "pyc")
+        s_lastFileType = PY;
+    else if (file_ext == "js")
+        s_lastFileType = JS;
+    else
+        s_lastFileType = TXT;
     
     //
     std::ifstream file;
@@ -83,7 +137,7 @@ int FileIO::write_buffer_to_file(const std::string &_filename, LineBuffer *_line
 }
 
 //---------------------------------------------------------------------------------------
-bool FileIO::file_exists(const std::string &_filename)
+bool FileIO::does_file_exists(const std::string &_filename)
 {
     struct stat st;
     return stat(_filename.c_str(), &st) == 0 ? true : false;

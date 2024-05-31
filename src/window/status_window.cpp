@@ -11,7 +11,7 @@ void StatusWindow::update(FileBufferWindow *_buffer_window)
     // update from current buffer window
     if (_buffer_window != NULL)
     {
-        m_filename = _buffer_window->loadedFile();
+        m_filename = _buffer_window->fileName();
         m_filetype = _buffer_window->fileType();
         m_lineCount = _buffer_window->lineCount();
         m_bpos = _buffer_window->bufferCursorPos();

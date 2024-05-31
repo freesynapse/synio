@@ -16,6 +16,7 @@ public:
     // some functions
     void initialize();
     CommandWindow *newCommandWindow();
+    void deleteCommandWindow(Event *_e);
     void adjustBufferWindowFrameY(int _dy);
 
     // event callbacks
@@ -61,7 +62,7 @@ private:
     bool m_commandMode = false;
     
     // windows
-    FileBufferWindow *m_bufferWindow = NULL;    // TODO : to become an undordered map of windows, allowing multiple buffers?
+    FileBufferWindow *m_currentBufferWindow = NULL;    // TODO : to become an undordered map of windows, allowing multiple buffers?
     CommandWindow *m_commandWindow = NULL;
     StatusWindow *m_statusWindow = NULL;
 

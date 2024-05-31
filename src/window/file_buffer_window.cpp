@@ -136,9 +136,9 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                 break;
 
             // save file -- TODO: move to commands
-            case CTRL('s'):
-                writeBufferToFile();
-                break;
+            // case CTRL('s'):
+            //     writeBufferToFile();
+            //     break;
 
             #ifdef DEBUG
             case CTRL('d'):
@@ -1389,27 +1389,11 @@ void FileBufferWindow::readFileToBuffer(const std::string &_filename)
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::writeBufferToFile()
+void FileBufferWindow::writeBufferToFile(const char *_filename)
 {
-    if (!m_isDirty)
-        LOG_INFO("no changes to file.");
+    std::string fn = (strcmp(_filename, "") == 0 ? m_filename : std::string(_filename));
 
-    // m_filename = get_filename() something;
-    // needs something to open a dialog for a  filename
-    if (strcmp(m_filename.c_str(), "") == 0)
-    {
-
-    }
-
-    // depending on if Save As was used
-    if (FileIO::file_exists(m_filename))
-    {   // --> move to Save As command
-        // overwrite option
-        // m_filename = get_filename();
-        // some sort of recursion to again find if the new filename exists
-    }
-
-    FileIO::write_buffer_to_file(m_filename, &m_lineBuffer);
+    FileIO::write_buffer_to_file(fn, &m_lineBuffer);
     m_isDirty = false;
 
     //

@@ -4,14 +4,23 @@
 #include "utils/log.h"
 #include "utils/backtrace.h"
 #include "event_handler.h"
-
+#include "command.h"
 
 //
 Synio::Synio(const std::string &_filename)
 {
     EventHandler::initialize();
+    Command::initialize();    
 
+    //
     m_filename = _filename;
+    if (m_filename == "")
+    {
+        m_filename = FileIO::create_temp_file();
+        LOG_INFO("no file entered, created this instead: '%s'", m_filename.c_str());
+    }
+
+    // set up minimal window configuration (buffer and status windows)
     initialize();
 
     // register callbacks
@@ -19,6 +28,8 @@ Synio::Synio(const std::string &_filename)
                                     EVENT_MEMBER_FNC(Synio::onExitEvent));
     EventHandler::register_callback(EventType::ADJUST_BUFFER_WINDOW,
                                     EVENT_MEMBER_FNC(Synio::onAdjustBufferWindowEvent));
+    EventHandler::register_callback(EventType::DELETE_COMMAND_WINDOW,
+                                    EVENT_MEMBER_FNC(Synio::deleteCommandWindow));
 
     // register signal handler
     struct sigaction sa;
@@ -36,9 +47,10 @@ Synio::Synio(const std::string &_filename)
 Synio::~Synio()
 {
     EventHandler::shutdown();
+    FileIO::delete_temp_files();
 
     //
-    delete m_bufferWindow;
+    delete m_currentBufferWindow;
     delete m_commandWindow;
     delete m_statusWindow;
 
@@ -50,11 +62,11 @@ void Synio::initialize()
     api->getRenderSize(&m_screenSize);
     m_bufferWndFrame = frame_t(ivec2_t(8, 0), 
                                ivec2_t(m_screenSize.x, m_screenSize.y - 1));
-    m_bufferWindow = new FileBufferWindow(m_bufferWndFrame, "buffer_window", false);
-    m_bufferWindow->readFileToBuffer(m_filename);
+    m_currentBufferWindow = new FileBufferWindow(m_bufferWndFrame, "buffer_window", false);
+    m_currentBufferWindow->readFileToBuffer(m_filename);
     
     //
-    m_focusedWindow = m_bufferWindow;
+    m_focusedWindow = m_currentBufferWindow;
 
     // command window
     m_commandWndFrame = frame_t(ivec2_t(0, m_screenSize.y - Config::COMMAND_WINDOW_HEIGHT),
@@ -70,20 +82,36 @@ void Synio::initialize()
 //---------------------------------------------------------------------------------------
 CommandWindow *Synio::newCommandWindow()
 {
+    delete m_commandWindow;
+
     CommandWindow *cmd_wnd = new CommandWindow(m_commandWndFrame,
                                                "command_window",
+                                               m_currentBufferWindow,
                                                false);
-    cmd_wnd->setVisibility(true);
     cmd_wnd->setQueryPrefix("cmd:");
-    cmd_wnd->setVisibility(true);
+    
     return cmd_wnd;
     
 }
 
 //---------------------------------------------------------------------------------------
+void Synio::deleteCommandWindow(Event *_e)
+{
+    adjustBufferWindowFrameY(m_commandWindow->frame().nrows);
+    m_commandMode = false;
+    // delete m_commandWindow;
+    // m_commandWindow = NULL;
+
+    m_focusedWindow = m_currentBufferWindow;
+    clear_redraw_refresh_window_ptr_(m_currentBufferWindow);
+    m_focusedWindow->refresh_next_frame_();   // needed for correct cursor behaviour
+
+}
+
+//---------------------------------------------------------------------------------------
 void Synio::adjustBufferWindowFrameY(int _dy)
 {
-    adjustBufferWindowFrame(m_bufferWindow, &m_bufferWndFrame, 0,   0, 0, _dy);
+    adjustBufferWindowFrame(m_currentBufferWindow, &m_bufferWndFrame, 0, 0, 0, _dy);
     adjustBufferWindowFrame(m_statusWindow, &m_statusWndFrame, 0, _dy, 0, _dy);
 
 }
@@ -99,11 +127,8 @@ void Synio::onAdjustBufferWindowEvent(Event *_e)
 {
     AdjustBufferWindowEvent *e = dynamic_cast<AdjustBufferWindowEvent *>(_e);
     int dy = e->dy;
-
-    // adjustBufferWindowFrame(m_bufferWindow, &m_bufferWndFrame, 0, 0, 0, dy);
-    // adjustBufferWindowFrame(m_statusWindow, &m_statusWndFrame, 0, dy, 0, dy);
     adjustBufferWindowFrameY(dy);
-    
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -115,7 +140,7 @@ void Synio::mainLoop()
         //
         if (m_statusWindow)
         {
-            m_statusWindow->update(m_bufferWindow);
+            m_statusWindow->update(m_currentBufferWindow);
             if (m_statusWindow->wasUpdated())
             {
                 m_statusWindow->clear();
@@ -142,8 +167,9 @@ void Synio::mainLoop()
         CtrlKeyAction ctrl_action = api->getCtrlKeyAction(key);
             
         
-        // command mode
-        //
+        // Command mode control
+        // -- Entering command mode is handled here, leaving command mode is done through
+        //    the command window (as an DeleteCommandWindowEvent).
         if (key == CTRL('x') && !m_commandMode)
         {
             m_commandMode = true;
@@ -157,28 +183,11 @@ void Synio::mainLoop()
             m_focusedWindow->refresh_next_frame_();   // needed for correct cursor behaviour
         }
 
-        else if (key == CTRL('x') && m_commandMode)
-        {
-            adjustBufferWindowFrameY(m_commandWindow->frame().nrows);
-            m_commandMode = false;
-            delete m_commandWindow;
-            m_commandWindow = NULL;
-
-            m_focusedWindow = m_bufferWindow;
-            clear_redraw_refresh_window_ptr_(m_bufferWindow);
-            m_focusedWindow->refresh_next_frame_();   // needed for correct cursor behaviour
-        }
-        
-        // interactive (editing) mode
+        // interactive mode
         //
         else
-        {
             m_focusedWindow->handleInput(key, ctrl_action);
 
-            // TODO : move to command mode
-            // if (key == CTRL('q'))
-                // m_shouldClose = true;
-        }
 
         EventHandler::process_events();
 

@@ -74,7 +74,7 @@ public:
 
     // load/save buffer
     void readFileToBuffer(const std::string &_filename);
-    void writeBufferToFile();
+    void writeBufferToFile(const char *_filename="");
 
     // Window class overrides
     virtual void resize(frame_t _new_frame) override;
@@ -84,7 +84,7 @@ public:
 
     // accessors
     line_t              *currentLine()      { return m_currentLine; }
-    const std::string   &loadedFile()       { return m_filename; }
+    const std::string   &fileName()         { return m_filename; }
     const std::string   &fileType()         { return m_filetype; }
     const int            lineCount()        { return m_lineBuffer.lineCount(); }
     const ivec2_t       &bufferCursorPos()  { return m_bufferCursorPos; }

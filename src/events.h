@@ -12,8 +12,9 @@
 //
 enum class EventType
 {
-    BUFFER_SCROLL, BUFFER_SEARCH_QUERY, SAVE, SAVE_AS, ADJUST_BUFFER_WINDOW,
-    EXIT,
+    BUFFER_SCROLL, BUFFER_SEARCH_QUERY, SAVE, SAVE_AS, ADJUST_BUFFER_WINDOW, 
+    NEW_COMMAND_WINDOW, DELETE_COMMAND_WINDOW,
+    EXIT
 
 };
 
@@ -57,38 +58,33 @@ class Window;
 class AdjustBufferWindowEvent : public Event
 {
 public:
-    AdjustBufferWindowEvent(int _dy) :
-        dy(_dy)
-    {}
-
+    AdjustBufferWindowEvent(int _dy) : dy(_dy) {}
     EVENT_TYPE(ADJUST_BUFFER_WINDOW);
-
     int dy;
-
 };
 
 //
-// class BufferSearchEvent : public Event
-// {
-// public:
-//     BufferSearchEvent(const std::string &_query) :
-//         query(_query)
-//     {}
+class NewCommandWindowEvent : public Event
+{
+public:
+    NewCommandWindowEvent() {}
+    EVENT_TYPE(NEW_COMMAND_WINDOW)
+};
 
-//     EVENT_TYPE(BUFFER_SEARCH_QUERY)
-
-//     std::string query;
-    
-// };
+//
+class DeleteCommandWindowEvent : public Event
+{
+public:
+    DeleteCommandWindowEvent() {}
+    EVENT_TYPE(DELETE_COMMAND_WINDOW)
+};
 
 //
 class ExitEvent : public Event
 {
 public:
     ExitEvent() {}
-
     EVENT_TYPE(EXIT)
-
 };
 
 

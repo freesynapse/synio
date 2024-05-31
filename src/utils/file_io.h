@@ -3,8 +3,7 @@
 
 #include <stdio.h>
 #include <string>
-
-#include "../buffer/line_buffer.h"
+#include <set>
 
 //
 enum FileType
@@ -18,20 +17,28 @@ enum FileType
 };
 
 //
+class LineBuffer; // decl for functions
 class FileIO
 {
 public:
-    //
+
+    // file creation/deletion
+    static const std::string &create_temp_file();
+    static int delete_temp_files();
+    static int remove_temp_file(const std::string &_filename);
+
+    // buffer read/write
     static int read_file_to_buffer(const std::string &_filename, LineBuffer *_line_buffer);
     static int write_buffer_to_file(const std::string &_filename, LineBuffer *_line_buffer);
 
     // helpers
-    static bool file_exists(const std::string &_filename);
-
+    static bool does_file_exists(const std::string &_filename);
+    static bool is_file_temp(const std::string &_filename) { return s_tempFileList.find(_filename) != s_tempFileList.end(); }
     //
     static std::string s_lastReadFile;
     static std::string s_lastWrittenFile;
     static FileType s_lastFileType;
+    static std::set<std::string> s_tempFileList;
 
 };
 

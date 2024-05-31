@@ -201,7 +201,7 @@ int Ncurses_Impl::printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PT
         if ((_line[i] & A_CHARTEXT) == '\t')
         {
             x = (x + (Config::TAB_SIZE - (x % Config::TAB_SIZE)));
-            waddch(w, '|' | A_BOLD);
+            waddch(w, '@' | A_BOLD);
             wmove(w, _cy, x);
         }
         else
