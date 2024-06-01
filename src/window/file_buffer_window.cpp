@@ -1345,9 +1345,9 @@ void FileBufferWindow::updateCurrentLinePtr(int _dy)
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::readFileToBuffer(const std::string &_filename)
+int FileBufferWindow::readFileToBuffer(const std::string &_filename)
 {
-    FileIO::read_file_to_buffer(_filename, &m_lineBuffer);
+    int ret = FileIO::read_file_to_buffer(_filename, &m_lineBuffer);
     if (!m_lineBuffer.lineCount())
         m_lineBuffer.push_front("");
     
@@ -1386,18 +1386,22 @@ void FileBufferWindow::readFileToBuffer(const std::string &_filename)
 
     m_isDirty = false;
 
+    return ret;
+
 }
 
 //---------------------------------------------------------------------------------------
-void FileBufferWindow::writeBufferToFile(const char *_filename)
+int FileBufferWindow::writeBufferToFile(const char *_filename)
 {
     std::string fn = (strcmp(_filename, "") == 0 ? m_filename : std::string(_filename));
 
-    FileIO::write_buffer_to_file(fn, &m_lineBuffer);
+    int ret = FileIO::write_buffer_to_file(fn, &m_lineBuffer);
     m_isDirty = false;
 
     //
     moveCursor(0, 0);
+
+    return ret;
 
 }
 

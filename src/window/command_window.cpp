@@ -188,6 +188,10 @@ void CommandWindow::processCommandKeycode(int _c)
 
     m_currentCommand = Command::cmd_from_key_code(_c);
 
+    if (m_currentCommand.id == CommandID::SAVE_BUFFER && 
+        FileIO::is_file_temp(m_currentBufferPtr->fileName()))
+        m_currentCommand = Command::cmd(CommandID::SAVE_TEMP_BUFFER);
+
     if (m_currentCommand.id != CommandID::NONE) // redundant but still here!
         dispatchCommand();
 
@@ -212,6 +216,10 @@ void CommandWindow::processInput()
     // was it set?
     if (Command::is_cmd(m_currentCommand.id))
     {
+        if (m_currentCommand.id == CommandID::SAVE_BUFFER && 
+            FileIO::is_file_temp(m_currentBufferPtr->fileName()))
+            m_currentCommand = Command::cmd(CommandID::SAVE_TEMP_BUFFER);
+
         clear_input_();
         dispatchCommand();
         return;
@@ -240,24 +248,13 @@ void CommandWindow::dispatchCommand()
         {
             //
             case CommandID::SAVE_BUFFER:
-                if (m_currentBufferPtr != NULL)
-                {
-                    // save as for temp files
-                    if (FileIO::is_file_temp(m_currentBufferPtr->fileName()))
-                    {
-                        setQueryPrefix(m_currentCommand.command_prompt.c_str());
-                        await_next_input_();
-                    }
-                    // else just save as is
-                    else
-                    {
-                        m_currentBufferPtr->writeBufferToFile();
-                        command_complete_();
-                    }
-                }
+                if (m_currentBufferPtr != NULL) break;
+                m_currentBufferPtr->writeBufferToFile();
+                command_complete_();
                 break;
 
             //---------------------------------------------------------------------------
+            case CommandID::SAVE_TEMP_BUFFER:
             case CommandID::SAVE_BUFFER_AS:
             case CommandID::OPEN_BUFFER:
             case CommandID::EXIT_SAVE_YN:
@@ -283,36 +280,42 @@ void CommandWindow::dispatchCommand()
         switch (m_currentCommand.id)
         {
             //
-            case CommandID::SAVE_BUFFER:    // if we are here, the file was temp
-                if (m_currentLine->len != 0 && 
-                    m_currentBufferPtr != NULL && 
-                    m_currentBufferPtr->bufferChanged())
+            case CommandID::SAVE_TEMP_BUFFER:
+                if (m_currentLine->len > 0)
                 {
                     // delete entry from temp file list
                     FileIO::remove_temp_file(m_currentBufferPtr->fileName());
                     // save as
                     m_currentBufferPtr->writeBufferToFile(m_currentLine->__debug_str);
+                    command_complete_();
                 }
-                command_complete_();
+                else
+                {
+                    clear_input_();
+                    await_next_input_();
+                }
                 break;
 
             //---------------------------------------------------------------------------
             case CommandID::SAVE_BUFFER_AS:
-                if (m_currentLine->len != 0 && m_currentBufferPtr != NULL)
+                if (m_currentLine->len > 0)
                 {
-                    m_currentBufferPtr->writeBufferToFile(m_currentLine->__debug_str);
+                    int ret = m_currentBufferPtr->writeBufferToFile(m_currentLine->__debug_str);
                     command_complete_();
                 }
                 break;
 
             //---------------------------------------------------------------------------
             case CommandID::SAVE_ALL:
-
+                // skip temp files -- but signal this to user
+                // for buffer in buffers -> writeBufferToFile
                 break;
 
             //---------------------------------------------------------------------------
             case CommandID::EXIT_SAVE_YN:
-                // save modified buffers before exit
+                // Save modified buffers, then exit. 
+                // N.B.: This is the default exit option.
+                //
                 // for buffer : open_buffers:
                     // save?
                 command_complete_();

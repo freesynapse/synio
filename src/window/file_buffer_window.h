@@ -73,8 +73,8 @@ public:
     void updateCurrentLinePtr(int _dy);
 
     // load/save buffer
-    void readFileToBuffer(const std::string &_filename);
-    void writeBufferToFile(const char *_filename="");
+    int readFileToBuffer(const std::string &_filename);
+    int writeBufferToFile(const char *_filename="");
 
     // Window class overrides
     virtual void resize(frame_t _new_frame) override;

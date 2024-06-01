@@ -19,6 +19,7 @@ enum CommandID
 {
     // file managment
     SAVE_BUFFER = 0,                // impl
+    SAVE_TEMP_BUFFER,
     SAVE_BUFFER_AS,                 // impl
     SAVE_ALL,
     OPEN_BUFFER,

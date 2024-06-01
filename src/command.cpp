@@ -13,6 +13,7 @@ void Command::initialize()
     {
         // { CTRL('s'), { CommandID::SAVE_BUFFER, "Save current buffer as", "Save As (filename):" } },
         { CommandID::SAVE_BUFFER,               { CommandID::SAVE_BUFFER, "save_buffer", "Save (current buffer)", "" } },
+        { CommandID::SAVE_TEMP_BUFFER,          { CommandID::SAVE_TEMP_BUFFER, "save_temp_buffer", "Save as (temporary buffer)", "Save as (temporary buffer) (filename)?" } },
         { CommandID::SAVE_BUFFER_AS,            { CommandID::SAVE_BUFFER_AS, "save_buffer_as", "Save as (current buffer)", "Save as (filename)?" } },
         { CommandID::SAVE_ALL,                  { CommandID::SAVE_ALL, "save_all_buffers", "Save all buffers", "" } },
         { CommandID::OPEN_BUFFER,               { CommandID::OPEN_BUFFER, "open_buffer", "Open buffer", "File:" } },
