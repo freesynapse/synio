@@ -9,9 +9,9 @@
 
 //
 FileBufferWindow::FileBufferWindow(const frame_t &_frame,
-                                   const std::string &_id,
+                                   const std::string &_id_filename,
                                    bool _border) :
-    BufferWindowBase(_frame, _id, _border)
+    BufferWindowBase(_frame, _id_filename, _border)
 {
     m_formatter = BufferFormatter(&m_frame);
     
@@ -21,7 +21,7 @@ FileBufferWindow::FileBufferWindow(const frame_t &_frame,
     // of the LineNumbers are deduced at runtime
     frame_t line_numbers_rect(ivec2_t(0, m_frame.v0.y), 
                               ivec2_t(m_frame.v0.x, m_frame.v1.y));
-    m_lineNumbers = new LineNumbers(line_numbers_rect, _id+"_line_numbers", _border);
+    m_lineNumbers = new LineNumbers(line_numbers_rect, _id_filename+"_line_numbers", _border);
     m_lineNumbers->setBuffer(this);
 
     m_lineNumbers->setWidth(Config::LINE_NUMBERS_MIN_WIDTH);
@@ -35,6 +35,9 @@ FileBufferWindow::FileBufferWindow(const frame_t &_frame,
 
     // undo buffer
     m_undoBuffer = UndoBuffer(this);
+
+    // read filename
+    readFileToBuffer(_id_filename);
 
 }
 

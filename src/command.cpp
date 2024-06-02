@@ -4,6 +4,7 @@
 // static decls
 std::unordered_map<CommandID, command_t> Command::s_commandMap;
 std::unordered_map<int, CommandID> Command::s_commandKeyCodes;
+std::set<CommandID> Command::s_fileIOCommands;
 
 //---------------------------------------------------------------------------------------
 void Command::initialize()
@@ -34,10 +35,14 @@ void Command::initialize()
         { CommandID::SHOW_SHORTCUTS,            { CommandID::SHOW_SHORTCUTS, "show_shortcuts", "Shows all keyboard shortcuts", "" } },
         { CommandID::SHOW_OPEN_BUFFERS,         { CommandID::SHOW_OPEN_BUFFERS, "show_open_buffers", "List all open buffers", "" } },
         { CommandID::SHOW_BUFFER_STATISTICS,    { CommandID::SHOW_BUFFER_STATISTICS, "show_buffer_stats", "Show statistics for the current buffer", "" } },
-        
+
+        #ifdef DEBUG
+        { CommandID::DEBUG_COMMAND,             { CommandID::DEBUG_COMMAND, "debug_command", "", "" } },
+        #endif
         { CommandID::INVALID_COMMAND,           { CommandID::INVALID_COMMAND, "", "", "" } },
     };
 
+    //
     s_commandKeyCodes = std::unordered_map<int, CommandID>
     {
         { CTRL('s'), CommandID::SAVE_BUFFER },
@@ -50,6 +55,21 @@ void Command::initialize()
         { CTRL('q'), CommandID::JUST_EXIT },
         { CTRL('p'), CommandID::SWITCH_TO_BUFFER },
         { CTRL('n'), CommandID::NEW_BUFFER },
+        #ifdef DEBUG
+        { CTRL('d'), CommandID::DEBUG_COMMAND },
+        #endif
+    };
+
+    //
+    s_fileIOCommands = std::set<CommandID>
+    {
+        CommandID::SAVE_BUFFER,
+        CommandID::SAVE_TEMP_BUFFER,
+        CommandID::SAVE_BUFFER_AS,
+        CommandID::SAVE_ALL,
+        CommandID::OPEN_BUFFER,
+        CommandID::CLOSE_BUFFER,
+        CommandID::NEW_BUFFER,
     };
 
     LOG_INFO("done.");

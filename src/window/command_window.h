@@ -6,12 +6,13 @@
 #include "../command.h"
 
 //
+class Synio;
 class CommandWindow : public LineBufferWindow
 {
 public:
     CommandWindow(const frame_t &_frame,
                   const std::string &_id,
-                  FileBufferWindow *_buffer_ptr,
+                  Synio *_app_ptr,
                   bool _border=false);
     ~CommandWindow();
 
@@ -30,10 +31,9 @@ public:
     virtual void processCommandKeycode(int _c);
     virtual void processInput();
     virtual void dispatchCommand();
-
-    // accessors
-    virtual void setCurrentBufferPtr(FileBufferWindow *_ptr) { m_currentBufferPtr = _ptr; }
-    virtual FileBufferWindow *currentBufferPtr() { return m_currentBufferPtr; }
+    #ifdef DEBUG
+    virtual void debugCommand();
+    #endif
 
 
 protected:
@@ -65,7 +65,8 @@ protected:
 
 protected:
     //
-    FileBufferWindow *m_currentBufferPtr = NULL;
+    Synio *m_app = NULL;
+    // FileBufferWindow *m_currentBufferPtr = NULL;
 
     CHTYPE_STR_PTR m_cmdPrefix = NULL;  // actually what's printed before the input
     ivec2_t m_cmdPrefixPos = ivec2_t(1, 0);

@@ -68,6 +68,7 @@ public:
     const frame_t &frame() { return m_frame; }
     const std::string &ID() const { return m_ID; }
     void setVisibility(bool _b) { m_isWindowVisible = _b; }
+    void setID(const std::string &_id) { m_ID = _id; }
 
     //
     #ifdef DEBUG

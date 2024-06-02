@@ -17,11 +17,20 @@ public:
     void initialize();
     CommandWindow *newCommandWindow();
     void deleteCommandWindow(Event *_e);
+    
+    FileBufferWindow *newFileBufferWindow(const std::string &_filename);
+    void deleteFileBufferWindow(Event *_e);
+
     void adjustBufferWindowFrameY(int _dy);
 
     // event callbacks
     void onExitEvent(Event *_e);
     void onAdjustBufferWindowEvent(Event *_e);
+
+    // accessor
+    FileBufferWindow *currentBufferWindow() { return m_currentBufferWindow; }
+    void setCurrentBufferWindow(FileBufferWindow *_w) { m_currentBufferWindow = _w; }
+    const std::unordered_map<std::string, FileBufferWindow *> &openBufferWindows() { return m_bufferWindows; }
 
     //
     void mainLoop();
@@ -67,7 +76,8 @@ private:
     // map of all open buffers
     std::unordered_map<std::string, FileBufferWindow *> m_bufferWindows;
 
-    FileBufferWindow *m_currentBufferWindow = NULL; // current window
+    FileBufferWindow *m_currentBufferWindow = NULL; // current displayed file window
+    std::string m_currentFilename = "";
     StatusWindow *m_statusWindow = NULL;            // updated by the current file buffer
     CommandWindow *m_commandWindow = NULL;          // created on demand
 
@@ -80,7 +90,6 @@ private:
 
     //
     ivec2_t m_screenSize;
-    std::string m_filename = "";
     
 };
 

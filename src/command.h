@@ -2,6 +2,7 @@
 #define __COMMAND_H
 
 #include <unordered_map>
+#include <set>
 #include <string>
 
 #include "utils/log.h"
@@ -44,6 +45,8 @@ enum CommandID
     SHOW_SHORTCUTS,
     SHOW_OPEN_BUFFERS,
     SHOW_BUFFER_STATISTICS,
+
+    DEBUG_COMMAND,
 
     INVALID_COMMAND,
     NONE
@@ -102,13 +105,17 @@ public:
     }
     static bool is_cmd(CommandID _cmd) { return s_commandMap.find(_cmd) != s_commandMap.end(); }
     static command_t cmd_from_key_code(int _keycode) { return s_commandMap[s_commandKeyCodes[_keycode]]; }
+    static bool is_cmd_fileio_(CommandID _cmd) { return s_fileIOCommands.find(_cmd) != s_fileIOCommands.end(); }
 
     // Sorted by command code (int) (e.g. CTRL(c) for shortcuts or arbitrary int for 
     // other commands).
     static std::unordered_map<CommandID, command_t> s_commandMap;
 
-    // set of all command codes
+    // map of all key codes linked to commands
     static std::unordered_map<int, CommandID> s_commandKeyCodes;
+
+    // set of all file I/O related commands
+    static std::set<CommandID> s_fileIOCommands;
 
 };
 

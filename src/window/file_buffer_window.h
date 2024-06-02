@@ -21,7 +21,8 @@ public:
 
 public:
 
-    FileBufferWindow(const frame_t &_frame, const std::string &_id, bool _border=false);
+    // N.B.: for FileBufferWindows, the _id is the filename
+    FileBufferWindow(const frame_t &_frame, const std::string &_id_filename, bool _border=false);
     ~FileBufferWindow();
 
     #ifdef DEBUG

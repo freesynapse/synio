@@ -3,6 +3,7 @@
 
 #include <assert.h>
 
+#include "../synio.h"
 #include "../event_handler.h"
 #include "../command.h"
 
@@ -10,11 +11,12 @@
 //
 CommandWindow::CommandWindow(const frame_t &_frame,
                              const std::string &_id,
-                             FileBufferWindow *_buffer_ptr,
+                            //  FileBufferWindow *_buffer_ptr,
+                             Synio *_app_ptr,
                              bool _border) :
     LineBufferWindow(_frame, _id, _border)
 {
-    m_currentBufferPtr = _buffer_ptr;
+    m_app = _app_ptr;
     
 }
 
@@ -83,6 +85,7 @@ void CommandWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
 
                 case 9:     // <TAB>
                     tabComplete();
+                    moveCursor(0, 0);
                     break;
 
                 default:
@@ -123,30 +126,46 @@ void CommandWindow::tabComplete()
 
     size_t n = 0;
     std::string line = "";
-    size_t current_line_width = m_cursor.offset_x() + line.size();
     int line_count = 0;
 
+    // Check use case
     //
-    for (auto &it : Command::s_commandMap)
+    
+    // All file I/O commands should list the current dir on <TAB> -- should we use some
+    // sort of dialog here?
+    if (Command::is_cmd_fileio_(m_currentCommand.id))
     {
-        if (it.first == CommandID::INVALID_COMMAND) continue;
-
-        if (line.size() + it.second.id_str.size() + 2 > m_frame.ncols)
-        {
-            m_utilMLBuffer.push_back(line);
-            line = it.second.id_str + "  ";
-        }
-        else
-            line += (it.second.id_str + "  ");
 
     }
-    m_utilMLBuffer.push_back(line);
-    
+
+    // (temporary) else, list all available commands
+    else
+    {
+        //
+        for (auto &it : Command::s_commandMap)
+        {
+            if (it.first == CommandID::INVALID_COMMAND) continue;
+
+            if (line.size() + it.second.id_str.size() + 2 > m_frame.ncols)
+            {
+                m_utilMLBuffer.push_back(line);
+                line = it.second.id_str + "  ";
+            }
+            else
+                line += (it.second.id_str + "  ");
+
+        }
+        m_utilMLBuffer.push_back(line);    
+    }
+
     int dy = -(m_utilMLBuffer.size() - m_frame.nrows);
-    m_frame.v0.y += dy;
-    m_frame.update_dims();
-    resize(m_frame);
-    
+    if (dy != 0)
+    {
+        m_frame.v0.y += dy;
+        m_frame.update_dims();
+        resize(m_frame);
+    }
+
     clear_next_frame_();
     refresh_next_frame_();
 
@@ -189,7 +208,7 @@ void CommandWindow::processCommandKeycode(int _c)
     m_currentCommand = Command::cmd_from_key_code(_c);
 
     if (m_currentCommand.id == CommandID::SAVE_BUFFER && 
-        FileIO::is_file_temp(m_currentBufferPtr->fileName()))
+        FileIO::is_file_temp(m_app->currentBufferWindow()->fileName()))
         m_currentCommand = Command::cmd(CommandID::SAVE_TEMP_BUFFER);
 
     if (m_currentCommand.id != CommandID::NONE) // redundant but still here!
@@ -200,16 +219,11 @@ void CommandWindow::processCommandKeycode(int _c)
 //---------------------------------------------------------------------------------------
 void CommandWindow::processInput()
 {
-    // if in raw input mode (ie not awaiting further input), enter that commands mode 
-    // and clear input
-    //if (m_currentCommand.id == CommandID::NONE)
-    //{
     // find if input matches command
     const char *cmd = m_currentLine->__debug_str;
     for (auto &it : Command::s_commandMap)
     {
         if (strcmp(it.second.id_str.c_str(), cmd) == 0)
-            // m_currentCommand = Command:: it.second.id;
             m_currentCommand = Command::cmd(it.second.id);
     }
     
@@ -217,7 +231,7 @@ void CommandWindow::processInput()
     if (Command::is_cmd(m_currentCommand.id))
     {
         if (m_currentCommand.id == CommandID::SAVE_BUFFER && 
-            FileIO::is_file_temp(m_currentBufferPtr->fileName()))
+            FileIO::is_file_temp(m_app->currentBufferWindow()->fileName()))
             m_currentCommand = Command::cmd(CommandID::SAVE_TEMP_BUFFER);
 
         clear_input_();
@@ -229,13 +243,6 @@ void CommandWindow::processInput()
 
     //
     clear_input_();
-    //}
-
-    // processing current command (eg save, open, search, etc)
-    //else
-    //{
-    //    LOG_WARNING("input was supposed to go to '%s'!", Command::cmd2Str(m_currentCommand.id));
-    //}
 
 }
 
@@ -247,9 +254,16 @@ void CommandWindow::dispatchCommand()
         switch (m_currentCommand.id)
         {
             //
+            #ifdef DEBUG
+            case CommandID::DEBUG_COMMAND:
+                debugCommand();
+                command_complete_();
+                break;
+            #endif
+            //---------------------------------------------------------------------------
             case CommandID::SAVE_BUFFER:
-                if (m_currentBufferPtr != NULL) break;
-                m_currentBufferPtr->writeBufferToFile();
+                if (m_app->currentBufferWindow() == NULL) break;
+                m_app->currentBufferWindow()->writeBufferToFile();
                 command_complete_();
                 break;
 
@@ -278,7 +292,6 @@ void CommandWindow::dispatchCommand()
 
     else // command dispatched, but needs more input
     {
-        LOG_INFO("next input for command '%s'", Command::cmd2Str(m_currentCommand.id));
         switch (m_currentCommand.id)
         {
             //
@@ -286,9 +299,9 @@ void CommandWindow::dispatchCommand()
                 if (m_currentLine->len > 0)
                 {
                     // delete entry from temp file list
-                    FileIO::remove_temp_file(m_currentBufferPtr->fileName());
+                    FileIO::remove_temp_file(m_app->currentBufferWindow()->fileName());
                     // save as
-                    m_currentBufferPtr->writeBufferToFile(m_currentLine->__debug_str);
+                    m_app->currentBufferWindow()->writeBufferToFile(m_currentLine->__debug_str);
                     command_complete_();
                 }
                 else
@@ -302,7 +315,7 @@ void CommandWindow::dispatchCommand()
             case CommandID::SAVE_BUFFER_AS:
                 if (m_currentLine->len > 0)
                 {
-                    int ret = m_currentBufferPtr->writeBufferToFile(m_currentLine->__debug_str);
+                    int ret = m_app->currentBufferWindow()->writeBufferToFile(m_currentLine->__debug_str);
                     command_complete_();
                 }
                 break;
@@ -317,7 +330,17 @@ void CommandWindow::dispatchCommand()
             //---------------------------------------------------------------------------
             case CommandID::OPEN_BUFFER:
                 // tab-complete for all filenames in the current directory
-                command_complete_();
+                if (m_currentLine->len > 0)
+                {
+                    std::string fn = std::string(m_currentLine->__debug_str);
+                    if (FileIO::does_file_exists(fn))
+                    {
+                        FileBufferWindow *w = m_app->newFileBufferWindow(fn);
+                        m_app->setCurrentBufferWindow(w);
+                    }
+                    // TODO : else 'file does not exist' error message
+                    command_complete_();
+                }
                 break;
 
             //---------------------------------------------------------------------------
@@ -370,4 +393,17 @@ void CommandWindow::dispatchCommand()
         EventHandler::push_event(new DeleteCommandWindowEvent);
 
 }
+
+//---------------------------------------------------------------------------------------
+#ifdef DEBUG
+void CommandWindow::debugCommand()
+{
+    auto &windows = m_app->openBufferWindows();
+    for (auto &w : windows)
+    {
+        LOG_ERROR("window %s -- %p", w.first.c_str(), w.second);
+    }
+
+}
+#endif
 

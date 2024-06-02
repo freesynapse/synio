@@ -31,7 +31,7 @@ public:
 };
 
 //
-class Window;
+// class Window;
 //class BufferScrollEvent : public Event
 //{
 //public:

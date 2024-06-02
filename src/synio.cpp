@@ -13,11 +13,11 @@ Synio::Synio(const std::string &_filename)
     Command::initialize();    
 
     //
-    m_filename = _filename;
-    if (m_filename == "")
+    m_currentFilename = _filename;
+    if (m_currentFilename == "" || !FileIO::does_file_exists(_filename))
     {
-        m_filename = FileIO::create_temp_file();
-        LOG_INFO("no file entered, created this instead: '%s'", m_filename.c_str());
+        m_currentFilename = FileIO::create_temp_file();
+        LOG_INFO("no file entered, created this instead: '%s'", m_currentFilename.c_str());
     }
 
     // set up minimal window configuration (buffer and status windows)
@@ -62,20 +62,38 @@ void Synio::initialize()
     api->getRenderSize(&m_screenSize);
     m_bufferWndFrame = frame_t(ivec2_t(8, 0), 
                                ivec2_t(m_screenSize.x, m_screenSize.y - 1));
-    m_currentBufferWindow = new FileBufferWindow(m_bufferWndFrame, "buffer_window", false);
-    m_currentBufferWindow->readFileToBuffer(m_filename);
-    
-    //
+    m_currentBufferWindow = newFileBufferWindow(m_currentFilename);
     m_focusedWindow = m_currentBufferWindow;
 
     // command window
     m_commandWndFrame = frame_t(ivec2_t(0, m_screenSize.y - Config::COMMAND_WINDOW_HEIGHT),
-                               ivec2_t(m_screenSize.x, m_screenSize.y));
+                                ivec2_t(m_screenSize.x, m_screenSize.y));
 
     // status window (below buffer, bottom of the screen)
     m_statusWndFrame = frame_t(ivec2_t(0, m_screenSize.y - 1),
                                ivec2_t(m_screenSize.x, m_screenSize.y));
     m_statusWindow = new StatusWindow(m_statusWndFrame, "status_window", false);
+
+}
+
+//---------------------------------------------------------------------------------------
+FileBufferWindow *Synio::newFileBufferWindow(const std::string &_filename)
+{
+    m_currentFilename = _filename;
+
+    FileBufferWindow *buffer_wnd = new FileBufferWindow(m_bufferWndFrame, 
+                                                        m_currentFilename, 
+                                                        false);
+    // store in map
+    m_bufferWindows[_filename] = buffer_wnd;
+
+    return buffer_wnd;
+
+}
+
+//---------------------------------------------------------------------------------------
+void Synio::deleteFileBufferWindow(Event *_e)
+{
 
 }
 
@@ -86,8 +104,8 @@ CommandWindow *Synio::newCommandWindow()
 
     CommandWindow *cmd_wnd = new CommandWindow(m_commandWndFrame,
                                                "command_window",
-                                               m_currentBufferWindow,
-                                               false);
+                                               this,
+                                               false);    
     cmd_wnd->setQueryPrefix("cmd:");
     
     return cmd_wnd;
@@ -97,10 +115,9 @@ CommandWindow *Synio::newCommandWindow()
 //---------------------------------------------------------------------------------------
 void Synio::deleteCommandWindow(Event *_e)
 {
+    // N.B.: memory freed before creation in newCommandWindow()
     adjustBufferWindowFrameY(m_commandWindow->frame().nrows);
     m_commandMode = false;
-    // delete m_commandWindow;
-    // m_commandWindow = NULL;
 
     m_focusedWindow = m_currentBufferWindow;
     clear_redraw_refresh_window_ptr_(m_currentBufferWindow);
@@ -188,7 +205,7 @@ void Synio::mainLoop()
         else
             m_focusedWindow->handleInput(key, ctrl_action);
 
-
+        //
         EventHandler::process_events();
 
     }
