@@ -24,6 +24,7 @@ enum CommandID
     SAVE_ALL,
     OPEN_BUFFER,
     CLOSE_BUFFER,
+    NEW_BUFFER,
 
     // workflow
     SWITCH_TO_BUFFER,

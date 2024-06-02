@@ -257,6 +257,7 @@ void CommandWindow::dispatchCommand()
             case CommandID::SAVE_TEMP_BUFFER:
             case CommandID::SAVE_BUFFER_AS:
             case CommandID::OPEN_BUFFER:
+            case CommandID::NEW_BUFFER:
             case CommandID::EXIT_SAVE_YN:
             case CommandID::EXIT_NO_SAVE_YN:
                 setQueryPrefix(m_currentCommand.command_prompt.c_str());
@@ -277,6 +278,7 @@ void CommandWindow::dispatchCommand()
 
     else // command dispatched, but needs more input
     {
+        LOG_INFO("next input for command '%s'", Command::cmd2Str(m_currentCommand.id));
         switch (m_currentCommand.id)
         {
             //
@@ -307,8 +309,21 @@ void CommandWindow::dispatchCommand()
 
             //---------------------------------------------------------------------------
             case CommandID::SAVE_ALL:
-                // skip temp files -- but signal this to user
+                // skip temp files(?) -- but signal this to user
                 // for buffer in buffers -> writeBufferToFile
+                command_complete_();
+                break;
+
+            //---------------------------------------------------------------------------
+            case CommandID::OPEN_BUFFER:
+                // tab-complete for all filenames in the current directory
+                command_complete_();
+                break;
+
+            //---------------------------------------------------------------------------
+            case CommandID::NEW_BUFFER:
+                // default filename is the next temp filename (based on the number of temp files)
+                command_complete_();
                 break;
 
             //---------------------------------------------------------------------------

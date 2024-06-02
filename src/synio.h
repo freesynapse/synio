@@ -62,11 +62,16 @@ private:
     bool m_commandMode = false;
     
     // windows
-    FileBufferWindow *m_currentBufferWindow = NULL;    // TODO : to become an undordered map of windows, allowing multiple buffers?
-    CommandWindow *m_commandWindow = NULL;
-    StatusWindow *m_statusWindow = NULL;
+    //
 
-    BufferWindowBase *m_focusedWindow = NULL;     // status, command, dialog, buffer, etc
+    // map of all open buffers
+    std::unordered_map<std::string, FileBufferWindow *> m_bufferWindows;
+
+    FileBufferWindow *m_currentBufferWindow = NULL; // current window
+    StatusWindow *m_statusWindow = NULL;            // updated by the current file buffer
+    CommandWindow *m_commandWindow = NULL;          // created on demand
+
+    BufferWindowBase *m_focusedWindow = NULL;       // status, command, dialog, buffer, etc
     
     // window sizes
     frame_t m_bufferWndFrame;

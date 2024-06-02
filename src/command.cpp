@@ -16,10 +16,11 @@ void Command::initialize()
         { CommandID::SAVE_TEMP_BUFFER,          { CommandID::SAVE_TEMP_BUFFER, "save_temp_buffer", "Save as (temporary buffer)", "Save as (temporary buffer) (filename)?" } },
         { CommandID::SAVE_BUFFER_AS,            { CommandID::SAVE_BUFFER_AS, "save_buffer_as", "Save as (current buffer)", "Save as (filename)?" } },
         { CommandID::SAVE_ALL,                  { CommandID::SAVE_ALL, "save_all_buffers", "Save all buffers", "" } },
-        { CommandID::OPEN_BUFFER,               { CommandID::OPEN_BUFFER, "open_buffer", "Open buffer", "File:" } },
+        { CommandID::OPEN_BUFFER,               { CommandID::OPEN_BUFFER, "open_buffer", "Open buffer", "Open (filename)?" } },
         { CommandID::CLOSE_BUFFER,              { CommandID::CLOSE_BUFFER, "close_buffer", "Closes current buffer", "Save buffer before closing (Y/n)?" } },
+        { CommandID::NEW_BUFFER,                { CommandID::NEW_BUFFER, "new_buffer", "Creates a new buffer", "New buffer (filename)?" } },
 
-        { CommandID::SWITCH_TO_BUFFER,          { CommandID::SWITCH_TO_BUFFER, "switch_to_buffer", "Switch to open buffer", "File:" } },
+        { CommandID::SWITCH_TO_BUFFER,          { CommandID::SWITCH_TO_BUFFER, "switch_to_buffer", "Switch to open buffer", "Buffer (filename)?" } },
         { CommandID::NEXT_BUFFER,               { CommandID::NEXT_BUFFER, "next_buffer", "Switch to next open buffer", "" } },
         { CommandID::PREV_BUFFER,               { CommandID::PREV_BUFFER, "prev_buffer", "Switch to previous open buffer", "" } },
 
@@ -48,6 +49,7 @@ void Command::initialize()
         //{ CTRL('e'), CommandID::YN_DIAG_EXIT },
         { CTRL('q'), CommandID::JUST_EXIT },
         { CTRL('p'), CommandID::SWITCH_TO_BUFFER },
+        { CTRL('n'), CommandID::NEW_BUFFER },
     };
 
     LOG_INFO("done.");
