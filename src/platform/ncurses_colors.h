@@ -40,7 +40,7 @@
 #define SYN_COLOR_MCOMMENT               9
 #define SYN_COLOR_PREPROC               10
 #define SYN_COLOR_STATUS                11
-#define SYN_COLOR_LINENO                12
+#define SYN_COLOR_INACTIVE              12
 #define SYN_COLOR_LINENO_INACTIVE       13
 
 #define COLOR_PAIR_COUNT                14

@@ -41,10 +41,13 @@ void ListboxWindow::redraw()
     //
     for (int i = 0; i < m_frame.nrows; i++)
     {
+        api->enableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_INACTIVE));
+    
         if (i == m_currentEntryIdx)
-            api->enableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_LINENO));
+            api->disableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_INACTIVE));
+    
         api->wprint(m_apiWindowPtr, 5, i, "%s", m_entries[i].c_str());
-        api->disableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_LINENO));
+        
     }
     
     updateCursor();

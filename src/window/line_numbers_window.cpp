@@ -26,13 +26,13 @@ void LineNumbers::redraw()
     int line_no = m_associatedBuffer->m_scrollPos.y + 1;
     line_t *curr_line = m_associatedBuffer->m_pageFirstLine;
 
-    api->enableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_LINENO));
+    api->enableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_INACTIVE));
     while (y < m_frame.nrows && curr_line != NULL)
     {
         api->wprint(m_apiWindowPtr, 0, y++, "%*d", m_width-3, line_no++);
         curr_line = curr_line->next;
     }
-    api->disableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_LINENO));
+    api->disableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_INACTIVE));
 
     // draw blank line numbers
     if (y < m_frame.nrows)

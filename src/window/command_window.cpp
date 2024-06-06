@@ -42,9 +42,9 @@ void CommandWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
         m_listboxWndPtr->handleInput(_c, _ctrl_action);
         std::string selected_entry = m_listboxWndPtr->getSelectedEntry();
         //
-        LOG_RAW("selected string : %s", selected_entry.c_str());
         if (selected_entry != "")
         {
+            LOG_INFO("selected string : %s", selected_entry.c_str());
             delete m_listboxWndPtr;
             m_listboxWndPtr = NULL;
             // refresh parent windows
@@ -165,14 +165,12 @@ void CommandWindow::tabComplete()
         std::string sstr(m_currentLine->__debug_str);
         
         //
-        LOG_RAW("tab pressed: entered chars = '%s'", sstr.c_str());        
         prefix_node_t *stree = PrefixTree::find_subtree(ptree, sstr);
 
         // find longest common prefix, if this exists, we auto-insert that to the search
         // string
         std::string longest_prefix = "";
         PrefixTree::find_longest_prefix(stree, sstr, &longest_prefix);
-        LOG_RAW("longest prefix for '%s' = '%s' (%zu)", sstr.c_str(), longest_prefix.c_str(), longest_prefix.length());
 
         // if the longest prefix is longer than the search string, the longest prefix
         // is inserted.
@@ -186,11 +184,23 @@ void CommandWindow::tabComplete()
         else
         {
             // accumulate autocompletions for this 
-            std::vector<std::string> autocomp;
-            PrefixTree::find_completions(stree, &autocomp, sstr);
+            std::vector<std::string> autocomps;
+            PrefixTree::find_completions(stree, &autocomps, sstr);
+
+            for (auto &ac : autocomps)
+            {
+               if (line.size() + ac.length() + 2 > m_frame.ncols)
+               {
+                   m_utilMLBuffer.push_back(line);
+                   line = ac + "  ";
+               }
+               else
+                   line += (ac + "  ");
+            }
+            m_utilMLBuffer.push_back(line);
 
             show_util_buffer_next_frame_();
-            
+
             int dy = -(m_utilMLBuffer.size() - m_frame.nrows);
             if (dy != 0)
             {
@@ -201,25 +211,6 @@ void CommandWindow::tabComplete()
             }
         }
 
-
-        //std::string longest = "";
-        //std::string sstr = "sh";
-        //prefix_node_t *subtree = PrefixTree::find_subtree(s_cmdPTree, sstr);
-        //PrefixTree::find_longest_prefix(subtree, sstr, &longest);
-        //LOG_RAW("longest prefix ('%s') -> %s", sstr.c_str(), longest.c_str());
-
-        //for (auto &it : Command::s_commandMap)
-        //{
-        //    if (it.first == CommandID::INVALID_COMMAND) continue;
-        //    if (line.size() + it.second.id_str.size() + 2 > m_frame.ncols)
-        //    {
-        //        m_utilMLBuffer.push_back(line);
-        //        line = it.second.id_str + "  ";
-        //    }
-        //    else
-        //        line += (it.second.id_str + "  ");
-        //}
-        //m_utilMLBuffer.push_back(line);    
     }
 
     clear_next_frame_();
@@ -241,7 +232,11 @@ void CommandWindow::redraw()
     api->printBufferLine(m_apiWindowPtr, m_cursor.offset_x(), m_cmdPrefixPos.y, m_currentLine->content, m_currentLine->len);
 
     if (m_showUtilBuffer)
-        api->wprintml(m_apiWindowPtr, m_cursor.offset_x(), 0, m_utilMLBuffer);
+    {
+        api->enableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_INACTIVE));
+        api->wprintml(m_apiWindowPtr, m_cursor.offset_x() + m_currentLine->len + 2, 0, m_utilMLBuffer);
+        api->disableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_INACTIVE));
+    }
 
     updateCursor();
 
