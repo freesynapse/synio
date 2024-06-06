@@ -24,7 +24,7 @@ CommandWindow::CommandWindow(const frame_t &_frame,
 CommandWindow::~CommandWindow()
 { 
     delete m_cmdPrefix;
-
+    delete m_listboxWndPtr;
 }
 
 //---------------------------------------------------------------------------------------
@@ -36,7 +36,25 @@ void CommandWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
         return;
     }
 
+    // if there is an open listbox, redirect input
+    if (m_listboxWndPtr != NULL)
+    {
+        m_listboxWndPtr->handleInput(_c, _ctrl_action);
+        std::string selected_entry = m_listboxWndPtr->getSelectedEntry();
+        //
+        LOG_RAW("selected string : %s", selected_entry.c_str());
+        if (selected_entry != "")
+        {
+            delete m_listboxWndPtr;
+            m_listboxWndPtr = NULL;
+            // refresh parent windows
+            m_app->refreshBufferWindow();
+            
+        }
+        return;
+    }
 
+    // special keys
     if (_ctrl_action != CtrlKeyAction::NONE)
     {
         switch (_ctrl_action)
@@ -45,11 +63,13 @@ void CommandWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case CtrlKeyAction::CTRL_RIGHT: findColDelim(1);    break;
             case CtrlKeyAction::CTRL_UP:    moveCursorToRowDelim(-1);   break;
             case CtrlKeyAction::CTRL_DOWN:  moveCursorToRowDelim(1);    break;
+
             default: LOG_WARNING("ctrl keycode %d : %s", _c, ctrlActionStr(_ctrl_action)); break;
             // default: break;
 
         }
     }
+    //
     else
     {
         // check for command
@@ -138,41 +158,72 @@ void CommandWindow::tabComplete()
 
     }
 
-    // (temporary) else, list all available commands
+    // show autocompletion for entered characters
     else
     {
+        static prefix_node_t *ptree = Command::s_cmdPTree;
+        std::string sstr(m_currentLine->__debug_str);
+        
         //
-        for (auto &it : Command::s_commandMap)
+        LOG_RAW("tab pressed: entered chars = '%s'", sstr.c_str());        
+        prefix_node_t *stree = PrefixTree::find_subtree(ptree, sstr);
+
+        // find longest common prefix, if this exists, we auto-insert that to the search
+        // string
+        std::string longest_prefix = "";
+        PrefixTree::find_longest_prefix(stree, sstr, &longest_prefix);
+        LOG_RAW("longest prefix for '%s' = '%s' (%zu)", sstr.c_str(), longest_prefix.c_str(), longest_prefix.length());
+
+        // if the longest prefix is longer than the search string, the longest prefix
+        // is inserted.
+        if (longest_prefix.length() != sstr.length())
         {
-            if (it.first == CommandID::INVALID_COMMAND) continue;
-
-            if (line.size() + it.second.id_str.size() + 2 > m_frame.ncols)
-            {
-                m_utilMLBuffer.push_back(line);
-                line = it.second.id_str + "  ";
-            }
-            else
-                line += (it.second.id_str + "  ");
-
+            delete m_currentLine;
+            m_currentLine = create_line(longest_prefix.c_str());
+            moveCursor(longest_prefix.length() - sstr.length(), 0);
         }
-        m_utilMLBuffer.push_back(line);    
-    }
+        // longest prefix is the same as input, so let's show possible autocompletions
+        else
+        {
+            // accumulate autocompletions for this 
+            std::vector<std::string> autocomp;
+            PrefixTree::find_completions(stree, &autocomp, sstr);
 
-    int dy = -(m_utilMLBuffer.size() - m_frame.nrows);
-    if (dy != 0)
-    {
-        m_frame.v0.y += dy;
-        m_frame.update_dims();
-        resize(m_frame);
+            show_util_buffer_next_frame_();
+            
+            int dy = -(m_utilMLBuffer.size() - m_frame.nrows);
+            if (dy != 0)
+            {
+                m_frame.v0.y += dy;
+                m_frame.update_dims();
+                resize(m_frame);
+                EventHandler::push_event(new AdjustBufferWindowEvent(dy));
+            }
+        }
+
+
+        //std::string longest = "";
+        //std::string sstr = "sh";
+        //prefix_node_t *subtree = PrefixTree::find_subtree(s_cmdPTree, sstr);
+        //PrefixTree::find_longest_prefix(subtree, sstr, &longest);
+        //LOG_RAW("longest prefix ('%s') -> %s", sstr.c_str(), longest.c_str());
+
+        //for (auto &it : Command::s_commandMap)
+        //{
+        //    if (it.first == CommandID::INVALID_COMMAND) continue;
+        //    if (line.size() + it.second.id_str.size() + 2 > m_frame.ncols)
+        //    {
+        //        m_utilMLBuffer.push_back(line);
+        //        line = it.second.id_str + "  ";
+        //    }
+        //    else
+        //        line += (it.second.id_str + "  ");
+        //}
+        //m_utilMLBuffer.push_back(line);    
     }
 
     clear_next_frame_();
     refresh_next_frame_();
-
-    //
-    show_util_buffer_next_frame_();
-
-    EventHandler::push_event(new AdjustBufferWindowEvent(dy));
 
 }
 
@@ -193,6 +244,14 @@ void CommandWindow::redraw()
         api->wprintml(m_apiWindowPtr, m_cursor.offset_x(), 0, m_utilMLBuffer);
 
     updateCursor();
+
+    // if active listbox
+    if (m_listboxWndPtr != NULL)
+    {
+        m_listboxWndPtr->clear();
+        m_listboxWndPtr->redraw();
+        m_listboxWndPtr->refresh();
+    }
 
 }
 
@@ -257,7 +316,7 @@ void CommandWindow::dispatchCommand()
             #ifdef DEBUG
             case CommandID::DEBUG_COMMAND:
                 debugCommand();
-                command_complete_();
+                // command_complete_();
                 break;
             #endif
             //---------------------------------------------------------------------------
@@ -267,6 +326,11 @@ void CommandWindow::dispatchCommand()
                 command_complete_();
                 break;
 
+            //---------------------------------------------------------------------------
+            case CommandID::SWITCH_TO_BUFFER:
+                command_complete_();
+                break;
+                
             //---------------------------------------------------------------------------
             case CommandID::SAVE_TEMP_BUFFER:
             case CommandID::SAVE_BUFFER_AS:
@@ -398,11 +462,10 @@ void CommandWindow::dispatchCommand()
 #ifdef DEBUG
 void CommandWindow::debugCommand()
 {
-    auto &windows = m_app->openBufferWindows();
-    for (auto &w : windows)
-    {
-        LOG_ERROR("window %s -- %p", w.first.c_str(), w.second);
-    }
+    static frame_t listbox_wnd_frame = frame_t(ivec2_t(10, 10), ivec2_t(40, 40));
+    
+    delete m_listboxWndPtr;
+    m_listboxWndPtr = new ListboxWindow(listbox_wnd_frame, "test");
 
 }
 #endif

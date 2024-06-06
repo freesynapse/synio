@@ -3,6 +3,7 @@
 
 #include "line_buffer_window.h"
 #include "file_buffer_window.h"
+#include "listbox_window.h"
 #include "../command.h"
 
 //
@@ -66,8 +67,10 @@ protected:
 protected:
     //
     Synio *m_app = NULL;
-    // FileBufferWindow *m_currentBufferPtr = NULL;
-
+    ListboxWindow *m_listboxWndPtr = NULL;
+    std::vector<std::string> m_autocompletions;
+    size_t m_selectedCompletion = 0;
+    
     CHTYPE_STR_PTR m_cmdPrefix = NULL;  // actually what's printed before the input
     ivec2_t m_cmdPrefixPos = ivec2_t(1, 0);
     command_t m_currentCommand;

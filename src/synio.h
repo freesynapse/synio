@@ -5,6 +5,7 @@
 #include "window/file_buffer_window.h"
 #include "window/command_window.h"
 #include "window/status_window.h"
+#include "window/listbox_window.h"
 
 //
 class Synio
@@ -23,6 +24,8 @@ public:
 
     void adjustBufferWindowFrameY(int _dy);
 
+    void refreshBufferWindow() { clear_redraw_refresh_window_ptr_(m_currentBufferWindow); }
+
     // event callbacks
     void onExitEvent(Event *_e);
     void onAdjustBufferWindowEvent(Event *_e);
@@ -34,7 +37,6 @@ public:
 
     //
     void mainLoop();
-
 
 private:
     void clear_redraw_refresh_window_ptr_(BufferWindowBase *_w)
@@ -75,6 +77,7 @@ private:
 
     // map of all open buffers
     std::unordered_map<std::string, FileBufferWindow *> m_bufferWindows;
+    std::vector<std::string> m_bufferQueue;
 
     FileBufferWindow *m_currentBufferWindow = NULL; // current displayed file window
     std::string m_currentFilename = "";

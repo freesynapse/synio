@@ -59,7 +59,7 @@ int FileIO::delete_temp_files()
 //---------------------------------------------------------------------------------------
 int FileIO::remove_temp_file(const std::string &_filename)
 {
-    s_tempFileList.erase(_filename);
+    return s_tempFileList.erase(_filename);
     
 }
 

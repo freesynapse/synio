@@ -1,8 +1,11 @@
 
 #include "synio.h"
 
+#include <assert.h>
+
 #include "utils/log.h"
 #include "utils/backtrace.h"
+#include "utils/prefix_tree.h"
 #include "event_handler.h"
 #include "command.h"
 
@@ -10,7 +13,8 @@
 Synio::Synio(const std::string &_filename)
 {
     EventHandler::initialize();
-    Command::initialize();    
+    PrefixTree::initialize();
+    Command::initialize();
 
     //
     m_currentFilename = _filename;

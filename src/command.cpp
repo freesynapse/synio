@@ -5,6 +5,7 @@
 std::unordered_map<CommandID, command_t> Command::s_commandMap;
 std::unordered_map<int, CommandID> Command::s_commandKeyCodes;
 std::set<CommandID> Command::s_fileIOCommands;
+prefix_node_t *Command::s_cmdPTree;
 
 //---------------------------------------------------------------------------------------
 void Command::initialize()
@@ -22,8 +23,6 @@ void Command::initialize()
         { CommandID::NEW_BUFFER,                { CommandID::NEW_BUFFER, "new_buffer", "Creates a new buffer", "New buffer (filename)?" } },
 
         { CommandID::SWITCH_TO_BUFFER,          { CommandID::SWITCH_TO_BUFFER, "switch_to_buffer", "Switch to open buffer", "Buffer (filename)?" } },
-        { CommandID::NEXT_BUFFER,               { CommandID::NEXT_BUFFER, "next_buffer", "Switch to next open buffer", "" } },
-        { CommandID::PREV_BUFFER,               { CommandID::PREV_BUFFER, "prev_buffer", "Switch to previous open buffer", "" } },
 
         { CommandID::BUFFER_SEARCH,             { CommandID::BUFFER_SEARCH, "buffer_find", "Find (current buffer)", "query:" } },
         { CommandID::BUFFER_REPLACE,            { CommandID::BUFFER_REPLACE, "buffer_replace", "Replace (current buffer)", "replace:" } },
@@ -71,6 +70,14 @@ void Command::initialize()
         CommandID::CLOSE_BUFFER,
         CommandID::NEW_BUFFER,
     };
+
+    // insert all commands into prefix tree (for autocompletion)
+    s_cmdPTree = new prefix_node_t();
+    for (auto &it : s_commandMap)
+    {
+        if (it.second.id_str != "")
+            PrefixTree::insert_string(s_cmdPTree, it.second.id_str);
+    }
 
     LOG_INFO("done.");
 

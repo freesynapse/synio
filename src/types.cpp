@@ -158,6 +158,12 @@ void line_t::insert_str(char *_str, size_t _len, size_t _pos)
 }
 
 //---------------------------------------------------------------------------------------
+void line_t::insert_str(const char *_str, size_t _pos)
+{
+    insert_str((char *)_str, strlen(_str), _pos);
+}
+
+//---------------------------------------------------------------------------------------
 void line_t::insert_str(CHTYPE_PTR _str, size_t _len, size_t _pos)
 {
 

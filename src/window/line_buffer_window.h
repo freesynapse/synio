@@ -16,9 +16,6 @@ public:
                      bool _border=false);
     ~LineBufferWindow();
 
-    // sets query string before editable line begins
-    //void setQuery(const std::string &_query, const ivec2_t &_pos);
-
     // 
     virtual void handleInput(int _c, CtrlKeyAction _ctrl_action) override;
 

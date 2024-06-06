@@ -60,6 +60,7 @@ void ncurses_init_colors(API_WINDOW_PTR _w)
     init_pair(SYN_COLOR_STATUS,             SYN_COLOR_BLACK,                SYN_COLOR_STATUS_BKGD   );
     init_pair(SYN_COLOR_LINENO,             SYN_COLOR_GREY,                 SYN_COLOR_BKGD          );
     init_pair(SYN_COLOR_LINENO_INACTIVE,    SYN_COLOR_DARK_GREY,            SYN_COLOR_BKGD          );
+
     
     // selection color pairs
     init_pair(SYN_COLOR_SEL_TEXT,           SYN_COLOR_TEXT_FGD,           SYN_COLOR_SEL_BKGD);

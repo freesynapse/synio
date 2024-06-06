@@ -6,6 +6,7 @@
 #include <string>
 
 #include "utils/log.h"
+#include "utils/prefix_tree.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmacro-redefined"
@@ -29,8 +30,6 @@ enum CommandID
 
     // workflow
     SWITCH_TO_BUFFER,
-    NEXT_BUFFER,
-    PREV_BUFFER,
 
     // buffer operations
     BUFFER_SEARCH,
@@ -116,6 +115,9 @@ public:
 
     // set of all file I/O related commands
     static std::set<CommandID> s_fileIOCommands;
+
+    // prefix tree of all commands for autocomplete
+    static prefix_node_t *s_cmdPTree;
 
 };
 

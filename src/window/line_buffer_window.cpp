@@ -172,7 +172,7 @@ int LineBufferWindow::findColDelim(int _dir, bool _move_cursor)
 void LineBufferWindow::insertCharAtCursor(char _c)
 {
     // only allowed characters (for now)
-    if (Config::ALLOWED_CHARACTERS.find(_c) == Config::ALLOWED_CHARACTERS.end())
+    if (Config::ALLOWED_CHAR_SET.find(_c) == Config::ALLOWED_CHAR_SET.end())
     {
         moveCursor(0, 0);
         return;

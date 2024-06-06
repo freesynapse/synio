@@ -77,6 +77,7 @@ struct line_t
     void insert_char(char _c, size_t _pos);
     void insert_char(CHTYPE _c, size_t _pos);
     void insert_str(char *_str, size_t _len, size_t _pos);
+    void insert_str(const char *_str, size_t _pos);
     void insert_str(CHTYPE_PTR _str, size_t _len, size_t _pos);
     void append_line(line_t *_other);
     void delete_at(size_t _pos);

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <unordered_set>
+#include <unordered_map>
 
 // Enumerations
 enum class TabsOrSpaces
@@ -10,6 +11,12 @@ enum class TabsOrSpaces
     TABS = 0,
     SPACES,
 };
+
+// constexpr shenanigans
+constexpr std::size_t strlen_constexpr(const char *_s) 
+{
+    return std::char_traits<char>::length(_s);
+}
 
 //
 class Config
@@ -28,7 +35,12 @@ public:
     static const char *FILE_PATH_DELIMITERS;
     static const char *STRUCTURAL_LITERALS;
 
-    static std::unordered_set<char> ALLOWED_CHARACTERS;
+    static std::unordered_set<char> ALLOWED_CHAR_SET;
+    static constexpr const char *ALLOWED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkl"
+                                                 "mnopqrstuvwxyz1234567890!#%&/()=?@${}["
+                                                 "]\\^~*-_.:,;<>|+\'\" ";
+    static constexpr size_t ALLOWED_CHARS_SZ = strlen_constexpr(ALLOWED_CHARS);
+
 
     //
     static void readConfigFile(const std::string &_filename="");
