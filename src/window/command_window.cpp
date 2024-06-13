@@ -25,6 +25,7 @@ CommandWindow::~CommandWindow()
 { 
     delete m_cmdPrefix;
     delete m_listboxWndPtr;
+    delete m_fileExplorerWndPtr;
 }
 
 //---------------------------------------------------------------------------------------
@@ -53,6 +54,20 @@ void CommandWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
         }
         return;
     }
+    else if (m_fileExplorerWndPtr != NULL)
+    {
+        m_fileExplorerWndPtr->handleInput(_c, _ctrl_action);
+        std::string selected_filename = m_fileExplorerWndPtr->getFilename();
+        //
+        if (selected_filename != "")
+        {
+            LOG_RAW("selected file = %s", selected_filename.c_str());
+            delete m_fileExplorerWndPtr;
+            m_fileExplorerWndPtr = NULL;
+            m_app->refreshBufferWindow();
+        }
+        return;
+    }
 
     // special keys
     if (_ctrl_action != CtrlKeyAction::NONE)
@@ -63,20 +78,18 @@ void CommandWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case CtrlKeyAction::CTRL_RIGHT: findColDelim(1);    break;
             case CtrlKeyAction::CTRL_UP:    moveCursorToRowDelim(-1);   break;
             case CtrlKeyAction::CTRL_DOWN:  moveCursorToRowDelim(1);    break;
-
-            default: LOG_WARNING("ctrl keycode %d : %s", _c, ctrlActionStr(_ctrl_action)); break;
-            // default: break;
-
+            case CtrlKeyAction::CTRL_DEL:   deleteToNextColDelim();     break;
+            // default: LOG_WARNING("ctrl keycode %d : %s", _c, ctrlActionStr(_ctrl_action)); break;
+            default: break;
         }
     }
     //
     else
     {
-        // check for command
+        // check for command keyboard shortcut
         if (Command::is_cmd_code(_c))
-        {
             processCommandKeycode(_c);
-        }
+
         else
         {
             switch (_c)
@@ -95,16 +108,20 @@ void CommandWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                     deleteCharBeforeCursor();
                     break;
 
+                case 8:     // <Ctrl> + <Backspace>
+                    deleteToPrevColDelim();
+                    break;
+
+                case 9:     // <TAB>
+                    tabComplete();
+                    moveCursor(0, 0);
+                    break;
+
                 case 10:    // <ENTER>
                     if (m_currentCommand.id == CommandID::NONE)
                         processInput();
                     else
                         dispatchCommand();
-                    moveCursor(0, 0);
-                    break;
-
-                case 9:     // <TAB>
-                    tabComplete();
                     moveCursor(0, 0);
                     break;
 
@@ -167,6 +184,16 @@ void CommandWindow::tabComplete()
         //
         prefix_node_t *stree = PrefixTree::find_subtree(ptree, sstr);
 
+        // string not found in tree, no completions
+        if (stree == nullptr)
+        {
+            m_utilMLBuffer.push_back("(no autocompletions found)");
+            show_util_buffer_next_frame_();
+            clear_next_frame_();
+            refresh_next_frame_();
+            return;
+        }
+        
         // find longest common prefix, if this exists, we auto-insert that to the search
         // string
         std::string longest_prefix = "";
@@ -238,8 +265,6 @@ void CommandWindow::redraw()
         api->disableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_INACTIVE));
     }
 
-    updateCursor();
-
     // if active listbox
     if (m_listboxWndPtr != NULL)
     {
@@ -247,6 +272,15 @@ void CommandWindow::redraw()
         m_listboxWndPtr->redraw();
         m_listboxWndPtr->refresh();
     }
+    else if (m_fileExplorerWndPtr != NULL)
+    {
+        m_fileExplorerWndPtr->clear();
+        m_fileExplorerWndPtr->redraw();
+        m_fileExplorerWndPtr->refresh();
+    }
+    else
+        updateCursor();
+
 
 }
 
@@ -457,11 +491,26 @@ void CommandWindow::dispatchCommand()
 #ifdef DEBUG
 void CommandWindow::debugCommand()
 {
-    static frame_t listbox_wnd_frame = frame_t(ivec2_t(10, 10), ivec2_t(40, 40));
-    
-    delete m_listboxWndPtr;
-    m_listboxWndPtr = new ListboxWindow(listbox_wnd_frame, "test");
+    //static frame_t listbox_wnd_frame = frame_t(ivec2_t(10, 10), ivec2_t(40, 40));
+    //
+    //delete m_listboxWndPtr;
+    //m_listboxWndPtr = new ListboxWindow(listbox_wnd_frame, "test");
 
+    ivec2_t ssize;
+    api->getRenderSize(&ssize);
+
+    float p = Config::FILE_DIALOG_SIZE_PERCENT; 
+    float p2 = (1.0f - p) * 0.5f;
+    int w0 = p2 * ssize.x;
+    int h0 = p2 * ssize.y;
+
+    static frame_t explorer_wnd_frame = frame_t(ivec2_t(w0, h0), 
+                                                ivec2_t(ssize.x - w0, ssize.y - h0));
+    delete m_fileExplorerWndPtr;
+    m_fileExplorerWndPtr = new FileExplorerWindow(explorer_wnd_frame, 
+                                                  "test-file-explorer-window",
+                                                  true,
+                                                  "Save As (Filename): ");
 }
 #endif
 

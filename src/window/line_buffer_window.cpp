@@ -100,71 +100,53 @@ void LineBufferWindow::moveCursorToLineEnd()
 //---------------------------------------------------------------------------------------
 int LineBufferWindow::findColDelim(int _dir, bool _move_cursor)
 {
-    // TODO : implement me!
-    // assert(1 == 0);
-    return -1;
- 
-#if 0
-    if (_dir > 0 && m_cursor.cx() == m_currentLine->len - 1)    { moveCursor(1, 0); return;  }
-    else if (_dir > 0 && m_cursor.cx() == m_currentLine->len)   { moveCursor(1, 0); return;  }
-    else if (_dir < 0 && m_cursor.cx() == 1)                    { moveCursor(-1, 0); return; }
-    else if (_dir < 0 && m_cursor.cx() == 0)                    { moveCursor(-1, 0); return; }
+    // change lines if at beginning or end of line
+    if (_dir > 0 && m_cursor.cx() >= m_currentLine->len - 1)    { if (_move_cursor) moveCursor( 1, 0); return  1; }
+    else if (_dir < 0 && m_cursor.cx() <= 1)                    { if (_move_cursor) moveCursor(-1, 0); return -1; }
 
-    CHTYPE_PTR p = m_currentLine->content + m_cursor.cx();
-    size_t line_len = m_currentLine->len;
-    int x = (_dir < 0 ? m_cursor.cx() : 0);
-    bool on_delimiter = is_col_delimiter_(*p);
-    bool do_continue = (_dir < 0 ? x > 0 : (*p & CHTYPE_CHAR_MASK) != 0);
-
+    int cx = m_cursor.cx();
+    int dx = 0;
     //
-    while (do_continue)
+    CHTYPE_PTR p = m_currentLine->content + cx;
+    bool start_on_delimiter = is_col_delimiter_(*p);
+
+    p += _dir;
+    start_on_delimiter = is_col_delimiter_(*p);
+    dx += _dir;
+    char c = (*p & CHTYPE_CHAR_MASK);
+    // starting on a delimiter -> skip all delimiters and then find the next
+    if (start_on_delimiter)
     {
-        x += _dir;
-        p += _dir;
-
-        // -- DEBUG
-        char c = (*p & CHTYPE_CHAR_MASK);
-        char c2 = (*(p + _dir) & CHTYPE_CHAR_MASK);
-
-        // if starting on a delimiter,<>=!,,, we search for non-delimiters
-        if (on_delimiter && is_col_delimiter_(*p))
+        while (is_col_delimiter_((*p & CHTYPE_CHAR_MASK)) && cx + dx < m_currentLine->len && cx + dx >= 0)
         {
-            while (is_col_delimiter_(*p) && do_continue)
-            {
-                x += _dir;
-                p += _dir;
-
-                do_continue = (_dir < 0 ? x > 0 : (*p & CHTYPE_CHAR_MASK) != 0);
-            }
-            x -= 1;
-            break;
+            p += _dir;
+            c = (*p & CHTYPE_CHAR_MASK);
+            dx += _dir;
         }
-        else if (on_delimiter && !is_col_delimiter_(*p))
+    }
+    // just jump to next delimiter
+    else
+    {
+        while (!is_col_delimiter_((*p & CHTYPE_CHAR_MASK)) && cx + dx < m_currentLine->len && cx + dx >= 0)
         {
-            // ex: 'char *p = ...'
-            // find next delimiter
-            while (!is_col_delimiter_(*p) && do_continue)
-            {
-                x += _dir;
-                p += _dir;
-
-                do_continue = (_dir < 0 ? x > 0 : (*p & CHTYPE_CHAR_MASK) != 0);
-            }
-            break;
-        }
-        else // not starting on delimiter
-        {
-            if (is_col_delimiter_(*p))
-                break;
+            p += _dir;
+            c = (*p & CHTYPE_CHAR_MASK);
+            dx += _dir;
         }
 
-        do_continue = (_dir < 0 ? x > 0 : (*p & CHTYPE_CHAR_MASK) != 0);
     }
 
-    int dx = (_dir < 0 ? -(m_cursor.cx() - x) : x);
-    moveCursor(dx);
-#endif
-    return 0;
+    // special case where the first char is preceeded by only whitespace (i.e. tabs),
+    // then move to the first actual character
+    // if (_dir < 0 && find_first_non_empty_char_(m_currentLine) > cx + dx)
+    // Actually, we want to jump to the non-delimieter when going backwards, always
+    if (_dir < 0)
+        dx++;
+
+    if (_move_cursor)
+        moveCursor(dx, 0);
+
+    return dx;
 
 }
 
@@ -214,8 +196,23 @@ void LineBufferWindow::deleteCharAtCursor()
 //---------------------------------------------------------------------------------------
 void LineBufferWindow::deleteToNextColDelim()
 {
-    // TODO : implement me!
-    // assert(1 == 0);
+    int cx = m_cursor.cx();
+
+    int nspaces = find_empty_chars_from_pos_(cx, FORWARD);
+    int next_delim_pos_dx = findColDelim(FORWARD, false);
+    
+    int ndels = next_delim_pos_dx;
+    if (nspaces < next_delim_pos_dx && nspaces > 0)
+        ndels = nspaces;
+    
+    //
+    if (cx + ndels <= m_currentLine->len)
+        m_currentLine->delete_n_at(cx, ndels);
+
+    m_windowLinesUpdateList.insert(m_cursor.cy());
+
+    refresh_next_frame_();
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -242,8 +239,22 @@ void LineBufferWindow::deleteCharBeforeCursor()
 //---------------------------------------------------------------------------------------
 void LineBufferWindow::deleteToPrevColDelim()
 {
-    // TODO : implement me!
-    assert(1 == 0);
+    int prev_delim_pos_dx = findColDelim(BACKWARD, false);
+    int cx = m_cursor.cx();
+    int nspaces = find_empty_chars_from_pos_(cx, BACKWARD);
+
+    if (abs(prev_delim_pos_dx) > m_currentLine->len)
+        prev_delim_pos_dx++;
+    
+    int ndels = abs(prev_delim_pos_dx);
+    if (nspaces < abs(prev_delim_pos_dx) && nspaces > 0)
+        ndels = nspaces;
+    
+    m_currentLine->delete_n_at(cx - ndels, ndels);
+
+    moveCursor(-ndels, 0);
+    // m_windowLinesUpdateList.insert(m_cursor.cy());
+
 }
 
 //---------------------------------------------------------------------------------------

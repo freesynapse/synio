@@ -34,6 +34,7 @@ public:
     FileBufferWindow *currentBufferWindow() { return m_currentBufferWindow; }
     void setCurrentBufferWindow(FileBufferWindow *_w) { m_currentBufferWindow = _w; }
     const std::unordered_map<std::string, FileBufferWindow *> &openBufferWindows() { return m_bufferWindows; }
+    const frame_t &bufferWndFrame() { return m_bufferWndFrame; }
 
     //
     void mainLoop();

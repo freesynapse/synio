@@ -164,7 +164,6 @@ CtrlKeyAction Ncurses_Impl::getCtrlKeyAction(int _key)
 int Ncurses_Impl::moveCursor(API_WINDOW_PTR _w, int _x, int _y)
 {
     int ret = wmove((WINDOW *)_w, _y, _x);
-    // wrefresh((WINDOW *)_w);
 
     return ret;
 
@@ -211,6 +210,13 @@ int Ncurses_Impl::printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PT
     }
 
     return RETURN_SUCCESS;
+}
+
+//---------------------------------------------------------------------------------------
+int Ncurses_Impl::printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, line_t *_line_ptr)
+{
+    return printBufferLine(_w, _cx, _cy, _line_ptr->content, _line_ptr->len);
+    
 }
 
 //---------------------------------------------------------------------------------------

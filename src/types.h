@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <sys/stat.h>
 
 #include "utils/log.h"
 
@@ -330,6 +331,44 @@ struct ctrl_keycode_t : keycode_t
         action(_action)
     {
         id = _id;
+    }
+
+};
+
+// File entry, used by FileExplorerWindow
+struct FileEntry
+{
+    std::string name = "";
+    uint32_t mode = 0;      // file permissions and S_ISDIR()
+    char mode_str[10] = { 0 };
+    uint32_t sz = 0;
+
+    bool is_dir() { return S_ISDIR(mode); }
+
+    FileEntry() {}
+    FileEntry(const std::string &_name, uint32_t _mode, uint32_t _sz) : 
+        name(_name), mode(_mode), sz(_sz)
+    {
+        convert_mode_to_str_();
+    }
+    FileEntry(const char *_name, uint32_t _mode, uint32_t _sz) : 
+        name(std::string(_name)), mode(_mode), sz(_sz)
+    {
+        convert_mode_to_str_();
+    }
+
+    void convert_mode_to_str_()
+    {
+        mode_str[0] = (S_ISDIR(mode))  ? 'd' : '-';
+        mode_str[1] = (mode & S_IRUSR) ? 'r' : '-';
+        mode_str[2] = (mode & S_IWUSR) ? 'w' : '-';
+        mode_str[3] = (mode & S_IXUSR) ? 'x' : '-';
+        mode_str[4] = (mode & S_IRGRP) ? 'r' : '-';
+        mode_str[5] = (mode & S_IWGRP) ? 'w' : '-';
+        mode_str[6] = (mode & S_IXGRP) ? 'x' : '-';
+        mode_str[7] = (mode & S_IROTH) ? 'r' : '-';
+        mode_str[8] = (mode & S_IWOTH) ? 'w' : '-';
+        mode_str[9] = (mode & S_IXOTH) ? 'x' : '-';
     }
 
 };

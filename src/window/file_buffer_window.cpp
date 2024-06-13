@@ -10,25 +10,30 @@
 //
 FileBufferWindow::FileBufferWindow(const frame_t &_frame,
                                    const std::string &_id_filename,
-                                   bool _border) :
+                                   bool _border,
+                                   bool _use_line_numbers,
+                                   bool _auto_open_file) :
     BufferWindowBase(_frame, _id_filename, _border)
 {
     m_formatter = BufferFormatter(&m_frame);
-    
     m_cursor = Cursor(this);
     
     // Create a line numbers subwindow. In case of reading buffer from file, the width 
     // of the LineNumbers are deduced at runtime
-    frame_t line_numbers_rect(ivec2_t(0, m_frame.v0.y), 
-                              ivec2_t(m_frame.v0.x, m_frame.v1.y));
-    m_lineNumbers = new LineNumbers(line_numbers_rect, _id_filename+"_line_numbers", _border);
-    m_lineNumbers->setBuffer(this);
+    m_useLineNumbers = _use_line_numbers;
+    if (_use_line_numbers)
+    {
+        frame_t line_numbers_rect(ivec2_t(0, m_frame.v0.y), 
+                                ivec2_t(m_frame.v0.x, m_frame.v1.y));
+        m_lineNumbers = new LineNumbers(line_numbers_rect, _id_filename+"_line_numbers", _border);
+        m_lineNumbers->setBuffer(this);
 
-    m_lineNumbers->setWidth(Config::LINE_NUMBERS_MIN_WIDTH);
-    resize(m_frame);
+        m_lineNumbers->setWidth(Config::LINE_NUMBERS_MIN_WIDTH);
+        resize(m_frame);
 
-    if (!Config::SHOW_LINE_NUMBERS)
-        m_lineNumbers->setVisibility(false);
+        if (!Config::SHOW_LINE_NUMBERS)
+            m_lineNumbers->setVisibility(false);
+    }
 
     // selection instance
     m_selection = new Selection();
@@ -37,7 +42,8 @@ FileBufferWindow::FileBufferWindow(const frame_t &_frame,
     m_undoBuffer = UndoBuffer(this);
 
     // read filename
-    readFileToBuffer(_id_filename);
+    if (_auto_open_file)
+        readFileToBuffer(_id_filename);
 
 }
 
@@ -52,7 +58,8 @@ FileBufferWindow::~FileBufferWindow()
 #ifdef DEBUG
 void FileBufferWindow::__debug_fnc()
 {
-    m_undoBuffer.__debug_print_stack();
+    // m_undoBuffer.__debug_print_stack();
+    deleteToPrevColDelim();
 
 }
 #endif
@@ -138,11 +145,6 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                 m_undoBuffer.undo();
                 break;
 
-            // save file -- TODO: move to commands
-            // case CTRL('s'):
-            //     writeBufferToFile();
-            //     break;
-
             #ifdef DEBUG
             case CTRL('d'):
                 __debug_fnc();
@@ -168,6 +170,12 @@ void FileBufferWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                 insertStructuralLiteral(_c);
                 break;
             
+            // TODO : closing structural literals:
+            //case '}':
+            //case '"': -- duplicate!
+            //case ']':
+            //case ')':
+
             default:
                 insertCharAtCursor((char)_c);
                 break;
@@ -1377,7 +1385,7 @@ int FileBufferWindow::readFileToBuffer(const std::string &_filename)
     m_filename = std::string(_filename);
 
     // initialize line numbers window
-    if (m_filename != "" && Config::SHOW_LINE_NUMBERS)
+    if (m_filename != "" && Config::SHOW_LINE_NUMBERS && m_useLineNumbers)
     {
         int width = (int)std::round(std::log10((float)m_lineBuffer.m_lineCount) + 1) + 1;
         // also leave 2 blank spaces left and 1 before the divider
@@ -1419,7 +1427,8 @@ void FileBufferWindow::resize(frame_t _new_frame)
     m_frame = _new_frame;
 
     // if (m_frame.v0.x != m_lineNumbers->getWidth())
-    m_frame.v0.x = m_lineNumbers->getWidth();
+    if (m_useLineNumbers)
+        m_frame.v0.x = m_lineNumbers->getWidth();
 
     //if (_left_reserved != -1 && m_frame.v0.x != _left_reserved)
     //{
@@ -1438,7 +1447,8 @@ void FileBufferWindow::resize(frame_t _new_frame)
         m_apiBorderWindowPtr = api->newBorderWindow(&m_frame);
     }
 
-    m_lineNumbers->resize(m_frame);
+    if (m_useLineNumbers)
+        m_lineNumbers->resize(m_frame);
 
     m_cursor.set_frame(m_frame);
 
@@ -1523,7 +1533,8 @@ void FileBufferWindow::redraw()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::clear()
 {
-    m_lineNumbers->clear();
+    if (m_useLineNumbers)
+        m_lineNumbers->clear();
 
     if (m_clearNextFrame)
     {
@@ -1535,8 +1546,9 @@ void FileBufferWindow::clear()
 //---------------------------------------------------------------------------------------
 void FileBufferWindow::refresh()
 {
-    m_lineNumbers->refresh();   // called first to move the cursor to the buffer window
-                                // on updateCursor()
+    if (m_useLineNumbers)
+        m_lineNumbers->refresh();   // called first to move the cursor to the buffer window
+                                    // on updateCursor()
 
     if (m_refreshNextFrame)
     {

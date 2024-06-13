@@ -22,7 +22,11 @@ public:
 public:
 
     // N.B.: for FileBufferWindows, the _id is the filename
-    FileBufferWindow(const frame_t &_frame, const std::string &_id_filename, bool _border=false);
+    FileBufferWindow(const frame_t &_frame, 
+                     const std::string &_id_filename,
+                     bool _border=false,
+                     bool _use_line_numbers=true,
+                     bool _auto_open_file=true);
     ~FileBufferWindow();
 
     #ifdef DEBUG
@@ -168,6 +172,7 @@ protected:
                                 // a delete command).
 
     // Line numbers window accompanying this one
+    bool m_useLineNumbers = false;
     LineNumbers *m_lineNumbers = NULL;
 
 };

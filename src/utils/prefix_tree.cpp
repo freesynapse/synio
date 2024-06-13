@@ -41,11 +41,17 @@ void PrefixTree::insert_string(prefix_node_t *_root, const std::string &_str)
 prefix_node_t *PrefixTree::find_subtree(prefix_node_t *_root, 
                                         const std::string &_search_str)
 {
+    if (_root == nullptr)
+        return nullptr;
+
     prefix_node_t *current_node = _root;
     for (char c : _search_str)
     {
         size_t idx = s_char2idxMap[c];
-        current_node = current_node->children[idx];
+        if (current_node->children[idx] != nullptr)
+            current_node = current_node->children[idx];
+        else
+            return nullptr;
     }
     return current_node;
 }
@@ -95,7 +101,7 @@ void PrefixTree::find_longest_prefix(prefix_node_t *_node,
                             _search_str + s_idx2charMap[single_path_idx],
                             _found_prefix);
     }
-    else // n is either 0 or >1
+    else // n = 0 or > 1
     {
         *_found_prefix = _search_str;
         return;

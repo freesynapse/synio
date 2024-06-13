@@ -48,7 +48,7 @@ void Command::initialize()
         { CTRL('o'), CommandID::OPEN_BUFFER },
         { CTRL('w'), CommandID::CLOSE_BUFFER },
         { CTRL('f'), CommandID::BUFFER_SEARCH },
-        { CTRL('h'), CommandID::BUFFER_REPLACE },
+        { CTRL('r'), CommandID::BUFFER_REPLACE },   // ctrl+h confilcts with ctrl+backspace (key 8)
         //{ CTRL('c'), CommandID::YN_DIAG_SAVE_BEFORE_EXIT },
         //{ CTRL('e'), CommandID::YN_DIAG_EXIT },
         { CTRL('q'), CommandID::JUST_EXIT },
@@ -88,19 +88,24 @@ const char *Command::cmd2Str(CommandID _cmd)
 {
     switch (_cmd)
     {
-        case CommandID::SAVE_BUFFER:                return "CommandID::SAVE_BUFFER";
-        case CommandID::SAVE_BUFFER_AS:             return "CommandID::SAVE_BUFFER_AS";
-        case CommandID::OPEN_BUFFER:                return "CommandID::OPEN_BUFFER";
-        case CommandID::CLOSE_BUFFER:               return "CommandID::CLOSE_BUFFER";
-        case CommandID::BUFFER_SEARCH:              return "CommandID::BUFFER_SEARCH";
-        case CommandID::BUFFER_REPLACE:             return "CommandID::BUFFER_REPLACE";
-        case CommandID::EXIT_SAVE_YN:               return "CommandID::EXIT_SAVE_YN";
-        case CommandID::EXIT_NO_SAVE_YN:            return "CommandID::EXIT_NO_SAVE_YN";
-        case CommandID::JUST_EXIT:                  return "CommandID::JUST_EXIT";
-        case CommandID::SWITCH_TO_BUFFER:           return "CommandID::SWITCH_TO_BUFFER";
-        case CommandID::SHOW_SHORTCUTS:             return "CommandID::SHOW_SHORTCUTS";
-        case CommandID::SHOW_OPEN_BUFFERS:          return "CommandID::SHOW_OPEN_BUFFERS";
-        case CommandID::INVALID_COMMAND:            return "CommandID::INVALID_COMMAND";
-        default: return "";
+        case CommandID::SAVE_BUFFER:            return "CommandID::SAVE_BUFFER";
+        case CommandID::SAVE_TEMP_BUFFER:       return "CommandID::SAVE_TEMP_BUFFER";
+        case CommandID::SAVE_BUFFER_AS:         return "CommandID::SAVE_BUFFER_AS";
+        case CommandID::SAVE_ALL:               return "CommandID::SAVE_ALL";
+        case CommandID::OPEN_BUFFER:            return "CommandID::OPEN_BUFFER";
+        case CommandID::CLOSE_BUFFER:           return "CommandID::CLOSE_BUFFER";
+        case CommandID::NEW_BUFFER:             return "CommandID::NEW_BUFFER";
+        case CommandID::SWITCH_TO_BUFFER:       return "CommandID::SWITCH_TO_BUFFER";
+        case CommandID::BUFFER_SEARCH:          return "CommandID::BUFFER_SEARCH";
+        case CommandID::BUFFER_REPLACE:         return "CommandID::BUFFER_REPLACE";
+        case CommandID::EXIT_SAVE_YN:           return "CommandID::EXIT_SAVE_YN";
+        case CommandID::EXIT_NO_SAVE_YN:        return "CommandID::EXIT_NO_SAVE_YN";
+        case CommandID::JUST_EXIT:              return "CommandID::JUST_EXIT";
+        case CommandID::SHOW_SHORTCUTS:         return "CommandID::SHOW_SHORTCUTS";
+        case CommandID::SHOW_OPEN_BUFFERS:      return "CommandID::SHOW_OPEN_BUFFERS";
+        case CommandID::SHOW_BUFFER_STATISTICS: return "CommandID::SHOW_BUFFER_STATISTICS";
+        case CommandID::DEBUG_COMMAND:          return "CommandID::DEBUG_COMMAND";
+        case CommandID::INVALID_COMMAND:        return "CommandID::INVALID_COMMAND";
+        case CommandID::NONE:                   return "CommandID::NONE";
     }
 }

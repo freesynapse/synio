@@ -18,7 +18,7 @@ public:
     //
     void update();
     
-    //void set_cpos(const ivec2_t &_p) { set_cpos(_p.x, _p.y); };
+    void set_cpos(const ivec2_t &_p) { set_cpos(_p.x, _p.y); };
     void set_cpos(int _x, int _y);
     void set_cx(int _x);
     void set_cy(int _y);

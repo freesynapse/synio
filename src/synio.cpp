@@ -64,7 +64,7 @@ Synio::~Synio()
 void Synio::initialize()
 {
     api->getRenderSize(&m_screenSize);
-    m_bufferWndFrame = frame_t(ivec2_t(8, 0), 
+    m_bufferWndFrame = frame_t(ivec2_t(8, 0), // taking line numbers space into account
                                ivec2_t(m_screenSize.x, m_screenSize.y - 1));
     m_currentBufferWindow = newFileBufferWindow(m_currentFilename);
     m_focusedWindow = m_currentBufferWindow;
@@ -172,7 +172,6 @@ void Synio::mainLoop()
 
         m_focusedWindow->clear();
         m_focusedWindow->redraw();
-        m_focusedWindow->updateCursor();
         m_focusedWindow->refresh();
 
         // actually swap the buffers

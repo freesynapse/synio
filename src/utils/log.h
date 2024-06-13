@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <string>
-
+#include <assert.h>
 
 //
 #define __func__ __PRETTY_FUNCTION__
@@ -15,6 +15,7 @@
     #define LOG_WARNING(...) { Log::open(); Log::log_("\x1b[33m[WARN]\x1b[0m ", __func__, __VA_ARGS__); fclose(Log::s_file_handle); }
     #define LOG_ERROR(...) { Log::open(); Log::log_("\x1b[31m[ERR]\x1b[0m  ", __func__, __VA_ARGS__); fclose(Log::s_file_handle); }
     #define LOG_CRITICAL_ERROR(...) { Log::open(); Log::log_("\x1b[31m[CERR]\x1b[0m ", __func__, __VA_ARGS__); fclose(Log::s_file_handle); int *a = NULL; *a = 1; }
+    #define NOT_IMPLEMENTED() { LOG_ERROR("not yet implemented"); }
 #else
     #define LOG_RAW(...)
     #define LOG_INFO(...)

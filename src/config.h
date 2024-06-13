@@ -25,20 +25,26 @@ public:
     static bool SHOW_LINE_NUMBERS;
     static int LINE_NUMBERS_MIN_WIDTH;
 
-    static int COMMAND_WINDOW_HEIGHT;
+    static int COMMAND_WINDOW_HEIGHT;           // height of (unexapnded) command window
+                                                // (in lines)
 
-    static int PAGE_SIZE;
+    static float FILE_DIALOG_SIZE_PERCENT;      // proportion of the screen (both width 
+                                                // and height) occupied by file popup
+                                                // dialogs
+
+    static int PAGE_SIZE;                       // size of jump for PgUp/PgDn
     static int TAB_SIZE;
-    static TabsOrSpaces USE_TABS_OR_SPACES;
+    static TabsOrSpaces USE_TABS_OR_SPACES;     // TODO : now unused
 
     static const char *COL_DELIMITERS;
     static const char *FILE_PATH_DELIMITERS;
     static const char *STRUCTURAL_LITERALS;
 
     static std::unordered_set<char> ALLOWED_CHAR_SET;
-    static constexpr const char *ALLOWED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijkl"
-                                                 "mnopqrstuvwxyz1234567890!#%&/()=?@${}["
-                                                 "]\\^~*-_.:,;<>|+\'\" ";
+    static constexpr const char *ALLOWED_CHARS = "]\\^~*-_.:,;<>|+\'\" "
+                                                 "AaBbCcDdEeFfGgHhIiJjKkLlMm"
+                                                 "NnOoPpQqRrSsTtUuVvWwXxYyZz"
+                                                 "1234567890!#%&/()=?@${}[";
     static constexpr size_t ALLOWED_CHARS_SZ = strlen_constexpr(ALLOWED_CHARS);
 
 

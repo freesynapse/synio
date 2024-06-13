@@ -46,6 +46,7 @@ public:
     virtual int clearBufferLine(API_WINDOW_PTR _w, int _cy, int _win_maxx) override;
     virtual int clearSpace(API_WINDOW_PTR _w, int _cx, int _cy, int _n) override;
     virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _line, size_t _len) override;
+    virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, line_t *_line_ptr) override;
     virtual int printString(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _str, size_t _len) override;
     virtual int wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...) override;
     virtual int wprintml(API_WINDOW_PTR _w, int _cx0, int _cy0, const std::vector<std::string> &_ml_buffer) override;

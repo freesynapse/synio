@@ -4,6 +4,7 @@
 #include "line_buffer_window.h"
 #include "file_buffer_window.h"
 #include "listbox_window.h"
+#include "file_explorer_window.h"
 #include "../command.h"
 
 //
@@ -68,6 +69,9 @@ protected:
     //
     Synio *m_app = NULL;
     ListboxWindow *m_listboxWndPtr = NULL;
+    FileExplorerWindow *m_fileExplorerWndPtr = NULL;
+    
+    //
     std::vector<std::string> m_autocompletions;
     size_t m_selectedCompletion = 0;
     
