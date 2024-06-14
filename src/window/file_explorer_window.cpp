@@ -107,7 +107,7 @@ void FileExplorerWindow::redraw()
     if (!m_isWindowVisible)
         return;
 
-    static int listing_x_offset = 2;
+    static int listing_x_offset = Config::FILE_DIALOG_LISTING_SPACING;
 
     // print listing
     m_formatter.render(m_apiWindowPtr, m_pageFirstLine, NULL, listing_x_offset);
@@ -132,6 +132,11 @@ void FileExplorerWindow::redraw()
 //---------------------------------------------------------------------------------------
 void FileExplorerWindow::getCurrentDirContents()
 {
+    
+    
+    m_currentDir = "/var/log";
+    // m_currentDir = "/bin";
+
 
     DIR *dir_stream;
     struct dirent *dir;
@@ -143,9 +148,14 @@ void FileExplorerWindow::getCurrentDirContents()
     std::string longfname = "";
 
     if (dir_stream == NULL)
-        PrefixTree::insert_string(&ptree, "(ERROR: could not open dir '" + m_currentDir + "')");
+    {
+        // PrefixTree::insert_string(&ptree, "(ERROR: could not open dir '" + m_currentDir + "')");
+        LOG_ERROR("could not open dir '%s')", m_currentDir.c_str());
+    }
     else
     {
+        // { Timer t("dir and fill prefix tree", true);
+        
         while ((dir = readdir(dir_stream)) != NULL)
         {
             std::string fname = std::string(dir->d_name);
@@ -158,8 +168,11 @@ void FileExplorerWindow::getCurrentDirContents()
             else
             {
                 // insert in prefix tree (for autocomplete) and vector (for rendering)
-                PrefixTree::insert_string(&ptree, fname);
-                m_currentDirListing.push_back(fname);
+                // TODO : do this in separate thread (for later)
+                // PrefixTree::insert_string(&ptree, fname);
+                
+                FileEntry fe(dir->d_name, fstat.st_mode, fstat.st_size);
+                m_currentDirListing.push_back(fe);
 
                 if (fname.length() > max_fname_len)
                 {
@@ -169,23 +182,55 @@ void FileExplorerWindow::getCurrentDirContents()
 
             }
         }
+        // }
     }
-    LOG_RAW("longest filename = %s (%zu)", longfname.c_str(), longfname.length());
+    closedir(dir_stream);
+    // LOG_RAW("longest filename = %s (%zu)", longfname.c_str(), longfname.length());
 
     // sort vector strings (case insensitive + smaller size comes first)
+    // { Timer t("sort", true);
     std::sort(m_currentDirListing.begin(), m_currentDirListing.end(), 
-              [](const std::string &_a, const std::string &_b) -> bool
-              {
-                for (size_t c = 0; c < _a.size() && c < _b.size(); c++) {
-                    if (std::tolower(_a[c]) != std::tolower(_b[c]))
-                        return (std::tolower(_a[c]) < std::tolower(_b[c]));
-                }
-                return (_a.size() < _b.size()); 
-              }
-            );
+             [](const FileEntry &_a, const FileEntry &_b) -> bool
+             {
+               for (size_t c = 0; c < _a.name.size() && c < _b.name.size(); c++) {
+                   if (std::tolower(_a.name[c]) != std::tolower(_b.name[c]))
+                       return (std::tolower(_a.name[c]) < std::tolower(_b.name[c]));
+               }
+               return (_a.name.size() < _b.name.size()); 
+             }
+           );
+    // }
+    // calculate listing column count based on longest filename
+    int spacing = Config::FILE_DIALOG_LISTING_SPACING;
+    int ncols = (m_frame.ncols - spacing) / (max_fname_len + spacing);
+    int col_width = m_frame.ncols / ncols;
+    int total_width = spacing * ncols + col_width * ncols;
+    LOG_RAW("n cols = %d (%f)", ncols, (float)(m_frame.ncols - spacing) / (max_fname_len + spacing));
 
-    for (auto &file : m_currentDirListing)
-        m_lineBuffer.push_back(file.c_str());
+    // calculate number of whole rows
+    int remainder = m_currentDirListing.size() % ncols;
+    int nrows = m_currentDirListing.size() / ncols + (remainder ? 1 : 0);
+    LOG_RAW("n rows = (%zu) %d (%d)", m_currentDirListing.size(), nrows, remainder);
+    
+    char line[1024];
+    memset(line, 0, 1024);
+    size_t nfiles = m_currentDirListing.size();
+    for (int row = 0; row < nrows; row++)
+    {
+        memset(line, ' ', total_width);
+        for (int col = 0; col < ncols; col++)
+        {
+            int file_idx = col * nrows + row;
+            if (file_idx >= nfiles)
+                continue;
+            
+            auto &fname = m_currentDirListing[file_idx].name;
+
+            // copy filename into correct x loc in this line
+            memcpy(line+(col*col_width ), (char *)fname.c_str(), fname.length());
+        }
+        m_lineBuffer.push_back(line, total_width);
+    }
 
 }
 

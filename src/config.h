@@ -31,6 +31,9 @@ public:
     static float FILE_DIALOG_SIZE_PERCENT;      // proportion of the screen (both width 
                                                 // and height) occupied by file popup
                                                 // dialogs
+    
+    static int FILE_DIALOG_LISTING_SPACING;     // spacing between filenames (and left 
+                                                // frame margin) in dir listings
 
     static int PAGE_SIZE;                       // size of jump for PgUp/PgDn
     static int TAB_SIZE;

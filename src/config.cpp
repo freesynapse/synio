@@ -8,6 +8,8 @@ int             Config::LINE_NUMBERS_MIN_WIDTH      = 5;
 int             Config::COMMAND_WINDOW_HEIGHT       = 1;
 
 float           Config::FILE_DIALOG_SIZE_PERCENT    = 0.75f;
+int             Config::FILE_DIALOG_LISTING_SPACING = 2;
+
 int             Config::PAGE_SIZE                   = 20;
 int             Config::TAB_SIZE                    = 4;
 TabsOrSpaces    Config::USE_TABS_OR_SPACES          = TabsOrSpaces::SPACES;

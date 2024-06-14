@@ -1404,6 +1404,9 @@ int FileBufferWindow::readFileToBuffer(const std::string &_filename)
 //---------------------------------------------------------------------------------------
 int FileBufferWindow::writeBufferToFile(const char *_filename)
 {
+    if (!m_isDirty)
+        return 0;
+        
     std::string fn = (strcmp(_filename, "") == 0 ? m_filename : std::string(_filename));
 
     int ret = FileIO::write_buffer_to_file(fn, &m_lineBuffer);

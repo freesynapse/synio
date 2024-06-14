@@ -38,10 +38,9 @@ private:
 
 private:
     // files etc
-    std::string m_currentDir = "/bin/";
-    // std::string m_currentDir = ".";
+    std::string m_currentDir = ".";
     std::string m_selectedFilename = "";
-    std::vector<std::string> m_currentDirListing;
+    std::vector<FileEntry> m_currentDirListing;
     
     // rendering
     line_t *m_currentListingPtr; // current line in dir listing
