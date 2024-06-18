@@ -28,11 +28,11 @@ public:
     //
     virtual void clearScreen() override     { wclear((WINDOW *)m_screenPtr);   }
     virtual void refreshScreen() override   { wrefresh((WINDOW *)m_screenPtr); }
-    virtual void clearWindow(API_WINDOW_PTR _w) override     { wclear((WINDOW *)_w);   }
+    virtual void clearWindow(API_WINDOW_PTR _w) override;
     // TODO : rename current refreshWindow to updateWindow and keep refreshWindow below
     // virtual void refreshWindow(API_WINDOW_PTR _w) override { wrefresh((WINDOW *)_w); }
-    virtual void refreshWindow(API_WINDOW_PTR _w) override { wnoutrefresh((WINDOW *)_w); }
-    virtual void redrawScreen() override { doupdate(); }
+    virtual void refreshWindow(API_WINDOW_PTR _w) override;
+    virtual void redrawScreen() override;
     virtual void refreshBorder(API_WINDOW_PTR _w) override;
 
     //
@@ -50,6 +50,7 @@ public:
     virtual int printString(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _str, size_t _len) override;
     virtual int wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...) override;
     virtual int wprintml(API_WINDOW_PTR _w, int _cx0, int _cy0, const std::vector<std::string> &_ml_buffer) override;
+    virtual int printCursorBlock(API_WINDOW_PTR _w, int _cx, int _cy) override;
     virtual int verticalDivider(API_WINDOW_PTR _w, int _cx, int _cy, int _n) override;
     virtual int horizontalDivider(API_WINDOW_PTR _w, int _cx, int _cy, int _n) override;
 

@@ -45,6 +45,13 @@ line_t *create_line(const char *_content)
 }
 
 //---------------------------------------------------------------------------------------
+line_t *create_line(const std::string &_content)
+{
+    return create_line((char *)_content.c_str(), _content.length());
+    
+}
+
+//---------------------------------------------------------------------------------------
 line_t *create_line(CHTYPE_PTR _content, size_t _len)
 {
     line_t *new_line = (line_t *)malloc(sizeof(line_t));

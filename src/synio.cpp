@@ -140,9 +140,10 @@ void Synio::adjustBufferWindowFrameY(int _dy)
 //---------------------------------------------------------------------------------------
 void Synio::onExitEvent(Event *_e)
 {
-    LOG_INFO("app exit event received.");
+    LOG_INFO("Synio exit event received.");
     m_shouldClose = true;
 }
+
 //---------------------------------------------------------------------------------------
 void Synio::onAdjustBufferWindowEvent(Event *_e)
 {

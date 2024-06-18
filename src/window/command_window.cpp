@@ -265,24 +265,57 @@ void CommandWindow::redraw()
         api->disableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_INACTIVE));
     }
 
-    // if active listbox
     if (m_listboxWndPtr != NULL)
     {
-        m_listboxWndPtr->clear();
+        // m_listboxWndPtr->clear();
         m_listboxWndPtr->redraw();
-        m_listboxWndPtr->refresh();
+        // m_listboxWndPtr->refresh();
     }
     else if (m_fileExplorerWndPtr != NULL)
     {
-        m_fileExplorerWndPtr->clear();
+        // m_fileExplorerWndPtr->clear();
         m_fileExplorerWndPtr->redraw();
-        m_fileExplorerWndPtr->refresh();
+        // m_fileExplorerWndPtr->refresh();
     }
     else
         updateCursor();
 
 
 }
+
+//---------------------------------------------------------------------------------------
+void CommandWindow::clear()
+{
+    if (m_listboxWndPtr != NULL)
+        m_listboxWndPtr->clear();
+
+    if (m_fileExplorerWndPtr != NULL)
+        m_fileExplorerWndPtr->clear();
+
+    if (m_clearNextFrame)
+    {
+        api->clearWindow(m_apiWindowPtr);
+        m_clearNextFrame = false;
+    }
+    
+};
+
+//---------------------------------------------------------------------------------------
+void CommandWindow::refresh()
+{
+    if (m_listboxWndPtr != NULL)
+        m_listboxWndPtr->refresh();
+
+    if (m_fileExplorerWndPtr != NULL)
+        m_fileExplorerWndPtr->refresh();
+
+    if (m_refreshNextFrame)
+    {
+        api->refreshWindow(m_apiWindowPtr);
+        m_refreshNextFrame = false;
+    }
+
+};
 
 //---------------------------------------------------------------------------------------
 void CommandWindow::processCommandKeycode(int _c)

@@ -102,6 +102,7 @@ struct line_t
 // helper function for line creation (incl malloc)
 line_t *create_line(char *_content, size_t _len);
 line_t *create_line(const char *_content);
+line_t *create_line(const std::string &_content);
 line_t *create_line(CHTYPE_PTR _content, size_t _len);
 line_t *copy_line(line_t *_line);
 
@@ -344,6 +345,7 @@ struct FileEntry
     uint32_t sz = 0;
 
     bool is_dir() { return S_ISDIR(mode); }
+    bool empty() { return sz == 0; }
 
     FileEntry() {}
     FileEntry(const std::string &_name, uint32_t _mode, uint32_t _sz) : 

@@ -21,6 +21,8 @@ public:
     // LineBufferWindow overrides
     virtual void handleInput(int _c, CtrlKeyAction _ctrl_action) override;
     virtual void redraw() override;
+    virtual void clear() override;
+    virtual void refresh() override;
 
     // set prefix (filename input, command etc, before user input)
     virtual void setQueryPrefix(const char *_prefix="");

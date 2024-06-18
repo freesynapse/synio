@@ -13,28 +13,48 @@ public:
                        const std::string &_id, 
                        bool _border=false,
                        const std::string &_input_prompt="Filename: ");
-    ~FileExplorerWindow() = default;
+    ~FileExplorerWindow();
 
     // overrides
     virtual void handleInput(int _c, CtrlKeyAction _ctrl_action) override;
     virtual void redraw() override;
-
+    virtual void moveCursorToLineBegin() override { moveCursorColumn(-m_currentCol); }
+    virtual void moveCursorToLineEnd() override { moveCursorColumn(m_ncols - 1 - m_currentCol); }
+    // virtual void insertCharAtCursor(char _c) override;
+    
     // FileExplorerWindow-only functions
+    void pushCharToInput(char _c);
+    void popCharFromInput();
+    void moveCursorColumn(int _dcol=0);
     void getCurrentDirContents();
+
+    // accessors
     const std::string &getFilename() { return m_selectedFilename; }
 
+
 private:
-    __always_inline void toggle_mode_()
+    //
+    __always_inline void clear_input_()
     {
-        m_isBrowsing = !m_isBrowsing;
-        ivec2_t pcpos = m_prevModeCPos;
-        m_prevModeCPos = m_cursor.cpos();
-
-        if (m_isBrowsing)   m_cursor.set_offset({ 0 });
-        else                m_cursor.set_offset(m_inputFieldOffset);
-
-        m_cursor.set_cpos(pcpos);
+        if (m_inputLine->len == 0)
+            return;
+        
+        delete m_inputLine;
+        m_inputLine = create_line("");
     }
+    //
+    __always_inline int get_listing_offset_from_x_(int _x)
+    {
+        updateBufferCursorPos();
+
+        int col = get_column_from_x_(_x);
+        int offset = col * m_nrows + m_bufferCursorPos.y;
+
+        return offset;
+    }
+
+    //
+    __always_inline int get_column_from_x_(int _x) { return _x / m_colWidth; }
 
 private:
     // files etc
@@ -42,18 +62,22 @@ private:
     std::string m_selectedFilename = "";
     std::vector<FileEntry> m_currentDirListing;
     
-    // rendering
-    line_t *m_currentListingPtr; // current line in dir listing
-    frame_t m_renderFrame;
-    size_t m_renderYPos = 0;     // scroll position
+    // state
+    bool m_isBrowsing = true;
 
-    // different modes; input and browsing files
-    bool m_isBrowsing;
-    ivec2_t m_prevModeCPos;
-    
-    // input field 
+    // rendering
+    frame_t m_renderFrame;          // accounting for input line at the bottom
+    int m_nrows;
+    int m_ncols;
+    int m_colWidth;
+    int m_currentCol = 0;
+
+    // state-dependent variables 
     std::string m_inputPrompt;
-    ivec2_t m_inputFieldOffset;             // cursor offset when in this field
+    ivec2_t m_inputFieldOffset;     // cursor offset in input field
+    line_t *m_inputLine;            // m_currentLine is pointing into the line buffer,
+                                    // this is for keyboard input (e.g. filename)
+    ivec2_t m_browsingCursorOffset;
     
 
 };

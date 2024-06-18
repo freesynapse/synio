@@ -52,6 +52,7 @@ public:
     void set_offset_x(int _x) { m_offset_pos.x = _x; }
     void set_offset_y(int _y) { m_offset_pos.y = _y; }
 
+
 private:
     void clamp_to_frame_();
     int calc_rposx_from_cposx_();

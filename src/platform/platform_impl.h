@@ -50,6 +50,7 @@ public:
     virtual int printString(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _str, size_t _len) = 0;
     virtual int wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...) = 0;
     virtual int wprintml(API_WINDOW_PTR _w, int _cx0, int _cy0, const std::vector<std::string> &_ml_buffer) = 0;
+    virtual int printCursorBlock(API_WINDOW_PTR _w, int _cx, int _cy) = 0;
     virtual int verticalDivider(API_WINDOW_PTR _w, int _cx, int _cy, int _n) = 0;
     virtual int horizontalDivider(API_WINDOW_PTR _w, int _cx, int _cy, int _n) = 0;
 

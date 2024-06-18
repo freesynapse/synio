@@ -1,5 +1,6 @@
 
 #include <locale.h>
+#include <unistd.h>
 
 #include "ncurses_impl.h"
 #include "ncurses_colors.h"
@@ -135,6 +136,26 @@ API_WINDOW_PTR Ncurses_Impl::newVerticalBarWindow(int _x, int _y0, int _y1)
 }
 
 //---------------------------------------------------------------------------------------
+void Ncurses_Impl::clearWindow(API_WINDOW_PTR _w)
+{
+    // wclear((WINDOW *)_w);
+    werase((WINDOW *)_w);   // don't really know why, but this prevents screen flicker
+                            // in FileBufferWindow.
+}
+
+//---------------------------------------------------------------------------------------
+void Ncurses_Impl::refreshWindow(API_WINDOW_PTR _w)
+{
+    wnoutrefresh((WINDOW *)_w); 
+}
+
+//---------------------------------------------------------------------------------------
+void Ncurses_Impl::redrawScreen()
+{
+    usleep(5000);
+    doupdate(); 
+}
+//---------------------------------------------------------------------------------------
 void Ncurses_Impl::refreshBorder(API_WINDOW_PTR _w)
 {
     wborder((WINDOW *)_w, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
@@ -261,6 +282,16 @@ int Ncurses_Impl::wprintml(API_WINDOW_PTR _w, int _cx0, int _cy0,
     }
 
     return len;
+}
+
+//---------------------------------------------------------------------------------------
+int Ncurses_Impl::printCursorBlock(API_WINDOW_PTR _w, int _cx, int _cy)
+{
+    WINDOW *w = (WINDOW *)_w;
+    wmove(w, _cy, _cx);
+    // https://forums.raspberrypi.com/viewtopic.php?t=351465
+    return waddch(w, ' ' | A_REVERSE);
+
 }
 
 //---------------------------------------------------------------------------------------

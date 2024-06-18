@@ -235,6 +235,7 @@ void FileBufferWindow::scroll_(int _axis, int _dir, int _steps, bool _update_cur
     m_scrollPos += scroll;
     
     clear_next_frame_();
+    refresh_next_frame_();
 
 }
 
@@ -249,6 +250,12 @@ void FileBufferWindow::moveCursor(int _dx, int _dy)
     int cx = m_cursor.cx();
     int cy = m_cursor.cy();
     
+    if (!_dx && !_dy)
+    {
+        refresh_next_frame_();
+        return;
+    }
+
     // beggining of line, move to last char of prev
     if (cx == 0 && dx < 0 && m_currentLine->prev != NULL)
     {
@@ -1555,8 +1562,9 @@ void FileBufferWindow::refresh()
 
     if (m_refreshNextFrame)
     {
-        if (m_apiBorderWindowPtr)
-            api->refreshBorder(m_apiBorderWindowPtr);
+        // This causes screen flickering!!!
+        //if (m_apiBorderWindowPtr)
+        //    api->refreshBorder(m_apiBorderWindowPtr);
 
         api->refreshWindow(m_apiWindowPtr);
 
