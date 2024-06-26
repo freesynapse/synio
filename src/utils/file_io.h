@@ -33,6 +33,7 @@ public:
 
     // helpers
     static bool does_file_exists(const std::string &_filename);
+    static bool is_file_dir(const std::string &_filename);
     static bool is_file_temp(const std::string &_filename) { return s_tempFileList.find(_filename) != s_tempFileList.end(); }
     //
     static std::string s_lastReadFile;

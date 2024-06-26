@@ -37,19 +37,21 @@ void CommandWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
         return;
     }
 
-    // if there is an open listbox, redirect input
+    // if there is an open child window, redirect input
     if (m_listboxWndPtr != NULL)
     {
         m_listboxWndPtr->handleInput(_c, _ctrl_action);
-        std::string selected_entry = m_listboxWndPtr->getSelectedEntry();
+        m_selectedFile = m_listboxWndPtr->getSelectedEntry();
         //
-        if (selected_entry != "")
+        if (m_selectedFile != "")
         {
-            LOG_INFO("selected string : %s", selected_entry.c_str());
+            LOG_INFO("selected string : %s", m_selectedFile.c_str());
             delete m_listboxWndPtr;
             m_listboxWndPtr = NULL;
             // refresh parent windows
             m_app->refreshBufferWindow();
+            // forward result
+            dispatchCommand();
             
         }
         return;
@@ -57,14 +59,12 @@ void CommandWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
     else if (m_fileExplorerWndPtr != NULL)
     {
         m_fileExplorerWndPtr->handleInput(_c, _ctrl_action);
-        std::string selected_filename = m_fileExplorerWndPtr->getFilename();
+        m_selectedFile = m_fileExplorerWndPtr->getFilename();
         //
-        if (selected_filename != "")
+        if (m_selectedFile != "")
         {
-            LOG_RAW("selected file = %s", selected_filename.c_str());
-            delete m_fileExplorerWndPtr;
-            m_fileExplorerWndPtr = NULL;
-            m_app->refreshBufferWindow();
+            LOG_RAW("selected file = %s", m_selectedFile.c_str());
+            closeFileExplorerWindow();
         }
         return;
     }
@@ -122,7 +122,7 @@ void CommandWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                         processInput();
                     else
                         dispatchCommand();
-                    moveCursor(0, 0);
+                    // moveCursor(0, 0);
                     break;
 
                 default:
@@ -207,7 +207,7 @@ void CommandWindow::tabComplete()
             m_currentLine = create_line(longest_prefix.c_str());
             moveCursor(longest_prefix.length() - sstr.length(), 0);
         }
-        // longest prefix is the same as input, so let's show possible autocompletions
+        // longest prefix is the same as input; show possible autocompletions
         else
         {
             // accumulate autocompletions for this 
@@ -216,7 +216,7 @@ void CommandWindow::tabComplete()
 
             for (auto &ac : autocomps)
             {
-               if (line.size() + ac.length() + 2 > m_frame.ncols)
+               if (line.length() + ac.length() + 2 > m_frame.ncols)
                {
                    m_utilMLBuffer.push_back(line);
                    line = ac + "  ";
@@ -246,6 +246,48 @@ void CommandWindow::tabComplete()
 }
 
 //---------------------------------------------------------------------------------------
+void CommandWindow::openFileExplorerWindow(const std::string &_input_prompt)
+{
+    ivec2_t ssize;
+    api->getRenderSize(&ssize);
+
+    float p = Config::FILE_DIALOG_SIZE_PERCENT; 
+    float p2 = (1.0f - p) * 0.5f;
+    int w0 = p2 * ssize.x;
+    int h0 = p2 * ssize.y;
+
+    static frame_t explorer_wnd_frame = frame_t(ivec2_t(w0, h0), 
+                                                ivec2_t(ssize.x - w0, ssize.y - h0));
+    delete m_fileExplorerWndPtr;
+    m_fileExplorerWndPtr = new FileExplorerWindow(explorer_wnd_frame, 
+                                                  "file_explorer_window",
+                                                  true,
+                                                  _input_prompt);
+
+}
+
+//---------------------------------------------------------------------------------------
+void CommandWindow::closeFileExplorerWindow()
+{
+    delete m_fileExplorerWndPtr;
+    m_fileExplorerWndPtr = NULL;
+    m_app->refreshBufferWindow();
+
+}
+
+//---------------------------------------------------------------------------------------
+void CommandWindow::openYesNoDialog(const std::string &_text)
+{
+
+}
+
+//---------------------------------------------------------------------------------------
+void CommandWindow::closeYesNoDialog()
+{
+
+}
+
+//---------------------------------------------------------------------------------------
 void CommandWindow::redraw()
 {
     if (!m_isWindowVisible)
@@ -266,17 +308,9 @@ void CommandWindow::redraw()
     }
 
     if (m_listboxWndPtr != NULL)
-    {
-        // m_listboxWndPtr->clear();
         m_listboxWndPtr->redraw();
-        // m_listboxWndPtr->refresh();
-    }
     else if (m_fileExplorerWndPtr != NULL)
-    {
-        // m_fileExplorerWndPtr->clear();
         m_fileExplorerWndPtr->redraw();
-        // m_fileExplorerWndPtr->refresh();
-    }
     else
         updateCursor();
 
@@ -332,8 +366,7 @@ void CommandWindow::processCommandKeycode(int _c)
         FileIO::is_file_temp(m_app->currentBufferWindow()->fileName()))
         m_currentCommand = Command::cmd(CommandID::SAVE_TEMP_BUFFER);
 
-    if (m_currentCommand.id != CommandID::NONE) // redundant but still here!
-        dispatchCommand();
+    dispatchCommand();
 
 }
 
@@ -355,7 +388,8 @@ void CommandWindow::processInput()
             FileIO::is_file_temp(m_app->currentBufferWindow()->fileName()))
             m_currentCommand = Command::cmd(CommandID::SAVE_TEMP_BUFFER);
 
-        clear_input_();
+        // clear_input_();  <-- this prevents the cursor to move to a new window..?
+        //                      MUST BE THE moveCursor() call..?
         dispatchCommand();
         return;
     }
@@ -377,10 +411,11 @@ void CommandWindow::dispatchCommand()
             //
             #ifdef DEBUG
             case CommandID::DEBUG_COMMAND:
-                debugCommand();
+                openFileExplorerWindow("DEBUG: ");
                 // command_complete_();
                 break;
             #endif
+            
             //---------------------------------------------------------------------------
             case CommandID::SAVE_BUFFER:
                 if (m_app->currentBufferWindow() == NULL) break;
@@ -394,13 +429,27 @@ void CommandWindow::dispatchCommand()
                 break;
                 
             //---------------------------------------------------------------------------
+            // Opens a FileExplorerWindow
             case CommandID::SAVE_TEMP_BUFFER:
             case CommandID::SAVE_BUFFER_AS:
             case CommandID::OPEN_BUFFER:
+                // setQueryPrefix(m_currentCommand.command_prompt.c_str());
+                openFileExplorerWindow(m_currentCommand.command_prompt);
+                await_next_input_();
+                break;
+
+            //---------------------------------------------------------------------------
+            // Simple query for filename
             case CommandID::NEW_BUFFER:
+                setQueryPrefix(m_currentCommand.command_prompt.c_str());
+                await_next_input_();
+                break;
+
+            //---------------------------------------------------------------------------
+            // Opens Yes/No dialog
             case CommandID::EXIT_SAVE_YN:
             case CommandID::EXIT_NO_SAVE_YN:
-                setQueryPrefix(m_currentCommand.command_prompt.c_str());
+                // setQueryPrefix(m_currentCommand.command_prompt.c_str());
                 await_next_input_();
                 break;
 
@@ -416,7 +465,7 @@ void CommandWindow::dispatchCommand()
 
     }
 
-    else // command dispatched, but needs more input
+    else // command dispatched, this is now awaiting signal
     {
         switch (m_currentCommand.id)
         {
@@ -456,6 +505,10 @@ void CommandWindow::dispatchCommand()
             //---------------------------------------------------------------------------
             case CommandID::OPEN_BUFFER:
                 // tab-complete for all filenames in the current directory
+                
+                //här är vi (exempelvis), här skulle man behöva testa mot m_selectedFile =! "" eller så istället
+                //för att input finns. Sen processa filen.
+                
                 if (m_currentLine->len > 0)
                 {
                     std::string fn = std::string(m_currentLine->__debug_str);
@@ -519,31 +572,3 @@ void CommandWindow::dispatchCommand()
         EventHandler::push_event(new DeleteCommandWindowEvent);
 
 }
-
-//---------------------------------------------------------------------------------------
-#ifdef DEBUG
-void CommandWindow::debugCommand()
-{
-    //static frame_t listbox_wnd_frame = frame_t(ivec2_t(10, 10), ivec2_t(40, 40));
-    //
-    //delete m_listboxWndPtr;
-    //m_listboxWndPtr = new ListboxWindow(listbox_wnd_frame, "test");
-
-    ivec2_t ssize;
-    api->getRenderSize(&ssize);
-
-    float p = Config::FILE_DIALOG_SIZE_PERCENT; 
-    float p2 = (1.0f - p) * 0.5f;
-    int w0 = p2 * ssize.x;
-    int h0 = p2 * ssize.y;
-
-    static frame_t explorer_wnd_frame = frame_t(ivec2_t(w0, h0), 
-                                                ivec2_t(ssize.x - w0, ssize.y - h0));
-    delete m_fileExplorerWndPtr;
-    m_fileExplorerWndPtr = new FileExplorerWindow(explorer_wnd_frame, 
-                                                  "test-file-explorer-window",
-                                                  true,
-                                                  "Save As (Filename): ");
-}
-#endif
-

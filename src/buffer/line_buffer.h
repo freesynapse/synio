@@ -37,10 +37,12 @@ public:
     void clear();
 
     // some overloads
-    void push_front(const char *_content)           { push_front(create_line(_content)); }
-    void push_back(const char *_content)            { push_back(create_line(_content));  }
-    void push_front(char *_content, size_t _len)    { push_front(create_line(_content, _len)); }
-    void push_back(char *_content, size_t _len)     { push_back(create_line(_content, _len));  }
+    void push_front(const char *_content)               { push_front(create_line(_content)); }
+    void push_back(const char *_content)                { push_back(create_line(_content));  }
+    void push_front(char *_content, size_t _len)        { push_front(create_line(_content, _len)); }
+    void push_back(char *_content, size_t _len)         { push_back(create_line(_content, _len));  }
+    void push_front(CHTYPE_PTR _content, size_t _len)   { push_front(create_line(_content, _len)); }
+    void push_back(CHTYPE_PTR _content, size_t _len)    { push_back(create_line(_content, _len));  }
     void insertAtPtr(line_t *_at_line, int _insert_flag, const char *_content) { insertAtPtr(_at_line, _insert_flag, create_line((char *)_content, strlen(_content))); }
     void insertAtPtr(line_t *_at_line, int _insert_flag, char *_content, size_t _len) { insertAtPtr(_at_line, _insert_flag, create_line(_content, _len)); }
 

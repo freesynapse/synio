@@ -28,16 +28,18 @@ public:
     virtual void setQueryPrefix(const char *_prefix="");
 
     // show available options
-    // TODO : implement tree as in tsodings video for autocomplete
     virtual void tabComplete();
+
+    // child window handling
+    void openFileExplorerWindow(const std::string &_input_prompt);
+    void closeFileExplorerWindow();
+    void openYesNoDialog(const std::string &_text);
+    void closeYesNoDialog();
 
     // dispatch events based on entered command
     virtual void processCommandKeycode(int _c);
     virtual void processInput();
     virtual void dispatchCommand();
-    #ifdef DEBUG
-    virtual void debugCommand();
-    #endif
 
 
 protected:
@@ -66,12 +68,14 @@ protected:
         return (strcmp(m_currentLine->__debug_str, "n") == 0 ||
                 strcmp(m_currentLine->__debug_str, "N") == 0);
     }
+   
 
 protected:
     //
     Synio *m_app = NULL;
     ListboxWindow *m_listboxWndPtr = NULL;
     FileExplorerWindow *m_fileExplorerWndPtr = NULL;
+    std::string m_selectedFile = "";    // result signal of FileExploreWindow
     
     //
     std::vector<std::string> m_autocompletions;

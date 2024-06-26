@@ -8,11 +8,12 @@
 void BufferFormatter::render(API_WINDOW_PTR _api_window, 
                              line_t *_first,
                              line_t *_current_line,
-                             int _x_offset)
+                             int _x_offset,
+                             int _y_offset)
 {
     // coordinates is relative to window, so we need to start at (0, 0)
     int x = _x_offset;
-    int y = 0;
+    int y = _y_offset;
 
     line_t *line = _first;
 

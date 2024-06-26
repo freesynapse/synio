@@ -95,6 +95,12 @@ void PrefixTree::find_longest_prefix(prefix_node_t *_node,
         }
     }
 
+    if (_node->is_leaf)
+    {
+        *_found_prefix = _search_str;
+        return;
+    }
+
     if (n == 1)
     {
         find_longest_prefix(_node->children[single_path_idx],

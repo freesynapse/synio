@@ -44,7 +44,10 @@ void ncurses_init_colors(API_WINDOW_PTR _w)
     init_color(SYN_COLOR_BLACK,                   0,    0,    0);
     init_color(SYN_COLOR_GREY,                  500,  500,  500);
     init_color(SYN_COLOR_DARK_GREY,             300,  300,  300);
-
+    init_color(SYN_COLOR_NICE_BLUE,             400,  470,  920);
+    init_color(SYN_COLOR_RED,                  1000,    0,    0);
+    init_color(SYN_COLOR_WHITE,                1000, 1000, 1000);
+    
     // regular color pairs
     init_pair(SYN_COLOR_TEXT,               SYN_COLOR_TEXT_FGD,             SYN_COLOR_BKGD          ); // 'standard' color scheme
     init_pair(SYN_COLOR_KEYWORD,            SYN_COLOR_KEYWORD_FGD,          SYN_COLOR_BKGD          );
@@ -57,11 +60,13 @@ void ncurses_init_colors(API_WINDOW_PTR _w)
     init_pair(SYN_COLOR_COMMENT,            SYN_COLOR_COMMENT_FGD,          SYN_COLOR_BKGD          );
     init_pair(SYN_COLOR_MCOMMENT,           SYN_COLOR_COMMENT_FGD,          SYN_COLOR_BKGD          );
     init_pair(SYN_COLOR_PREPROC,            SYN_COLOR_PREPROC_FGD,          SYN_COLOR_BKGD          );
+    
     init_pair(SYN_COLOR_STATUS,             SYN_COLOR_BLACK,                SYN_COLOR_STATUS_BKGD   );
     init_pair(SYN_COLOR_INACTIVE,           SYN_COLOR_GREY,                 SYN_COLOR_BKGD          );
     init_pair(SYN_COLOR_LINENO_INACTIVE,    SYN_COLOR_DARK_GREY,            SYN_COLOR_BKGD          );
+    init_pair(SYN_COLOR_DIR,                SYN_COLOR_NICE_BLUE,            SYN_COLOR_BKGD          );
+    init_pair(SYN_COLOR_ERROR,              SYN_COLOR_WHITE,                SYN_COLOR_RED           );
 
-    
     // selection color pairs
     init_pair(SYN_COLOR_SEL_TEXT,           SYN_COLOR_TEXT_FGD,           SYN_COLOR_SEL_BKGD);
     init_pair(SYN_COLOR_SEL_KEYWORD,        SYN_COLOR_KEYWORD_FGD,        SYN_COLOR_SEL_BKGD);
@@ -161,8 +166,38 @@ void ncurses_color_substr(line_t *_line, size_t _start, size_t _end, short _pair
 }
 
 //---------------------------------------------------------------------------------------
+void ncurses_color_substr_raw(line_t *_line, size_t _start, size_t _end, short _pair_index)
+{
+    for (size_t i = _start; i < _end; i++)
+        _line->content[i] = ((_line->content[i] & ~CHTYPE_COLOR_MASK) | COLOR_PAIR(_pair_index));
+
+}
+
+//---------------------------------------------------------------------------------------
+void ncurses_color_substr_raw(CHTYPE_PTR _content, size_t _start, size_t _end, short _pair_index)
+{
+    for (size_t i = _start; i < _end; i++)
+        _content[i] = ((_content[i] & ~CHTYPE_COLOR_MASK) | COLOR_PAIR(_pair_index));
+
+}
+
+//---------------------------------------------------------------------------------------
 int16_t ncurses_get_CHTYPE_color(CHTYPE _c)
 {
     return (_c & CHTYPE_COLOR_MASK) >> 8;
     
 }
+
+//---------------------------------------------------------------------------------------
+void ncurses_enable_attribute(CHTYPE_PTR _content, size_t _start, size_t _end, int _attr)
+{
+    for (size_t i = _start; i < _end; i++)
+        _content[i] |= _attr;
+}
+
+//---------------------------------------------------------------------------------------
+void ncurses_disable_attribute(CHTYPE_PTR _content, size_t _start, size_t _end, int _attr)
+{
+    // TODO : do me!
+}
+

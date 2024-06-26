@@ -145,6 +145,15 @@ bool FileIO::does_file_exists(const std::string &_filename)
 }
 
 //---------------------------------------------------------------------------------------
+bool FileIO::is_file_dir(const std::string &_filename)
+{
+    struct stat st;
+    stat(_filename.c_str(), &st);
+    bool is_dir = S_ISDIR(st.st_mode);
+    return is_dir;
+}
+
+//---------------------------------------------------------------------------------------
 const char *FileType2Str(FileType _ft)
 {
     switch (_ft)

@@ -81,6 +81,22 @@ line_t *copy_line(line_t *_line)
     return line_copy;
 }
 
+//---------------------------------------------------------------------------------------
+void memcpyCharToCHTYPE(CHTYPE_PTR _dest, char *_src, size_t _len)
+{
+    CHTYPE_PTR p = _dest;
+    for (size_t i = 0; i < _len; i++)
+        *p++ = (CHTYPE)_src[i];
+
+}
+
+//---------------------------------------------------------------------------------------
+void memsetCHTYPE(CHTYPE_PTR _dest, CHTYPE _c, size_t _len)
+{
+    CHTYPE_PTR p = _dest;
+    for (size_t i = 0; i < _len; i++)
+        *p++ = _c;
+}
 
 //---------------------------------------------------------------------------------------
 copy_line_t::copy_line_t(line_t *_line, bool _newline, bool _use_sel_offsets)

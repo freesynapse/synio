@@ -73,7 +73,7 @@ struct line_t
     size_t sel_start        = 0;
     size_t sel_end          = 0;
 
-    ~line_t() { free(content); }
+    ~line_t() { free(content); content = NULL; }
 
     void insert_char(char _c, size_t _pos);
     void insert_char(CHTYPE _c, size_t _pos);
@@ -105,6 +105,8 @@ line_t *create_line(const char *_content);
 line_t *create_line(const std::string &_content);
 line_t *create_line(CHTYPE_PTR _content, size_t _len);
 line_t *copy_line(line_t *_line);
+void memcpyCharToCHTYPE(CHTYPE_PTR _dest, char *_src, size_t _len);
+void memsetCHTYPE(CHTYPE_PTR _dest, CHTYPE _c, size_t _len);
 
 // struct for copying lines
 struct copy_line_t

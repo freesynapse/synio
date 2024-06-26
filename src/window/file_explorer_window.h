@@ -1,8 +1,11 @@
 #ifndef __FILE_EXPLORER_WINDOW
 #define __FILE_EXPLORER_WINDOW
 
+#include <filesystem>
+
 #include "file_buffer_window.h"
 #include "../types.h"
+#include "../utils/prefix_tree.h"
 
 
 //
@@ -26,7 +29,11 @@ public:
     void pushCharToInput(char _c);
     void popCharFromInput();
     void moveCursorColumn(int _dcol=0);
-    void getCurrentDirContents();
+    void moveToColRow(int _col, int _row);
+    void autocompleteInput();
+    void showCompletions();
+
+    void getCurrentDirContents(bool _reset_error=true);
 
     // accessors
     const std::string &getFilename() { return m_selectedFilename; }
@@ -56,11 +63,18 @@ private:
     //
     __always_inline int get_column_from_x_(int _x) { return _x / m_colWidth; }
 
+
 private:
     // files etc
-    std::string m_currentDir = ".";
+    std::filesystem::path m_currentPath;
     std::string m_selectedFilename = "";
     std::vector<FileEntry> m_currentDirListing;
+    std::string m_errorMsg = "";
+    
+    // autocomplete for file names
+    prefix_node_t *m_dirPTree = NULL;
+    std::string m_autocompleteLine = "";
+    std::vector<std::string> m_autocompletions;
     
     // state
     bool m_isBrowsing = true;

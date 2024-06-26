@@ -339,7 +339,7 @@ void LineBuffer::clear()
     if (p->next == NULL)
     {
         free(p);
-        return;
+
     }
 
     else

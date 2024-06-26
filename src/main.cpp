@@ -7,7 +7,7 @@
 int main(int argc, char *argv[])
 {
     std::string filename = "";
-    // filename = "test.cpp";
+    filename = "test.cpp";
     // filename = "short.cpp";
     // filename = "scroll.txt";
     // filename = "tabbed_file.txt";

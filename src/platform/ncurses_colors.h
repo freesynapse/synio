@@ -24,8 +24,11 @@
 #define SYN_COLOR_BLACK                 11
 #define SYN_COLOR_GREY                  12
 #define SYN_COLOR_DARK_GREY             13
+#define SYN_COLOR_NICE_BLUE             14
+#define SYN_COLOR_RED                   15
+#define SYN_COLOR_WHITE                 16
 
-#define SYN_COLOR_COUNT                 14
+#define SYN_COLOR_COUNT                 17
 
 // color pair ids
 #define SYN_COLOR_TEXT                   0
@@ -42,8 +45,11 @@
 #define SYN_COLOR_STATUS                11
 #define SYN_COLOR_INACTIVE              12
 #define SYN_COLOR_LINENO_INACTIVE       13
+#define SYN_COLOR_DIR                   14
 
-#define COLOR_PAIR_COUNT                14
+#define SYN_COLOR_ERROR                 15
+
+#define COLOR_PAIR_COUNT                16
 
 // selection color pair ids
 #define SELECTION_OFFSET                (255 - COLOR_PAIR_COUNT)
@@ -69,10 +75,16 @@ extern void ncurses_find_selected_offsets(line_t *_line, size_t *start, size_t *
 extern void ncurses_deselect_substr(line_t *_line, size_t _start, size_t _end);
 extern void ncurses_toggle_selection_substr(line_t *_line, size_t _start, size_t _end);
 
-// keeps background for selection 
+// keeps background for selection
 extern void ncurses_color_substr(line_t *_line, size_t _start, size_t _end, short _pair_index);
+// ignores selection
+extern void ncurses_color_substr_raw(line_t *_line, size_t _start, size_t _end, short _pair_index);
+extern void ncurses_color_substr_raw(CHTYPE_PTR _content, size_t _start, size_t _end, short _pair_index);
 //
 extern int16_t ncurses_get_CHTYPE_color(CHTYPE _c);
-
+// strictly not coloring, maybe this file should be renamed to attributes...
+// TODO : add for lines?
+extern void ncurses_enable_attribute(CHTYPE_PTR _content, size_t _start, size_t _end, int _attr);
+extern void ncurses_disable_attribute(CHTYPE_PTR _content, size_t _start, size_t _end, int _attr);
 
 #endif // __NCURSES_COLORS_H

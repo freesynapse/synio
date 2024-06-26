@@ -9,15 +9,22 @@ Implementera C-x-typ kommandon som i emacs. Skriptspråk?
 
 --  Flera bufferfönster som man kan switcha mellan, stänga med C-x C-w
 
+--  NY IDÉ: FileExplorerWindow skulle göras om till en basklass som CommandWindow skulle
+    ärva, istället för att ha några små rader längst ned skulle man ha ett större fönster
+    med alla options? Fundera på det, du!
+
 --  FileBufferWindow: om man har fått autocomplete på ex '[' (= '[]') och står på closing
     bracket och trycker ']' så ska det inte infogas någon ny, utan bara moveCursor(1, 0).
 
 --> Prefix-tree.
     Ändra i command_window att m_utilMLBuffer alltid visas men uppdateras för varje 
     input vilka ändelser som är aktuella. Nu måste man trycka på <tab> för att få 
-    frame autocompletions.
+    frame autocompletions (funktionalitet finns i FileExplorerWindow::autocompleteInput
+    och ::showCompletions).
 
---> I FileBufferWindow måste och copybuffern bli global, så att man kan kopiera mellan
+--  I StatusWindow uppdateras inte bpos och % förrän nästa frame.
+
+--  I FileBufferWindow måste och copybuffern bli global, så att man kan kopiera mellan
     fönster. Static klass CopyBuffer?
     CopyBuffer ska läsa och skriva till X11s generella buffer.
 
