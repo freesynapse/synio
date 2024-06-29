@@ -45,11 +45,11 @@ void CommandWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
         //
         if (m_selectedFile != "")
         {
-            LOG_INFO("selected string : %s", m_selectedFile.c_str());
             delete m_listboxWndPtr;
             m_listboxWndPtr = NULL;
-            // refresh parent windows
+            // refresh relevant windows
             m_app->refreshBufferWindow();
+            refresh_next_frame_();
             // forward result
             dispatchCommand();
             
@@ -59,12 +59,14 @@ void CommandWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
     else if (m_fileExplorerWndPtr != NULL)
     {
         m_fileExplorerWndPtr->handleInput(_c, _ctrl_action);
-        m_selectedFile = m_fileExplorerWndPtr->getFilename();
+        m_selectedFile = std::filesystem::path(m_fileExplorerWndPtr->getFilename());
         //
         if (m_selectedFile != "")
         {
-            LOG_RAW("selected file = %s", m_selectedFile.c_str());
             closeFileExplorerWindow();
+            // move focus to this window after file explorer closes
+            refresh_next_frame_();
+            dispatchCommand();
         }
         return;
     }
@@ -340,10 +342,10 @@ void CommandWindow::refresh()
     if (m_listboxWndPtr != NULL)
         m_listboxWndPtr->refresh();
 
-    if (m_fileExplorerWndPtr != NULL)
+    else if (m_fileExplorerWndPtr != NULL)
         m_fileExplorerWndPtr->refresh();
 
-    if (m_refreshNextFrame)
+    else if (m_refreshNextFrame)
     {
         api->refreshWindow(m_apiWindowPtr);
         m_refreshNextFrame = false;
@@ -388,8 +390,10 @@ void CommandWindow::processInput()
             FileIO::is_file_temp(m_app->currentBufferWindow()->fileName()))
             m_currentCommand = Command::cmd(CommandID::SAVE_TEMP_BUFFER);
 
-        // clear_input_();  <-- this prevents the cursor to move to a new window..?
-        //                      MUST BE THE moveCursor() call..?
+        clear_input_(); // <--- this prevents the cursor to move to a new window..?
+                        //      (it was the refresh_next_frame_() called by moveCursor),
+                        //      but fixed through refresh_next_frame_() call by this on 
+                        //      return from FileExplorerWindow.
         dispatchCommand();
         return;
     }
@@ -506,20 +510,32 @@ void CommandWindow::dispatchCommand()
             case CommandID::OPEN_BUFFER:
                 // tab-complete for all filenames in the current directory
                 
-                //här är vi (exempelvis), här skulle man behöva testa mot m_selectedFile =! "" eller så istället
+                //här är vi (exempelvis), här skulle man behöva testa mot m_selectedFile != "" eller så istället
                 //för att input finns. Sen processa filen.
                 
-                if (m_currentLine->len > 0)
+                //if (m_currentLine->len > 0)
+                //{
+                //    std::string fn = std::string(m_currentLine->__debug_str);
+                //    if (FileIO::does_file_exists(fn))
+                //    {
+                //        FileBufferWindow *w = m_app->newFileBufferWindow(fn);
+                //        m_app->setCurrentBufferWindow(w);
+                //    }
+                //    // TODO : else 'file does not exist' error message
+                //    command_complete_();
+                //}
+                
+                if (FileIO::does_file_exists(m_selectedFile))
                 {
-                    std::string fn = std::string(m_currentLine->__debug_str);
-                    if (FileIO::does_file_exists(fn))
-                    {
-                        FileBufferWindow *w = m_app->newFileBufferWindow(fn);
-                        m_app->setCurrentBufferWindow(w);
-                    }
-                    // TODO : else 'file does not exist' error message
-                    command_complete_();
+                    FileBufferWindow *w = m_app->newFileBufferWindow(m_selectedFile);
+                    m_app->setCurrentBufferWindow(w);
                 }
+                else
+                {
+                    LOG_ERROR("File '%s' does not exist.", m_selectedFile.c_str());
+                }
+                command_complete_();
+
                 break;
 
             //---------------------------------------------------------------------------

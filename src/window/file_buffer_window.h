@@ -79,7 +79,7 @@ public:
 
     // load/save buffer
     int readFileToBuffer(const std::string &_filename);
-    int writeBufferToFile(const char *_filename="");
+    int writeBufferToFile(const std::string &_filename="");
 
     // Window class overrides
     virtual void resize(frame_t _new_frame) override;
@@ -94,6 +94,7 @@ public:
     const int            lineCount()        { return m_lineBuffer.lineCount(); }
     const ivec2_t       &bufferCursorPos()  { return m_bufferCursorPos; }
     const bool           bufferChanged()    { return m_isDirty; }
+    void                 setFileName(const std::string &_fn) { m_filename = _fn; }
 
 private:
     // (includes y)

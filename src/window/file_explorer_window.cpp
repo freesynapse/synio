@@ -37,7 +37,6 @@ FileExplorerWindow::FileExplorerWindow(const frame_t &_frame,
     m_renderFrame = m_frame;
     m_renderFrame.v0.y += 1;    // space for current directory
     m_renderFrame.v1.y -= 2;    // space for input field
-    m_renderFrame.__debug_print("file explorer render frame");
     m_renderFrame.update_dims();
     m_formatter = BufferFormatter(&m_renderFrame);
 
@@ -50,6 +49,7 @@ FileExplorerWindow::FileExplorerWindow(const frame_t &_frame,
     m_inputLine = create_line("");
 
     moveCursor(Config::FILE_DIALOG_LISTING_SPACING, 0);
+    updateCursor();
     
 }
 
@@ -63,6 +63,13 @@ FileExplorerWindow::~FileExplorerWindow()
 //---------------------------------------------------------------------------------------
 void FileExplorerWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
 {
+    static bool first_render = true;
+    if (first_render)
+    {
+        moveCursor(0, 0);
+        first_render = false;
+    }
+
     if (m_isBrowsing)
     {
         if (_ctrl_action != CtrlKeyAction::NONE)
@@ -140,11 +147,15 @@ void FileExplorerWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                         // so read again
                         else
                             getCurrentDirContents(false);
-                        
+
+                        clear_input_();
                         clear_next_frame_();
                         refresh_next_frame_();
                     }
                     // else m_selectedFilename is set, signaling to caller
+                    else
+                        m_selectedFilename = std::string((m_currentPath / m_selectedFilename).c_str());
+                        
                     break;
 
                 default:

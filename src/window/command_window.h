@@ -1,6 +1,8 @@
 #ifndef __COMMAND_WINDOW_H
 #define __COMMAND_WINDOW_H
 
+#include <filesystem>
+
 #include "line_buffer_window.h"
 #include "file_buffer_window.h"
 #include "listbox_window.h"
@@ -75,7 +77,8 @@ protected:
     Synio *m_app = NULL;
     ListboxWindow *m_listboxWndPtr = NULL;
     FileExplorerWindow *m_fileExplorerWndPtr = NULL;
-    std::string m_selectedFile = "";    // result signal of FileExploreWindow
+    std::filesystem::path m_selectedFile = "";  // result signal of FileExploreWindow
+    std::string m_selectedListBoxEntry = "";    // result signal of ListboxWindow
     
     //
     std::vector<std::string> m_autocompletions;

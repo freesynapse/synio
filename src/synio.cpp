@@ -83,6 +83,7 @@ void Synio::initialize()
 //---------------------------------------------------------------------------------------
 FileBufferWindow *Synio::newFileBufferWindow(const std::string &_filename)
 {
+    // clean filename from path
     m_currentFilename = _filename;
 
     FileBufferWindow *buffer_wnd = new FileBufferWindow(m_bufferWndFrame, 
