@@ -10,7 +10,7 @@
 #include "command.h"
 
 //
-Synio::Synio(const std::string &_filename)
+Synio::Synio(const std::filesystem::path &_filename)
 {
     EventHandler::initialize();
     PrefixTree::initialize();
@@ -18,10 +18,10 @@ Synio::Synio(const std::string &_filename)
 
     //
     m_currentFilename = _filename;
-    if (m_currentFilename == "" || !FileIO::does_file_exists(_filename))
+    if (m_currentFilename.filename() == "" || !FileIO::does_file_exists(_filename))
     {
         m_currentFilename = FileIO::create_temp_file();
-        LOG_INFO("no file entered, created this instead: '%s'", m_currentFilename.c_str());
+        LOG_INFO("no filename provided, created temp file '%s'", m_currentFilename.c_str());
     }
 
     // set up minimal window configuration (buffer and status windows)
@@ -81,16 +81,25 @@ void Synio::initialize()
 }
 
 //---------------------------------------------------------------------------------------
-FileBufferWindow *Synio::newFileBufferWindow(const std::string &_filename)
+FileBufferWindow *Synio::newFileBufferWindow(const std::filesystem::path &_filepath)
 {
-    // clean filename from path
-    m_currentFilename = _filename;
+    m_currentFilename = _filepath;
 
+    // check if file is already opened and return that if it is
+    auto fbe = std::find_if(m_bufferWindows.begin(), 
+                            m_bufferWindows.end(), 
+                            [_filepath](const FileBufferEntry &_entry) {
+                                return _entry.path == _filepath;
+                            });
+    if (fbe != m_bufferWindows.end())
+        return fbe->bufferWindowPtr;
+
+    // new entry
     FileBufferWindow *buffer_wnd = new FileBufferWindow(m_bufferWndFrame, 
                                                         m_currentFilename, 
                                                         false);
-    // store in map
-    m_bufferWindows[_filename] = buffer_wnd;
+    FileBufferEntry new_fbe(_filepath, buffer_wnd);
+    m_bufferWindows.push_back(new_fbe);
 
     return buffer_wnd;
 
@@ -99,7 +108,7 @@ FileBufferWindow *Synio::newFileBufferWindow(const std::string &_filename)
 //---------------------------------------------------------------------------------------
 void Synio::deleteFileBufferWindow(Event *_e)
 {
-
+    // change current window to previous in queue
 }
 
 //---------------------------------------------------------------------------------------

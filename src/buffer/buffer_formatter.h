@@ -17,7 +17,7 @@ public:
     {}
     ~BufferFormatter() {}
 
-    void render(API_WINDOW_PTR _api_window, line_t *_first, line_t *_current=NULL, 
+    void render(API_WINDOW_PTR _api_window, line_t *_first, line_t *_current=NULL,
                 int _x_offset=0, int _y_offset=0);
 
 private:

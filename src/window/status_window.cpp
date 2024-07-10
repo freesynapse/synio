@@ -14,6 +14,7 @@ void StatusWindow::update(FileBufferWindow *_buffer_window)
         m_filename = _buffer_window->fileName();
         m_filetype = _buffer_window->fileType();
         m_lineCount = _buffer_window->lineCount();
+        _buffer_window->updateBufferCursorPos();
         m_bpos = _buffer_window->bufferCursorPos();
     
         // left-aligned status

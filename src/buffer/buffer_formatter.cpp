@@ -11,13 +11,16 @@ void BufferFormatter::render(API_WINDOW_PTR _api_window,
                              int _x_offset,
                              int _y_offset)
 {
-    // coordinates is relative to window, so we need to start at (0, 0)
+    // Coordinates is relative to window, so we need to start at (0, 0)
+    // By owning a separate frame_t, different rendering coordinates from the actual 
+    // window is encouraged.
     int x = _x_offset;
     int y = _y_offset;
-
+    
     line_t *line = _first;
 
-    while (line != NULL && y < m_windowRect->nrows)
+    // while (line != NULL && y < m_windowRect->nrows)
+    while (line != NULL && y <= m_windowRect->nrows)
     {
         
         api->printBufferLine(_api_window, x, y, line->content, line->len);

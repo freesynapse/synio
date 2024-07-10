@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <filesystem>
 
 #include "utils.h"
 #include "../buffer/line_buffer.h"
@@ -22,15 +23,17 @@ std::set<std::string> FileIO::s_tempFileList = {};
 const std::string &FileIO::create_temp_file()
 {
     std::string temp_fn = "#temp" + std::to_string(s_tempFileList.size()) + "#";
-    s_tempFileList.insert(temp_fn);
+    std::filesystem::path path = std::filesystem::current_path();
+    path /= temp_fn;
+    s_tempFileList.insert(path);
 
-    int fd = creat(temp_fn.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+    int fd = creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
     if (fd == -1)
         LOG_CRITICAL_ERROR("couldn't create temporary file using regular permissions.");
 
     close(fd);
 
-    s_lastReadFile = temp_fn;
+    s_lastReadFile = path;
 
     return s_lastReadFile;
 

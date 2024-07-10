@@ -290,6 +290,43 @@ void CommandWindow::closeYesNoDialog()
 }
 
 //---------------------------------------------------------------------------------------
+void CommandWindow::openListboxWindow(std::vector<std::string> _entries)
+{
+    ivec2_t ssize;
+    api->getRenderSize(&ssize);
+
+    size_t max_len = 0;
+    for (auto &it : _entries)
+        max_len = std::max(it.length(), max_len);
+
+    // window starts at x=1 and y=(no entry rows up from buffer window border) and 
+    // extends down.
+    auto buffer_frame = m_app->bufferWndFrame();
+    int start_row = buffer_frame.v1.y - _entries.size() - 4;
+    ivec2_t v0 = ivec2_t(1, start_row); 
+    ivec2_t v1 = ivec2_t(1 + max_len, buffer_frame.v1.y - 1); 
+
+    frame_t listbox_frame = frame_t(v0, v1);
+
+    delete m_listboxWndPtr;
+    m_listboxWndPtr = new ListboxWindow(listbox_frame, 
+                                        "listbox_window",
+                                        true,
+                                        "DEBUG: ListboxWindow",
+                                        _entries);
+
+}
+
+//---------------------------------------------------------------------------------------
+void CommandWindow::closeListboxWindow()
+{
+    delete m_listboxWndPtr;
+    m_listboxWndPtr = NULL;
+    m_app->refreshBufferWindow();
+    
+}
+
+//---------------------------------------------------------------------------------------
 void CommandWindow::redraw()
 {
     if (!m_isWindowVisible)
@@ -407,7 +444,8 @@ void CommandWindow::processInput()
 
 //---------------------------------------------------------------------------------------
 void CommandWindow::dispatchCommand()
-{
+{ 
+ 
     if (!m_awaitNextInput)
     {
         switch (m_currentCommand.id)
@@ -415,8 +453,7 @@ void CommandWindow::dispatchCommand()
             //
             #ifdef DEBUG
             case CommandID::DEBUG_COMMAND:
-                openFileExplorerWindow("DEBUG: ");
-                // command_complete_();
+                debugCommand();
                 break;
             #endif
             
@@ -508,23 +545,6 @@ void CommandWindow::dispatchCommand()
 
             //---------------------------------------------------------------------------
             case CommandID::OPEN_BUFFER:
-                // tab-complete for all filenames in the current directory
-                
-                //här är vi (exempelvis), här skulle man behöva testa mot m_selectedFile != "" eller så istället
-                //för att input finns. Sen processa filen.
-                
-                //if (m_currentLine->len > 0)
-                //{
-                //    std::string fn = std::string(m_currentLine->__debug_str);
-                //    if (FileIO::does_file_exists(fn))
-                //    {
-                //        FileBufferWindow *w = m_app->newFileBufferWindow(fn);
-                //        m_app->setCurrentBufferWindow(w);
-                //    }
-                //    // TODO : else 'file does not exist' error message
-                //    command_complete_();
-                //}
-                
                 if (FileIO::does_file_exists(m_selectedFile))
                 {
                     FileBufferWindow *w = m_app->newFileBufferWindow(m_selectedFile);
@@ -586,5 +606,20 @@ void CommandWindow::dispatchCommand()
     // is command done? if so, close command window
     if (m_commandCompleted)
         EventHandler::push_event(new DeleteCommandWindowEvent);
+
+}
+
+//---------------------------------------------------------------------------------------
+void CommandWindow::debugCommand()
+{
+    std::vector<std::string> v;
+    auto &open_buffers = m_app->openBufferWindows();
+    for (auto &it : open_buffers)
+    {
+        v.push_back(it.path);
+        LOG_INFO("%s", it.path.c_str());
+    }
+    openListboxWindow(v);
+    // openFileExplorerWindow("DEBUG: ");
 
 }

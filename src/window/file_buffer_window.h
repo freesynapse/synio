@@ -1,6 +1,8 @@
 #ifndef __BUFFER_WINDOW_H
 #define __BUFFER_WINDOW_H
 
+#include <filesystem>
+
 #include "buffer_window_base.h"
 #include "line_numbers_window.h"
 #include "../cursor.h"
@@ -10,6 +12,22 @@
 // TODO : move undo types to types.h
 #include "../buffer/undo_buffer.h"
 
+// FileBufferWindow entry in synio.h, used to track multiple open buffers
+struct FileBufferEntry
+{
+    std::string file = "";
+    std::filesystem::path path = "";
+    FileBufferWindow *bufferWindowPtr = NULL;
+
+    FileBufferEntry() {}
+    FileBufferEntry(const std::filesystem::path &_filepath, FileBufferWindow *_buffer_wnd_ptr) :
+        path(_filepath), bufferWindowPtr(_buffer_wnd_ptr)
+    {
+        file = path.filename();
+        
+    }
+
+};
 
 //
 class FileBufferWindow : public BufferWindowBase

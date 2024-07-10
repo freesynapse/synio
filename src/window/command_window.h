@@ -37,11 +37,16 @@ public:
     void closeFileExplorerWindow();
     void openYesNoDialog(const std::string &_text);
     void closeYesNoDialog();
+    void openListboxWindow(std::vector<std::string> _entries);
+    void closeListboxWindow();
 
     // dispatch events based on entered command
     virtual void processCommandKeycode(int _c);
     virtual void processInput();
     virtual void dispatchCommand();
+
+    ///// DEBUG
+    void debugCommand();
 
 
 protected:

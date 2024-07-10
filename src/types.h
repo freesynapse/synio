@@ -284,7 +284,7 @@ struct irect_t
         size_t n = 0;
         if (_prefix != "")
             n = sprintf(DEBUG_BUFFER, "%s: ", _prefix.c_str());
-        sprintf(DEBUG_BUFFER + n, "v0: [ %d  %d ], v1: [ %d  %d ], ncols=%d, ncols=%d", 
+        sprintf(DEBUG_BUFFER + n, "v0: [ %d  %d ], v1: [ %d  %d ], ncols=%d, nrows=%d", 
                 v0.x, v0.y, v1.x, v1.y, ncols, nrows);
         LOG_INFO("%s", DEBUG_BUFFER);
             

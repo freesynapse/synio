@@ -58,6 +58,7 @@ public:
     int idxFromPtr(line_t *_line);
     line_t *ptrFromPtr(line_t *_start, int _n);  // returns a ptr _n steps from _start
     const int lineCount() const { return m_lineCount; }
+    const size_t size() const { return m_lineCount; }
 
 
 public:

@@ -17,21 +17,13 @@ FileExplorerWindow::FileExplorerWindow(const frame_t &_frame,
                                        const std::string &_input_prompt) :
     FileBufferWindow(_frame, _id, _border, false, false)
 {
-    // default state
-    m_isBrowsing = true;
+    //
     m_currentPath = std::filesystem::current_path();
-    
-    // state-dependet init
     m_inputPrompt = _input_prompt;
     m_inputFieldOffset = ivec2_t(m_inputPrompt.length(), m_frame.nrows - 1);
-    m_browsingCursorOffset = ivec2_t(0, 1);
 
-    // set cursor limits
-    if (!m_isBrowsing)
-        m_cursor.set_offset(m_inputFieldOffset);
-    else
-        m_cursor.set_offset(m_browsingCursorOffset);
-
+    // set cursor offset (under current dir header)
+    m_cursor.set_offset(ivec2_t(0, 1));
     
     // set up the renderer with an adjusted frame
     m_renderFrame = m_frame;
@@ -63,111 +55,96 @@ FileExplorerWindow::~FileExplorerWindow()
 //---------------------------------------------------------------------------------------
 void FileExplorerWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
 {
-    static bool first_render = true;
-    if (first_render)
+
+    if (_ctrl_action != CtrlKeyAction::NONE)
     {
         moveCursor(0, 0);
-        first_render = false;
+        //switch (_ctrl_action)
+        //{
+        //    default: moveCursor(0, 0); break;
+        //}
     }
-
-    if (m_isBrowsing)
-    {
-        if (_ctrl_action != CtrlKeyAction::NONE)
-        {
-            switch (_ctrl_action)
-            {
-                //case CtrlKeyAction::CTRL_LEFT:  moveCursor(0, 0); break;
-                //case CtrlKeyAction::CTRL_RIGHT: moveCursor(0, 0); break;
-                //case CtrlKeyAction::CTRL_UP:    moveCursor(0, 0); break;
-                //case CtrlKeyAction::CTRL_DOWN:  moveCursor(0, 0); break;
-                // default: LOG_WARNING("ctrl keycode %d : %s", _c, ctrlActionStr(_ctrl_action)); break;
-                default: moveCursor(0, 0); break;
-            }
-        }
-        else
-        {
-            std::filesystem::path selected = m_currentPath;
-            switch (_c)
-            {
-                // cursor movement in input field
-                case KEY_LEFT:  clear_input_(); moveCursorColumn(-1);       break;
-                case KEY_RIGHT: clear_input_(); moveCursorColumn( 1);       break;
-                case KEY_UP:    clear_input_(); moveCursor(0, -1);          break;
-                case KEY_DOWN:  clear_input_(); moveCursor(0,  1);          break;
-                case KEY_PPAGE: clear_input_(); movePageUp();               break;
-                case KEY_NPAGE: clear_input_(); movePageDown();             break;
-                case KEY_HOME:  clear_input_(); moveCursorToLineBegin();    break;
-                case KEY_END:   clear_input_(); moveCursorToLineEnd();      break;
-                case 8:         clear_input_(); moveCursor(0, 0);           break;
-                case KEY_BACKSPACE:
-                    popCharFromInput();
-                    break;
-
-                case 9:     // <TAB>
-                    autocompleteInput();
-                    moveCursor(0, 0);
-                    break;
-                
-                // TODO : move to separate function for clenliness?
-                case 10:    // <ENTER>
-                    if (m_inputLine->len > 0)
-                        m_selectedFilename = std::string(m_inputLine->__debug_str);
-                    else
-                    {
-                        int fname_offset = get_listing_offset_from_x_(m_cursor.cx());
-                        m_selectedFilename = m_currentDirListing[fname_offset].name;
-                    }
-
-                    //
-                    selected /= m_selectedFilename;
-
-                    //
-                    if (FileIO::is_file_dir(selected))
-                    {
-                        if (m_selectedFilename == "..")
-                            m_currentPath = m_currentPath.parent_path();
-                        else if (m_selectedFilename == ".")
-                        {
-                            m_selectedFilename = "";
-                            moveCursor(0, 0);
-                            break;
-                        }
-                        else
-                            m_currentPath = selected;
-
-                        m_selectedFilename = "";
-                        getCurrentDirContents();
-                        if (m_errorMsg == "")
-                        {
-                            // reset cursor in new dir listing
-                            moveCursor(-m_cursor.cx() + Config::FILE_DIALOG_LISTING_SPACING, 
-                                       -m_cursor.cy());
-                        }
-                        // something was wrong, and parent of selected is set to current, 
-                        // so read again
-                        else
-                            getCurrentDirContents(false);
-
-                        clear_input_();
-                        clear_next_frame_();
-                        refresh_next_frame_();
-                    }
-                    // else m_selectedFilename is set, signaling to caller
-                    else
-                        m_selectedFilename = std::string((m_currentPath / m_selectedFilename).c_str());
-                        
-                    break;
-
-                default:
-                    pushCharToInput(_c);
-                    break;
-
-            }
-        }
-    }
-
     else
-        NOT_IMPLEMENTED();
+    {
+        std::filesystem::path selected = m_currentPath;
+        switch (_c)
+        {
+            // cursor movement in input field
+            case KEY_LEFT:  clear_input_(); moveCursorColumn(-1);       break;
+            case KEY_RIGHT: clear_input_(); moveCursorColumn( 1);       break;
+            case KEY_UP:    clear_input_(); moveCursor(0, -1);          break;
+            case KEY_DOWN:  clear_input_(); moveCursor(0,  1);          break;
+            case KEY_PPAGE: clear_input_(); movePageUp();               break;
+            case KEY_NPAGE: clear_input_(); movePageDown();             break;
+            case KEY_HOME:  clear_input_(); moveCursorToLineBegin();    break;
+            case KEY_END:   clear_input_(); moveCursorToLineEnd();      break;
+            case 8:         clear_input_(); moveCursor(0, 0);           break;
+            case KEY_BACKSPACE:
+                popCharFromInput();
+                break;
+
+            case 9:     // <TAB>
+                autocompleteInput();
+                moveCursor(0, 0);
+                break;
+            
+            // TODO : move to separate function for clenliness?
+            case 10:    // <ENTER>
+                if (m_inputLine->len > 0)
+                    m_selectedFilename = std::string(m_inputLine->__debug_str);
+                else
+                {
+                    int fname_offset = get_listing_offset_from_x_(m_cursor.cx());
+                    m_selectedFilename = m_currentDirListing[fname_offset].name;
+                }
+
+                //
+                selected /= m_selectedFilename;
+
+                //
+                if (FileIO::is_file_dir(selected))
+                {
+                    if (m_selectedFilename == "..")
+                        m_currentPath = m_currentPath.parent_path();
+                    else if (m_selectedFilename == ".")
+                    {
+                        m_selectedFilename = "";
+                        moveCursor(0, 0);
+                        break;
+                    }
+                    else
+                        m_currentPath = selected;
+
+                    m_selectedFilename = "";
+                    getCurrentDirContents();
+                    if (m_errorMsg == "")
+                    {
+                        // reset cursor in new dir listing
+                        moveCursor(-m_cursor.cx() + Config::FILE_DIALOG_LISTING_SPACING, 
+                                    -m_cursor.cy());
+                    }
+                    // something was wrong, and parent of selected is set to current, 
+                    // so read again
+                    else
+                        getCurrentDirContents(false);
+
+                    clear_input_();
+                    clear_next_frame_();
+                    refresh_next_frame_();
+                }
+                // else m_selectedFilename is set, signaling to caller
+                else
+                    m_selectedFilename = std::string((m_currentPath / m_selectedFilename).c_str());
+                    
+                break;
+
+            default:
+                pushCharToInput(_c);
+                break;
+
+        }
+    }
+
 }
 
 //---------------------------------------------------------------------------------------

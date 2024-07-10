@@ -1,11 +1,14 @@
 
 #include <string>
+#include <filesystem>
+
 #include "platform/platform.h"
 #include "synio.h"
 
 
 int main(int argc, char *argv[])
 {
+    std::filesystem::path path = std::filesystem::current_path();
     std::string filename = "";
     filename = "test.cpp";
     // filename = "short.cpp";
@@ -14,6 +17,8 @@ int main(int argc, char *argv[])
 
     if (argc > 1)
         filename = std::string(argv[1]);
+
+    path /= filename;
 
     //
     #ifdef DEBUG
@@ -24,7 +29,7 @@ int main(int argc, char *argv[])
     api->initialize();
 
     {
-        Synio synio(filename);
+        Synio synio(path);
     }
 
     api->shutdown();

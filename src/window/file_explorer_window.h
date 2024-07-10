@@ -76,9 +76,6 @@ private:
     std::string m_autocompleteLine = "";
     std::vector<std::string> m_autocompletions;
     
-    // state
-    bool m_isBrowsing = true;
-
     // rendering
     frame_t m_renderFrame;          // accounting for input line at the bottom
     int m_nrows;
@@ -91,7 +88,6 @@ private:
     ivec2_t m_inputFieldOffset;     // cursor offset in input field
     line_t *m_inputLine;            // m_currentLine is pointing into the line buffer,
                                     // this is for keyboard input (e.g. filename)
-    ivec2_t m_browsingCursorOffset;
     
 
 };

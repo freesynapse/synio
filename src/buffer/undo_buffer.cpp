@@ -20,20 +20,12 @@ void UndoBuffer::undo()
     
     if (!m_stack.size())
     {
-        #ifdef DEBUG
-        LOG_WARNING("undo buffer empty.");
-        #endif
         m_window->moveCursor(0, 0);
         return;
     }
 
     undo_item_t item = m_stack.top();
     m_stack.pop();
-
-    //#ifdef DEBUG
-    //LOG_RAW("stack size = %zu", m_stack.size());
-    //__debug_print_item(item);
-    //#endif
 
     // prevent new commands of being recorded as undoable actions
     m_window->m_storeActions = false;
@@ -55,7 +47,7 @@ void UndoBuffer::undo()
         case UndoAction::LINE_COLLAPSE_PREV:    addNewLineBefore(item);     break;
         case UndoAction::LINES_ADD:             deleteLines(item);          break;
         case UndoAction::LINES_DEL:             addLines(item);             break;
-        default: LOG_WARNING("how?!"); break;
+        default: /*LOG_WARNING("how are we here?!"); */break;
     }
 
     // recording undoable actions again
@@ -206,7 +198,6 @@ void UndoBuffer::addTabs(const undo_item_t &_item)
     LOG_INFO("");
     while (i < mblock.end_pos.x && line != NULL)
     {
-        LOG_RAW("\t\t%s", line->__debug_str);
         if (line->len > 0 && line->content != NULL && lines[i].len != 0)
             w->insert_leading_tab_(line);
 

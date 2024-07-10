@@ -1,6 +1,8 @@
 #ifndef __SYNIO_H
 #define __SYNIO_H
 
+#include <filesystem>
+
 #include "utils/utils.h"
 #include "window/file_buffer_window.h"
 #include "window/command_window.h"
@@ -11,7 +13,7 @@
 class Synio
 {
 public:
-    Synio(const std::string &_filename);
+    Synio(const std::filesystem::path &_filename);
     ~Synio();
 
     // some functions
@@ -19,7 +21,7 @@ public:
     CommandWindow *newCommandWindow();
     void deleteCommandWindow(Event *_e);
     
-    FileBufferWindow *newFileBufferWindow(const std::string &_filename);
+    FileBufferWindow *newFileBufferWindow(const std::filesystem::path &_filepath);
     void deleteFileBufferWindow(Event *_e);
 
     void adjustBufferWindowFrameY(int _dy);
@@ -33,7 +35,8 @@ public:
     // accessor
     FileBufferWindow *currentBufferWindow() { return m_currentBufferWindow; }
     void setCurrentBufferWindow(FileBufferWindow *_w) { m_currentBufferWindow = _w; }
-    const std::unordered_map<std::string, FileBufferWindow *> &openBufferWindows() { return m_bufferWindows; }
+    // const std::unordered_map<std::string, FileBufferWindow *> &openBufferWindows() { return m_bufferWindows; }
+    const std::vector<FileBufferEntry> &openBufferWindows() { return m_bufferWindows; }
     const frame_t &bufferWndFrame() { return m_bufferWndFrame; }
 
     //
@@ -76,12 +79,13 @@ private:
     // windows
     //
 
-    // map of all open buffers
-    std::unordered_map<std::string, FileBufferWindow *> m_bufferWindows;
-    std::vector<std::string> m_bufferQueue;
+    // TODO : move this to the file handler instead?
+    std::vector<FileBufferEntry> m_bufferWindows;
+    // std::unordered_map<std::string, FileBufferWindow *> m_bufferWindows;    // map of all open buffers
+    std::vector<std::string> m_bufferQueue; // switching between buffers
 
     FileBufferWindow *m_currentBufferWindow = NULL; // current displayed file window
-    std::string m_currentFilename = "";
+    std::filesystem::path m_currentFilename = "";
     StatusWindow *m_statusWindow = NULL;            // updated by the current file buffer
     CommandWindow *m_commandWindow = NULL;          // created on demand
 
