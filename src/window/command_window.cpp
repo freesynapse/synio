@@ -41,16 +41,13 @@ void CommandWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
     if (m_listboxWndPtr != NULL)
     {
         m_listboxWndPtr->handleInput(_c, _ctrl_action);
-        m_selectedFile = m_listboxWndPtr->getSelectedEntry();
+        m_selectedListBoxEntry = m_listboxWndPtr->getEntry();
         //
-        if (m_selectedFile != "")
+        if (m_selectedListBoxEntry != "")
         {
-            delete m_listboxWndPtr;
-            m_listboxWndPtr = NULL;
-            // refresh relevant windows
-            m_app->refreshBufferWindow();
+            LOG_RAW("got this from Listbox = %s", m_selectedListBoxEntry.c_str());
+            closeListboxWindow();
             refresh_next_frame_();
-            // forward result
             dispatchCommand();
             
         }
@@ -290,21 +287,15 @@ void CommandWindow::closeYesNoDialog()
 }
 
 //---------------------------------------------------------------------------------------
-void CommandWindow::openListboxWindow(std::vector<std::string> _entries)
+void CommandWindow::openListboxWindow(std::vector<listbox_entry_t> _entries)
 {
-    ivec2_t ssize;
-    api->getRenderSize(&ssize);
-
-    size_t max_len = 0;
-    for (auto &it : _entries)
-        max_len = std::max(it.length(), max_len);
-
     // window starts at x=1 and y=(no entry rows up from buffer window border) and 
     // extends down.
     auto buffer_frame = m_app->bufferWndFrame();
     int start_row = buffer_frame.v1.y - _entries.size() - 4;
     ivec2_t v0 = ivec2_t(1, start_row); 
-    ivec2_t v1 = ivec2_t(1 + max_len, buffer_frame.v1.y - 1); 
+    // make small, the window will resize to fit entries in it's constructor
+    ivec2_t v1 = ivec2_t(10, buffer_frame.v1.y - 1);
 
     frame_t listbox_frame = frame_t(v0, v1);
 
@@ -454,6 +445,7 @@ void CommandWindow::dispatchCommand()
             #ifdef DEBUG
             case CommandID::DEBUG_COMMAND:
                 debugCommand();
+                await_next_input_();
                 break;
             #endif
             
@@ -612,14 +604,14 @@ void CommandWindow::dispatchCommand()
 //---------------------------------------------------------------------------------------
 void CommandWindow::debugCommand()
 {
-    std::vector<std::string> v;
+    std::vector<listbox_entry_t> entries;
     auto &open_buffers = m_app->openBufferWindows();
     for (auto &it : open_buffers)
     {
-        v.push_back(it.path);
+        entries.push_back(listbox_entry_t(it.path, it.path.filename()));
         LOG_INFO("%s", it.path.c_str());
     }
-    openListboxWindow(v);
-    // openFileExplorerWindow("DEBUG: ");
-
+    
+    openListboxWindow(entries);
+    
 }

@@ -256,7 +256,7 @@ void FileBufferWindow::moveCursor(int _dx, int _dy)
         return;
     }
 
-    // beggining of line, move to last char of prev
+    // beginning of line, move to last char of prev
     if (cx == 0 && dx < 0 && m_currentLine->prev != NULL)
     {
         dx = m_currentLine->prev->len - cx;
@@ -1435,6 +1435,7 @@ void FileBufferWindow::resize(frame_t _new_frame)
     //
 
     m_frame = _new_frame;
+    m_frame.update_dims();
 
     // if (m_frame.v0.x != m_lineNumbers->getWidth())
     if (m_useLineNumbers)

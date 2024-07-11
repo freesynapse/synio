@@ -81,6 +81,7 @@ void FileExplorerWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case 8:         clear_input_(); moveCursor(0, 0);           break;
             case KEY_BACKSPACE:
                 popCharFromInput();
+                moveCursor(0, 0);
                 break;
 
             case 9:     // <TAB>
@@ -219,8 +220,7 @@ void FileExplorerWindow::pushCharToInput(char _c)
 
     m_inputLine->insert_char(_c, m_inputLine->len);
 
-    showCompletions();
-
+    findCompletions();
 
     refresh_next_frame_();
 
@@ -234,7 +234,7 @@ void FileExplorerWindow::popCharFromInput()
 
     m_inputLine->delete_at(m_inputLine->len);
 
-    showCompletions();
+    findCompletions();
 
     refresh_next_frame_();
 
@@ -319,14 +319,14 @@ void FileExplorerWindow::autocompleteInput()
     {
         delete m_inputLine;
         m_inputLine = create_line(longest_prefix.c_str());
-        showCompletions();
+        findCompletions();
         refresh_next_frame_();
     }
 
 }
 
 //---------------------------------------------------------------------------------------
-void FileExplorerWindow::showCompletions()
+void FileExplorerWindow::findCompletions()
 {
     std::string input = std::string(m_inputLine->__debug_str);
     prefix_node_t *stree = PrefixTree::find_subtree(m_dirPTree, input);
@@ -338,9 +338,9 @@ void FileExplorerWindow::showCompletions()
     m_autocompleteLine = "";
     int space_left = m_frame.ncols - m_inputLine->len - m_inputPrompt.length() - 1;
 
+    // Only one match, let's jump to that file in the listing
     if (m_autocompletions.size() == 1 && m_autocompletions[0] == input)
     {
-        // we found only one, let's jump to that file in the listing
         auto it = std::find_if(m_currentDirListing.begin(), m_currentDirListing.end(), 
                                 [input](const FileEntry &_fe) {
                                     return _fe.name == input;
@@ -357,7 +357,7 @@ void FileExplorerWindow::showCompletions()
         return;
     }
 
-    // fill line with as many as possible
+    // Multiple matches; fill line with as many as possible
     int n_entered = 0;
     bool done = false;
     for (size_t i = 0; i < m_autocompletions.size() && !done; i++)

@@ -31,7 +31,7 @@ public:
     void moveCursorColumn(int _dcol=0);
     void moveToColRow(int _col, int _row);
     void autocompleteInput();
-    void showCompletions();
+    void findCompletions();
 
     void getCurrentDirContents(bool _reset_error=true);
 

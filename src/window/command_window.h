@@ -37,7 +37,7 @@ public:
     void closeFileExplorerWindow();
     void openYesNoDialog(const std::string &_text);
     void closeYesNoDialog();
-    void openListboxWindow(std::vector<std::string> _entries);
+    void openListboxWindow(std::vector<listbox_entry_t> _entries);
     void closeListboxWindow();
 
     // dispatch events based on entered command

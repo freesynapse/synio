@@ -17,6 +17,9 @@
 
 
 # MISC #
+--  Fixa så att __debug_str inte är __debug utan en permanent del av line_t, och som 
+    auto-allokeras på samma sätt som CHTYPE.
+
 --  Yes/No dialog: global (eller static class) som tar en callback func, som anropas om
     Yes.
 
@@ -31,6 +34,8 @@
 
 --  Tabs: om stöts på ändra till spaces (tar bort TABS_OR_SPACES?)?
 
+--  Merge FileExplorerWindow och ListboxWindow; funktionaliteten väldigt lika för input 
+    osv.
 
 # FILE_BUFFER_WINDOW #
 --  I FileBufferWindow måste och copybuffern bli global, så att man kan kopiera mellan

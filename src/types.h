@@ -28,7 +28,7 @@
 typedef void* API_WINDOW_PTR;
 
 // the basic char type
-
+//
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmacro-redefined"
 #define NCURSES_IMPL
@@ -36,15 +36,14 @@ typedef void* API_WINDOW_PTR;
 
 #if defined NCURSES_IMPL
 #include <ncurses.h>
-// #define CHTYPE chtype
-// #define CHTYPE_PTR chtype *
 #define CHTYPE uint64_t
 #define CHTYPE_PTR uint64_t *
 #define CHTYPE_CHAR_MASK  0x00000000000000ff
 #define CHTYPE_COLOR_MASK 0x000000000000ff00
 #define CHTYPE_ATTR_MASK  0x00000000ffff0000
 #define CHTYPE_SELECTION_BIT 32 // first bit after the first 4 bytes used by ncurses
-// #elif defined (GLFW_IMPL)
+#define CHTYPE_HIGHLIGHT_BIT 33
+// #elif defined (GLFW_IMPL) -- needs update!
 #else
 #define CHTYPE uint32_t
 #define CHTYPE_PTR uint32_t *
@@ -377,5 +376,19 @@ struct FileEntry
 
 };
 
+struct listbox_entry_t
+{
+    std::string key = "";
+    std::string value = "";
+
+    listbox_entry_t() {}
+    listbox_entry_t(const std::string _k, const std::string _v) : 
+        key(_k), value(_v)
+    {}
+    listbox_entry_t(const std::string _k) : 
+        key(_k)
+    {}
+    
+};
 
 #endif // __TYPES_H
