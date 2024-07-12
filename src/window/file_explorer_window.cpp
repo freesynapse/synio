@@ -15,7 +15,7 @@ FileExplorerWindow::FileExplorerWindow(const frame_t &_frame,
                                        const std::string &_id, 
                                        bool _border,
                                        const std::string &_input_prompt) :
-    FileBufferWindow(_frame, _id, _border, false, false)
+    MLineInputWindow(_frame, _id, _border)
 {
     //
     m_currentPath = std::filesystem::current_path();
@@ -24,32 +24,15 @@ FileExplorerWindow::FileExplorerWindow(const frame_t &_frame,
 
     // set cursor offset (under current dir header)
     m_cursor.set_offset(ivec2_t(0, 1));
-    
-    // set up the renderer with an adjusted frame
-    m_renderFrame = m_frame;
-    m_renderFrame.v0.y += 1;    // space for current directory
-    m_renderFrame.v1.y -= 2;    // space for input field
-    m_renderFrame.update_dims();
-    m_formatter = BufferFormatter(&m_renderFrame);
-
     m_cursor.set_frame(m_renderFrame);
+    m_listingOffset.x = Config::FILE_DIALOG_LISTING_SPACING;
 
     //
     getCurrentDirContents();
 
-    //
-    m_inputLine = create_line("");
-
     moveCursor(Config::FILE_DIALOG_LISTING_SPACING, 0);
     updateCursor();
     
-}
-
-//---------------------------------------------------------------------------------------
-FileExplorerWindow::~FileExplorerWindow()
-{
-    delete m_inputLine;
-    delete m_dirPTree;
 }
 
 //---------------------------------------------------------------------------------------
@@ -154,8 +137,6 @@ void FileExplorerWindow::redraw()
     if (!m_isWindowVisible)
         return;
 
-    static int listing_x_offset = Config::FILE_DIALOG_LISTING_SPACING;
-
     // print current directory
     api->clearSpace(m_apiWindowPtr, 0, 0, m_frame.ncols);
     api->enableAttr(m_apiWindowPtr, A_BOLD);
@@ -169,7 +150,7 @@ void FileExplorerWindow::redraw()
     api->disableAttr(m_apiWindowPtr, A_BOLD);
 
     // print listing
-    m_formatter.render(m_apiWindowPtr, m_pageFirstLine, NULL, listing_x_offset, 1);
+    m_formatter.render(m_apiWindowPtr, m_pageFirstLine, NULL, m_listingOffset.x, 1);
     api->horizontalDivider(m_apiWindowPtr, 0, m_frame.nrows - 2, m_frame.ncols);
     
     // print input
@@ -212,33 +193,33 @@ void FileExplorerWindow::redraw()
 }
 
 //---------------------------------------------------------------------------------------
-void FileExplorerWindow::pushCharToInput(char _c)
-{
-    // only allowed characters (for now)
-    if (Config::ALLOWED_CHAR_SET.find(_c) == Config::ALLOWED_CHAR_SET.end())
-        return;
+// void FileExplorerWindow::pushCharToInput(char _c)
+// {
+//     // only allowed characters (for now)
+//     if (Config::ALLOWED_CHAR_SET.find(_c) == Config::ALLOWED_CHAR_SET.end())
+//         return;
 
-    m_inputLine->insert_char(_c, m_inputLine->len);
+//     m_inputLine->insert_char(_c, m_inputLine->len);
 
-    findCompletions();
+//     findCompletions();
 
-    refresh_next_frame_();
+//     refresh_next_frame_();
 
-}
+// }
 
 //---------------------------------------------------------------------------------------
-void FileExplorerWindow::popCharFromInput()
-{
-    if (m_inputLine->len == 0)
-        return;
+// void FileExplorerWindow::popCharFromInput()
+// {
+//     if (m_inputLine->len == 0)
+//         return;
 
-    m_inputLine->delete_at(m_inputLine->len);
+//     m_inputLine->delete_at(m_inputLine->len);
 
-    findCompletions();
+//     findCompletions();
 
-    refresh_next_frame_();
+//     refresh_next_frame_();
 
-}
+// }
 
 //---------------------------------------------------------------------------------------
 void FileExplorerWindow::moveCursorColumn(int _dcol)
@@ -301,35 +282,35 @@ void FileExplorerWindow::moveToColRow(int _col, int _row)
 }
 
 //---------------------------------------------------------------------------------------
-void FileExplorerWindow::autocompleteInput()
-{
-    if (m_inputLine->len == 0)
-        return;
+// void FileExplorerWindow::autocompleteInput()
+// {
+//     if (m_inputLine->len == 0)
+//         return;
     
-    std::string input = std::string(m_inputLine->__debug_str);
-    prefix_node_t *stree = PrefixTree::find_subtree(m_dirPTree, input);
-    std::string longest_prefix;
-    PrefixTree::find_longest_prefix(stree, input, &longest_prefix);
+//     std::string input = std::string(m_inputLine->__debug_str);
+//     prefix_node_t *stree = PrefixTree::find_subtree(m_dirPTree, input);
+//     std::string longest_prefix;
+//     PrefixTree::find_longest_prefix(stree, input, &longest_prefix);
 
-    if (longest_prefix.length() == 0)
-    {
-        return;
-    }
-    else if (longest_prefix.length() != input.length())
-    {
-        delete m_inputLine;
-        m_inputLine = create_line(longest_prefix.c_str());
-        findCompletions();
-        refresh_next_frame_();
-    }
+//     if (longest_prefix.length() == 0)
+//     {
+//         return;
+//     }
+//     else if (longest_prefix.length() != input.length())
+//     {
+//         delete m_inputLine;
+//         m_inputLine = create_line(longest_prefix.c_str());
+//         findCompletions();
+//         refresh_next_frame_();
+//     }
 
-}
+// }
 
 //---------------------------------------------------------------------------------------
 void FileExplorerWindow::findCompletions()
 {
     std::string input = std::string(m_inputLine->__debug_str);
-    prefix_node_t *stree = PrefixTree::find_subtree(m_dirPTree, input);
+    prefix_node_t *stree = PrefixTree::find_subtree(m_ptree, input);
 
     m_autocompletions.clear();
     PrefixTree::find_completions(stree, &m_autocompletions, input);
@@ -395,8 +376,8 @@ void FileExplorerWindow::getCurrentDirContents(bool _reset_error)
     // clear existing variables (if called again on new dir)
     m_currentDirListing.clear();
     m_lineBuffer.clear();
-    delete m_dirPTree;    
-    m_dirPTree = new prefix_node_t;
+    delete m_ptree;    
+    m_ptree = new prefix_node_t;
 
     size_t max_fname_len = 0;
     std::string longfname = "";
@@ -430,7 +411,7 @@ void FileExplorerWindow::getCurrentDirContents(bool _reset_error)
             {
                 // insert in prefix tree (for autocomplete) and vector (for rendering)
                 // TODO : ptree insert in separate thread? (for later)
-                PrefixTree::insert_string(m_dirPTree, fname);
+                PrefixTree::insert_string(m_ptree, fname);
                 FileEntry fe(fname, fstat.st_mode, fstat.st_size);
                 m_currentDirListing.push_back(fe);
 

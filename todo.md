@@ -1,10 +1,9 @@
 
 # LISTBOX_WINDOW #
---  ListBox window, med eller utan prompt för att skriva och söka i ett prefix-tree.
-    Som default tas som argument en std::vector<std::string> som utgör alternativen.
-    I ::redraw() vore det fräsigt att kunna markera hela raden, kanske nytt försök med 
-    detta i ncurses_colors.h|.cpp. <== THIS!!
-
+--  Just nu är ListboxWindow och FileExplorerWindow i princip samma sak, fast med lite 
+    skillnad i moveCursor och hur navigationen fungerar. Autocomplete och input fungerar
+    exakt likadant (literally copy-paste frpn FileExplorerWindow). Så, basklass 
+    MLineInputWindow eller liknande, och polymorfism. <-- THIS!!!
 
 # POPUPS #
 --  Idé: Alla popups skulle kunna ha en callback till en funktion i konstruktorn, som 

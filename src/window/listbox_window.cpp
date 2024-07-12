@@ -11,16 +11,13 @@ ListboxWindow::ListboxWindow(const frame_t &_frame,
                              bool _border,
                              const std::string &_header, 
                              const std::vector<listbox_entry_t> &_entries) :
-    FileBufferWindow(_frame, _id, _border, false, false)
+    MLineInputWindow(_frame, _id, _border)
 {
     //
     m_header = _header;
 
     // set cursor offset (under current dir header)
     m_cursor.set_offset(ivec2_t(1, 1));
-
-    //
-    m_ptree = new prefix_node_t;
 
     // scan for longest value in pairs
     size_t max_value_len = 0;
@@ -75,16 +72,6 @@ ListboxWindow::ListboxWindow(const frame_t &_frame,
     m_currentLine = m_lineBuffer.m_head;
     m_pageFirstLine = m_lineBuffer.m_head;
 
-    m_inputLine = create_line("");
-
-}
-
-//---------------------------------------------------------------------------------------
-ListboxWindow::~ListboxWindow()
-{
-    delete m_inputLine;
-    delete m_ptree;
-
 }
 
 //---------------------------------------------------------------------------------------
@@ -92,9 +79,10 @@ void ListboxWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
 {
     switch (_c)
     {
-        case KEY_UP:        clear_input_(); changeSelectedRow(-1);  break;
-        case KEY_DOWN:      clear_input_(); changeSelectedRow( 1);  break;
-        
+        case KEY_UP:    clear_input_(); changeSelectedRow(-1);  break;
+        case KEY_DOWN:  clear_input_(); changeSelectedRow( 1);  break;
+        case 8:         clear_input_(); moveCursor(0, 0);       break;
+
         case KEY_BACKSPACE: 
             popCharFromInput();
             moveCursor(0, 0);
@@ -227,36 +215,6 @@ void ListboxWindow::moveCursor(int _dx, int _dy)
 }
 
 //---------------------------------------------------------------------------------------
-void ListboxWindow::pushCharToInput(char _c)
-{
-    moveCursor(0, 0);
-
-    // only allowed characters (for now)
-    if (Config::ALLOWED_CHAR_SET.find(_c) == Config::ALLOWED_CHAR_SET.end())
-        return;
-
-    m_inputLine->insert_char(_c, m_inputLine->len);
-
-    findCompletions();
-
-    refresh_next_frame_();
-
-}
-//---------------------------------------------------------------------------------------
-void ListboxWindow::popCharFromInput()
-{
-    if (m_inputLine->len == 0)
-        return;
-
-    m_inputLine->delete_at(m_inputLine->len);
-
-    findCompletions();
-
-    refresh_next_frame_();
-
-}
-
-//---------------------------------------------------------------------------------------
 void ListboxWindow::changeSelectedRow(int _dy)
 {
     if (_dy == 0)
@@ -267,31 +225,6 @@ void ListboxWindow::changeSelectedRow(int _dy)
     moveCursor(0, _dy);
     
     refresh_next_frame_();
-
-}
-
-//---------------------------------------------------------------------------------------
-void ListboxWindow::autocompleteInput()
-{
-    if (m_inputLine->len == 0)
-        return;
-    
-    std::string input = std::string(m_inputLine->__debug_str);
-    prefix_node_t *stree = PrefixTree::find_subtree(m_ptree, input);
-    std::string longest_prefix;
-    PrefixTree::find_longest_prefix(stree, input, &longest_prefix);
-
-    if (longest_prefix.length() == 0)
-    {
-        return;
-    }
-    else if (longest_prefix.length() != input.length())
-    {
-        delete m_inputLine;
-        m_inputLine = create_line(longest_prefix.c_str());
-        findCompletions();
-        refresh_next_frame_();
-    }
 
 }
 
