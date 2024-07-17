@@ -32,8 +32,10 @@ Synio::Synio(const std::filesystem::path &_filename)
                                     EVENT_MEMBER_FNC(Synio::onExitEvent));
     EventHandler::register_callback(EventType::ADJUST_BUFFER_WINDOW,
                                     EVENT_MEMBER_FNC(Synio::onAdjustBufferWindowEvent));
-    EventHandler::register_callback(EventType::DELETE_COMMAND_WINDOW,
-                                    EVENT_MEMBER_FNC(Synio::deleteCommandWindow));
+    EventHandler::register_callback(EventType::CLOSE_COMMAND_WINDOW,
+                                    EVENT_MEMBER_FNC(Synio::onCloseCommandWindow));
+    EventHandler::register_callback(EventType::CLOSE_BUFFER_WINDOW,
+                                    EVENT_MEMBER_FNC(Synio::onCloseFileBufferWindow));
 
     // register signal handler
     struct sigaction sa;
@@ -54,9 +56,11 @@ Synio::~Synio()
     FileIO::delete_temp_files();
 
     //
-    delete m_currentBufferWindow;
+    // delete m_currentBufferWindow;
     delete m_commandWindow;
     delete m_statusWindow;
+    for (auto &it : m_bufferWindowsList)
+        delete it.bufferWindowPtr;
 
 }
 
@@ -66,7 +70,7 @@ void Synio::initialize()
     api->getRenderSize(&m_screenSize);
     m_bufferWndFrame = frame_t(ivec2_t(8, 0), // taking line numbers space into account
                                ivec2_t(m_screenSize.x, m_screenSize.y - 1));
-    m_currentBufferWindow = newFileBufferWindow(m_currentFilename);
+    m_currentBufferWindow = openFileBufferWindow(m_currentFilename);
     m_focusedWindow = m_currentBufferWindow;
 
     // command window
@@ -81,38 +85,88 @@ void Synio::initialize()
 }
 
 //---------------------------------------------------------------------------------------
-FileBufferWindow *Synio::newFileBufferWindow(const std::filesystem::path &_filepath)
+FileBufferWindow *Synio::openFileBufferWindow(const std::filesystem::path &_filepath)
 {
-    m_currentFilename = _filepath;
+    auto fbe = find_file_buffer_entry_(_filepath);
 
-    // check if file is already opened and return that if it is
-    auto fbe = std::find_if(m_bufferWindows.begin(), 
-                            m_bufferWindows.end(), 
-                            [_filepath](const FileBufferEntry &_entry) {
-                                return _entry.path == _filepath;
-                            });
-    if (fbe != m_bufferWindows.end())
+    if (fbe != m_bufferWindowsList.end())
         return fbe->bufferWindowPtr;
+
+    m_currentFilename = _filepath;
 
     // new entry
     FileBufferWindow *buffer_wnd = new FileBufferWindow(m_bufferWndFrame, 
                                                         m_currentFilename, 
                                                         false);
-    FileBufferEntry new_fbe(_filepath, buffer_wnd);
-    m_bufferWindows.push_back(new_fbe);
+    file_buffer_entry_t new_fbe(_filepath, buffer_wnd);
+    m_bufferWindowsList.emplace_front(new_fbe);
 
     return buffer_wnd;
 
 }
 
 //---------------------------------------------------------------------------------------
-void Synio::deleteFileBufferWindow(Event *_e)
+void Synio::switchToBuffer(const std::filesystem::path &_filepath)
 {
-    // change current window to previous in queue
+    // find iterator to buffer
+    auto fbe = find_file_buffer_entry_(_filepath);
+
+    if (fbe == m_bufferWindowsList.end())
+        return;
+
+    file_buffer_entry_t fbe_copy = *fbe;
+
+    // update list with new buffer
+    m_bufferWindowsList.erase(fbe);
+    m_bufferWindowsList.emplace_front(fbe_copy);
+
+    // make the switch
+    m_currentBufferWindow = fbe_copy.bufferWindowPtr;
+    m_currentFilename = fbe_copy.path;
+    m_currentBufferWindow->refresh_next_frame_();
+
 }
 
 //---------------------------------------------------------------------------------------
-CommandWindow *Synio::newCommandWindow()
+size_t Synio::closeFileBufferWindow(const std::filesystem::path &_filepath)
+{
+    auto fbe = find_file_buffer_entry_(_filepath);
+    if (fbe != m_bufferWindowsList.end())
+    {
+        auto last = m_bufferWindowsList.back();
+        if (m_bufferWindowsList.size() == 1)
+        {
+            delete fbe->bufferWindowPtr;
+            m_bufferWindowsList.erase(fbe);
+        }
+        else
+        {
+            if (fbe->bufferWindowPtr != last.bufferWindowPtr)
+            {
+                auto next = std::next(fbe);
+                m_currentBufferWindow = next->bufferWindowPtr;
+                m_currentFilename = next->path;
+            }
+            else
+            {
+                auto prev = std::prev(fbe);
+                m_currentBufferWindow = prev->bufferWindowPtr;
+                m_currentFilename = prev->path;
+            }
+            delete fbe->bufferWindowPtr;
+            m_bufferWindowsList.erase(fbe);
+    
+            m_currentBufferWindow->refresh_next_frame_();
+        }
+
+    }
+
+    return m_bufferWindowsList.size();
+
+}
+
+//---------------------------------------------------------------------------------------
+CommandWindow *Synio::openCommandWindow()
 {
     delete m_commandWindow;
 
@@ -124,19 +178,6 @@ CommandWindow *Synio::newCommandWindow()
     
     return cmd_wnd;
     
-}
-
-//---------------------------------------------------------------------------------------
-void Synio::deleteCommandWindow(Event *_e)
-{
-    // N.B.: memory freed before creation in newCommandWindow()
-    adjustBufferWindowFrameY(m_commandWindow->frame().nrows);
-    m_commandMode = false;
-
-    m_focusedWindow = m_currentBufferWindow;
-    clear_redraw_refresh_window_ptr_(m_currentBufferWindow);
-    m_focusedWindow->refresh_next_frame_();   // needed for correct cursor behaviour
-
 }
 
 //---------------------------------------------------------------------------------------
@@ -160,6 +201,40 @@ void Synio::onAdjustBufferWindowEvent(Event *_e)
     AdjustBufferWindowEvent *e = dynamic_cast<AdjustBufferWindowEvent *>(_e);
     int dy = e->dy;
     adjustBufferWindowFrameY(dy);
+
+}
+
+//---------------------------------------------------------------------------------------
+void Synio::onCloseCommandWindow(Event *_e)
+{
+    // N.B.: memory freed before creation in newCommandWindow()
+    adjustBufferWindowFrameY(m_commandWindow->frame().nrows);
+    m_commandMode = false;
+
+    m_focusedWindow = m_currentBufferWindow;
+    clear_redraw_refresh_window_ptr_(m_currentBufferWindow);
+    m_focusedWindow->refresh_next_frame_();   // needed for correct cursor behaviour
+
+}
+
+//---------------------------------------------------------------------------------------
+void Synio::onCloseFileBufferWindow(Event *_e)
+{
+    CloseFileBufferEvent *e = dynamic_cast<CloseFileBufferEvent *>(_e);
+    // check if we're closing the current buffer
+    size_t buffers_left;
+    if (e->close_this)
+        buffers_left = closeFileBufferWindow(m_currentFilename);
+    else
+        buffers_left = closeFileBufferWindow(e->filepath);
+
+    // create a temp buffer if last buffer was closed
+    if (buffers_left == 0)
+    {
+        m_currentFilename = FileIO::create_temp_file();
+        m_currentBufferWindow = openFileBufferWindow(m_currentFilename);
+        m_currentBufferWindow->refresh_next_frame_();
+    }
 
 }
 
@@ -200,11 +275,11 @@ void Synio::mainLoop()
         
         // Command mode control
         // -- Entering command mode is handled here, leaving command mode is done through
-        //    the command window (as an DeleteCommandWindowEvent).
+        //    the command window (as an CloseCommandWindowEvent).
         if (key == CTRL('x') && !m_commandMode)
         {
             m_commandMode = true;
-            m_commandWindow = newCommandWindow();
+            m_commandWindow = openCommandWindow();
 
             // make space for the command window
             adjustBufferWindowFrameY(-Config::COMMAND_WINDOW_HEIGHT);

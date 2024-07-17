@@ -12,8 +12,8 @@ public:
     friend class Cursor;
 
 public:
-    BufferWindowBase(const frame_t &_frame, const std::string &_id, bool _border=false) :
-        Window(_frame, _id, _border)
+    BufferWindowBase(const frame_t &_frame, const std::string &_id, int _wnd_params=false) :
+        Window(_frame, _id, _wnd_params)
     { 
         m_cursor = Cursor(this);
     }
@@ -27,7 +27,6 @@ public:
 
     // Cursor functions
     //
-    // (move cursor in line)
     virtual void moveCursor(int _dx, int _dy) {}
     virtual void moveCursorToLineBegin() {}
     virtual void moveCursorToLineEnd() {}

@@ -4,7 +4,7 @@
 #include "mline_input_window.h"
 #include "../utils/prefix_tree.h"
 #include "../types.h"
-
+#include "../callbacks.h"
 
 //
 class ListboxWindow : public MLineInputWindow
@@ -12,7 +12,8 @@ class ListboxWindow : public MLineInputWindow
 public:
     ListboxWindow(const frame_t &_frame, 
                   const std::string &_id, 
-                  bool _border=true,
+                  int _wnd_params,
+                  WindowCallback _callback=nullptr,
                   const std::string &_header="", 
                   const std::vector<listbox_entry_t> &_entries={});
     ~ListboxWindow() = default;
@@ -36,9 +37,6 @@ private:
 private:
     std::string m_selectedEntry = "";   // returned to parent caller
     int m_highlightedEntry = 0;         // currently highlighted entry, selected with <UP>/<DOWN>
-
-    std::vector<std::string> m_keys;    // internal representation, different from the listing
-    std::vector<std::string> m_values;  // if listbox displays files, this is the searchable entries
 
 };
 

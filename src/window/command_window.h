@@ -5,8 +5,9 @@
 
 #include "line_buffer_window.h"
 #include "file_buffer_window.h"
-#include "listbox_window.h"
 #include "file_explorer_window.h"
+#include "listbox_window.h"
+#include "options_window.h"
 #include "../command.h"
 
 //
@@ -17,7 +18,7 @@ public:
     CommandWindow(const frame_t &_frame,
                   const std::string &_id,
                   Synio *_app_ptr,
-                  bool _border=false);
+                  int _wnd_params=false);
     ~CommandWindow();
 
     // LineBufferWindow overrides
@@ -34,11 +35,16 @@ public:
 
     // child window handling
     void openFileExplorerWindow(const std::string &_input_prompt);
-    void closeFileExplorerWindow();
-    void openYesNoDialog(const std::string &_text);
-    void closeYesNoDialog();
-    void openListboxWindow(std::vector<listbox_entry_t> _entries);
-    void closeListboxWindow();
+    void callbackFileExplorerWindow(std::string _selected_file);
+    //
+    void openOptionsDialog(const std::string &_header, 
+                           const std::string &_text,
+                           const std::vector<std::string> &_options);
+    void callbackOptionsDialog(std::string _selected_option);
+    //
+    void openListboxWindow(const std::string &_header, 
+                           std::vector<listbox_entry_t> _entries);
+    void callbackListboxWindow(std::string _selected_entry);
 
     // dispatch events based on entered command
     virtual void processCommandKeycode(int _c);
@@ -80,10 +86,13 @@ protected:
 protected:
     //
     Synio *m_app = NULL;
-    ListboxWindow *m_listboxWndPtr = NULL;
     FileExplorerWindow *m_fileExplorerWndPtr = NULL;
+    ListboxWindow *m_listboxWndPtr = NULL;
+    OptionsWindow *m_optionsWndPtr = NULL;
+    
     std::filesystem::path m_selectedFile = "";  // result signal of FileExploreWindow
     std::string m_selectedListBoxEntry = "";    // result signal of ListboxWindow
+    std::string m_optionsResult = "";
     
     //
     std::vector<std::string> m_autocompletions;
@@ -97,8 +106,9 @@ protected:
 
     // state flags
     bool m_showUtilBuffer = false;
-    bool m_awaitNextInput = false; // e.g. yes/no, filename etc
+    bool m_awaitNextInput = false;      // e.g. yes/no, filename etc
     bool m_commandCompleted = false;
+    bool m_awaitNextCommand = false;    // if a command is intercepted by another command
 
 };
 

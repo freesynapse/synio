@@ -48,7 +48,11 @@ public:
     virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _line, size_t _len) override;
     virtual int printBufferLine(API_WINDOW_PTR _w, int _cx, int _cy, line_t *_line_ptr) override;
     virtual int printString(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _str, size_t _len) override;
+    virtual int wprint(API_WINDOW_PTR _w, ivec2_t _pos, const char *_fmt, ...) override;
     virtual int wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...) override;
+    virtual int wprintc(API_WINDOW_PTR _w, ivec2_t _pos, char _c) override;
+    virtual int wprintc(API_WINDOW_PTR _w, int _cx, int _cy, char _c) override;
+    virtual int wprintml(API_WINDOW_PTR _w, ivec2_t _pos, const std::vector<std::string> &_ml_buffer) override;
     virtual int wprintml(API_WINDOW_PTR _w, int _cx0, int _cy0, const std::vector<std::string> &_ml_buffer) override;
     virtual int printCursorBlock(API_WINDOW_PTR _w, int _cx, int _cy) override;
     virtual int verticalDivider(API_WINDOW_PTR _w, int _cx, int _cy, int _n) override;

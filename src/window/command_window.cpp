@@ -6,15 +6,15 @@
 #include "../synio.h"
 #include "../event_handler.h"
 #include "../command.h"
-
+#include "../callbacks.h"
 
 //
 CommandWindow::CommandWindow(const frame_t &_frame,
                              const std::string &_id,
                             //  FileBufferWindow *_buffer_ptr,
                              Synio *_app_ptr,
-                             bool _border) :
-    LineBufferWindow(_frame, _id, _border)
+                             int _wnd_params) :
+    LineBufferWindow(_frame, _id, _wnd_params)
 {
     m_app = _app_ptr;
     
@@ -26,6 +26,8 @@ CommandWindow::~CommandWindow()
     delete m_cmdPrefix;
     delete m_listboxWndPtr;
     delete m_fileExplorerWndPtr;
+    delete m_optionsWndPtr;
+    
 }
 
 //---------------------------------------------------------------------------------------
@@ -33,38 +35,28 @@ void CommandWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
 {
     if (_c == CTRL('x'))
     {
-        EventHandler::push_event(new DeleteCommandWindowEvent());
+        EventHandler::push_event(new CloseCommandWindowEvent());
         return;
     }
 
-    // if there is an open child window, redirect input
+    // TODO :   these statements could be replaced by shifting focus to the child window
+    //          in a future WindowManager class. For now, let's handle it like this.
+    // if there is an open listbox, redirect input
     if (m_listboxWndPtr != NULL)
     {
         m_listboxWndPtr->handleInput(_c, _ctrl_action);
-        m_selectedListBoxEntry = m_listboxWndPtr->getEntry();
-        //
-        if (m_selectedListBoxEntry != "")
-        {
-            LOG_RAW("got this from Listbox = %s", m_selectedListBoxEntry.c_str());
-            closeListboxWindow();
-            refresh_next_frame_();
-            dispatchCommand();
-            
-        }
         return;
     }
+    // redirect input to open file explorer window
     else if (m_fileExplorerWndPtr != NULL)
     {
         m_fileExplorerWndPtr->handleInput(_c, _ctrl_action);
-        m_selectedFile = std::filesystem::path(m_fileExplorerWndPtr->getFilename());
-        //
-        if (m_selectedFile != "")
-        {
-            closeFileExplorerWindow();
-            // move focus to this window after file explorer closes
-            refresh_next_frame_();
-            dispatchCommand();
-        }
+        return;
+    }
+    // redirect input to open options window
+    else if (m_optionsWndPtr != NULL)
+    {
+        m_optionsWndPtr->handleInput(_c, _ctrl_action);
         return;
     }
 
@@ -249,7 +241,6 @@ void CommandWindow::openFileExplorerWindow(const std::string &_input_prompt)
 {
     ivec2_t ssize;
     api->getRenderSize(&ssize);
-
     float p = Config::FILE_DIALOG_SIZE_PERCENT; 
     float p2 = (1.0f - p) * 0.5f;
     int w0 = p2 * ssize.x;
@@ -259,35 +250,67 @@ void CommandWindow::openFileExplorerWindow(const std::string &_input_prompt)
                                                 ivec2_t(ssize.x - w0, ssize.y - h0));
     delete m_fileExplorerWndPtr;
     m_fileExplorerWndPtr = new FileExplorerWindow(explorer_wnd_frame, 
-                                                  "file_explorer_window",
+                                                  "cmp_file_explorer_window",
                                                   true,
+                                                  SYNIO_MEMBER_FNC1(CommandWindow::callbackFileExplorerWindow),
                                                   _input_prompt);
 
 }
 
 //---------------------------------------------------------------------------------------
-void CommandWindow::closeFileExplorerWindow()
+void CommandWindow::callbackFileExplorerWindow(std::string _selected_file)
 {
+    m_selectedFile = std::filesystem::path(_selected_file);
+
     delete m_fileExplorerWndPtr;
     m_fileExplorerWndPtr = NULL;
+    refresh_next_frame_();
     m_app->refreshBufferWindow();
 
+    dispatchCommand();
+
 }
 
 //---------------------------------------------------------------------------------------
-void CommandWindow::openYesNoDialog(const std::string &_text)
+void CommandWindow::openOptionsDialog(const std::string &_header, 
+                                      const std::string &_text,
+                                      const std::vector<std::string> &_options)
 {
+    ivec2_t ssize;
+    api->getRenderSize(&ssize);
+    // height is irrelevant, since the OptionsWindow auto-resized to fit contents
+    ivec2_t v0 = { (ssize.x / 2) - (Config::OPTIONS_DIALOG_DEFAULT_WIDTH / 2), 1 };
+    ivec2_t v1 = { (ssize.x / 2) + (Config::OPTIONS_DIALOG_DEFAULT_WIDTH / 2), 5 };
+    frame_t options_frame = { v0, v1 };
+    
+    delete m_optionsWndPtr;
+    m_optionsWndPtr = new OptionsWindow(options_frame, 
+                                        "cmd_options_wnd", 
+                                        WPARAMS_BORDER,
+                                        SYNIO_MEMBER_FNC1(CommandWindow::callbackOptionsDialog),
+                                        _header,
+                                        _text,
+                                        _options);
 
 }
 
 //---------------------------------------------------------------------------------------
-void CommandWindow::closeYesNoDialog()
+void CommandWindow::callbackOptionsDialog(std::string _selected_option)
 {
+    m_optionsResult = _selected_option;
+
+    delete m_optionsWndPtr;
+    m_optionsWndPtr = NULL;
+    refresh_next_frame_();
+    m_app->refreshBufferWindow();
+
+    dispatchCommand();
 
 }
 
 //---------------------------------------------------------------------------------------
-void CommandWindow::openListboxWindow(std::vector<listbox_entry_t> _entries)
+void CommandWindow::openListboxWindow(const std::string &_header,
+                                      std::vector<listbox_entry_t> _entries)
 {
     // window starts at x=1 and y=(no entry rows up from buffer window border) and 
     // extends down.
@@ -301,20 +324,26 @@ void CommandWindow::openListboxWindow(std::vector<listbox_entry_t> _entries)
 
     delete m_listboxWndPtr;
     m_listboxWndPtr = new ListboxWindow(listbox_frame, 
-                                        "listbox_window",
+                                        "cmd_listbox_window",
                                         true,
-                                        "DEBUG: ListboxWindow",
+                                        SYNIO_MEMBER_FNC1(CommandWindow::callbackListboxWindow),
+                                        _header,
                                         _entries);
 
 }
 
 //---------------------------------------------------------------------------------------
-void CommandWindow::closeListboxWindow()
+void CommandWindow::callbackListboxWindow(std::string _selected_entry)
 {
+    m_selectedListBoxEntry = _selected_entry;
+
     delete m_listboxWndPtr;
     m_listboxWndPtr = NULL;
+    refresh_next_frame_();
     m_app->refreshBufferWindow();
-    
+
+    dispatchCommand();
+
 }
 
 //---------------------------------------------------------------------------------------
@@ -337,10 +366,17 @@ void CommandWindow::redraw()
         api->disableAttr(m_apiWindowPtr, COLOR_PAIR(SYN_COLOR_INACTIVE));
     }
 
-    if (m_listboxWndPtr != NULL)
-        m_listboxWndPtr->redraw();
-    else if (m_fileExplorerWndPtr != NULL)
-        m_fileExplorerWndPtr->redraw();
+    if (m_listboxWndPtr || m_fileExplorerWndPtr || m_optionsWndPtr)
+    {
+        if (m_listboxWndPtr != NULL)
+            m_listboxWndPtr->redraw();
+        
+        if (m_fileExplorerWndPtr != NULL)
+            m_fileExplorerWndPtr->redraw();
+        
+        if (m_optionsWndPtr != NULL)
+            m_optionsWndPtr->redraw();
+    }
     else
         updateCursor();
 
@@ -356,6 +392,10 @@ void CommandWindow::clear()
     if (m_fileExplorerWndPtr != NULL)
         m_fileExplorerWndPtr->clear();
 
+    if (m_optionsWndPtr != NULL)
+        m_optionsWndPtr->clear();
+
+    //
     if (m_clearNextFrame)
     {
         api->clearWindow(m_apiWindowPtr);
@@ -370,10 +410,14 @@ void CommandWindow::refresh()
     if (m_listboxWndPtr != NULL)
         m_listboxWndPtr->refresh();
 
-    else if (m_fileExplorerWndPtr != NULL)
+    if (m_fileExplorerWndPtr != NULL)
         m_fileExplorerWndPtr->refresh();
 
-    else if (m_refreshNextFrame)
+    if (m_optionsWndPtr != NULL)
+        m_optionsWndPtr->refresh();
+        
+    //
+    if (m_refreshNextFrame)
     {
         api->refreshWindow(m_apiWindowPtr);
         m_refreshNextFrame = false;
@@ -436,7 +480,8 @@ void CommandWindow::processInput()
 //---------------------------------------------------------------------------------------
 void CommandWindow::dispatchCommand()
 { 
- 
+    static std::vector<listbox_entry_t> listbox_entries;
+
     if (!m_awaitNextInput)
     {
         switch (m_currentCommand.id)
@@ -458,7 +503,14 @@ void CommandWindow::dispatchCommand()
 
             //---------------------------------------------------------------------------
             case CommandID::SWITCH_TO_BUFFER:
-                command_complete_();
+                listbox_entries.clear();
+                for (auto &it : m_app->openBufferWindows())
+                {
+                    listbox_entries.push_back(listbox_entry_t(it.path, it.path.filename()));
+                    LOG_INFO("%s", it.path.c_str());
+                }
+                openListboxWindow("Switch to buffer", listbox_entries);
+                await_next_input_();                            
                 break;
                 
             //---------------------------------------------------------------------------
@@ -466,9 +518,26 @@ void CommandWindow::dispatchCommand()
             case CommandID::SAVE_TEMP_BUFFER:
             case CommandID::SAVE_BUFFER_AS:
             case CommandID::OPEN_BUFFER:
-                // setQueryPrefix(m_currentCommand.command_prompt.c_str());
                 openFileExplorerWindow(m_currentCommand.command_prompt);
                 await_next_input_();
+                break;
+
+            //---------------------------------------------------------------------------
+            case CommandID::CLOSE_THIS_BUFFER:
+                // ask for save before save
+                if (m_app->currentBufferWindow()->bufferChanged())
+                {
+                    // ask for save
+                    // openOptionsDialog("Save buffer '" + m_app->currentFilename() + "' before closing?");
+                    await_next_input_();
+                }
+                else
+                {
+                    EventHandler::push_event(new CloseFileBufferEvent(true));
+                    command_complete_();
+                }
+                
+                    // m_app->closeFileBufferWindow()
                 break;
 
             //---------------------------------------------------------------------------
@@ -498,11 +567,19 @@ void CommandWindow::dispatchCommand()
 
     }
 
-    else // command dispatched, this is now awaiting signal
+    else // command dispatched, this is now awaiting second signal
     {
         switch (m_currentCommand.id)
         {
+            
             //
+            case CommandID::SWITCH_TO_BUFFER:
+                // switch active window to the selected
+                m_app->switchToBuffer(std::filesystem::path(m_selectedListBoxEntry));
+                command_complete_();
+                break;
+                
+            //---------------------------------------------------------------------------
             case CommandID::SAVE_TEMP_BUFFER:
                 if (m_currentLine->len > 0)
                 {
@@ -539,7 +616,7 @@ void CommandWindow::dispatchCommand()
             case CommandID::OPEN_BUFFER:
                 if (FileIO::does_file_exists(m_selectedFile))
                 {
-                    FileBufferWindow *w = m_app->newFileBufferWindow(m_selectedFile);
+                    FileBufferWindow *w = m_app->openFileBufferWindow(m_selectedFile);
                     m_app->setCurrentBufferWindow(w);
                 }
                 else
@@ -548,6 +625,24 @@ void CommandWindow::dispatchCommand()
                 }
                 command_complete_();
 
+                break;
+
+            //---------------------------------------------------------------------------
+            case CommandID::CLOSE_THIS_BUFFER:
+                // reached here if a YesNo dialog was issued due to unsaved buffer
+                if (m_optionsResult == "Yes")
+                {
+                    if (FileIO::is_file_temp(m_app->currentFilename()))
+                    {
+                        LOG_ERROR("CLOSE_THIS_BUFFER not yet implemented for temp buffers.");
+                    }
+                    else
+                    {
+                        m_app->currentBufferWindow()->writeBufferToFile();
+                        EventHandler::push_event(new CloseFileBufferEvent(true));
+                        command_complete_();
+                    }
+                }
                 break;
 
             //---------------------------------------------------------------------------
@@ -594,24 +689,15 @@ void CommandWindow::dispatchCommand()
 
     }
 
-
     // is command done? if so, close command window
     if (m_commandCompleted)
-        EventHandler::push_event(new DeleteCommandWindowEvent);
+        EventHandler::push_event(new CloseCommandWindowEvent);
 
 }
 
 //---------------------------------------------------------------------------------------
 void CommandWindow::debugCommand()
 {
-    std::vector<listbox_entry_t> entries;
-    auto &open_buffers = m_app->openBufferWindows();
-    for (auto &it : open_buffers)
-    {
-        entries.push_back(listbox_entry_t(it.path, it.path.filename()));
-        LOG_INFO("%s", it.path.c_str());
-    }
-    
-    openListboxWindow(entries);
-    
+    openOptionsDialog("DEBUG1 DEBUG2 DEBUG3 DEBUG4 DEBUG5 DEBUG6 DEBUG7 DEBUG8 DEBUG9", "test1 texttest2 texttest3 texttest4 texttest5 texttest6 texttest7 text8", {"Yes", "No", "Cancel"});
+
 }

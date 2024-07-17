@@ -2,6 +2,8 @@
 #define __EVENTS_H
 
 #include <string>
+#include <filesystem>
+
 #include "types.h"
 
 //
@@ -13,7 +15,7 @@
 enum class EventType
 {
     BUFFER_SCROLL, BUFFER_SEARCH_QUERY, SAVE, SAVE_AS, ADJUST_BUFFER_WINDOW, 
-    NEW_COMMAND_WINDOW, DELETE_COMMAND_WINDOW,
+    NEW_COMMAND_WINDOW, CLOSE_COMMAND_WINDOW, CLOSE_BUFFER_WINDOW,
     EXIT
 
 };
@@ -29,30 +31,6 @@ public:
     bool m_handled = false;
     inline virtual const bool& isHandled() const { return m_handled; }
 };
-
-//
-// class Window;
-//class BufferScrollEvent : public Event
-//{
-//public:
-//    BufferScrollEvent(int _axis, int _dir, int _steps, Window *_window_ptr) :
-//        m_axis(_axis), m_dir(_dir), m_steps(_steps), m_windowPtr(_window_ptr)
-//    {}
-//
-//    __always_inline const int axis() const { return m_axis; }
-//    __always_inline const int dir() const { return m_dir; }
-//    __always_inline const int steps() const { return m_steps; }
-//    __always_inline const Window *windowPtr() const { return m_windowPtr; }
-//
-//    EVENT_TYPE(BUFFER_SCROLL)
-//
-//private:
-//    int m_axis = 0;
-//    int m_dir = 0;
-//    int m_steps = 0;
-//    Window *m_windowPtr = NULL;
-//    
-//};
 
 //
 class AdjustBufferWindowEvent : public Event
@@ -72,11 +50,27 @@ public:
 };
 
 //
-class DeleteCommandWindowEvent : public Event
+class CloseCommandWindowEvent : public Event
 {
 public:
-    DeleteCommandWindowEvent() {}
-    EVENT_TYPE(DELETE_COMMAND_WINDOW)
+    CloseCommandWindowEvent() {}
+    EVENT_TYPE(CLOSE_COMMAND_WINDOW)
+};
+
+//
+class CloseFileBufferEvent : public Event
+{
+public:
+    CloseFileBufferEvent(const std::filesystem::path _filepath) :
+        filepath(_filepath)
+    {}
+    CloseFileBufferEvent(bool _close_this) :
+        close_this(_close_this)
+    {}
+    EVENT_TYPE(CLOSE_BUFFER_WINDOW)
+
+    std::filesystem::path filepath = "";
+    int close_this = false;
 };
 
 //

@@ -11,8 +11,8 @@ class StatusWindow : public LineBufferWindow
 public:
     StatusWindow(const frame_t &_frame,
                  const std::string &_id,
-                 bool _border=false) : 
-        LineBufferWindow(_frame, _id, _border)
+                 int _wnd_params=false) : 
+        LineBufferWindow(_frame, _id, _wnd_params)
     {}
     ~StatusWindow() = default;
 

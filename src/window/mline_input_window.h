@@ -3,12 +3,13 @@
 
 #include "file_buffer_window.h"
 #include "../utils/prefix_tree.h"
+#include "../callbacks.h"
 
 //
 class MLineInputWindow : public FileBufferWindow
 {
 public:
-    MLineInputWindow(const frame_t &_frame, const std::string &_id, bool _border);
+    MLineInputWindow(const frame_t &_frame, const std::string &_id, int _wnd_params);
     ~MLineInputWindow();
 
     // MLineInputWindow-specific functions
@@ -44,6 +45,12 @@ protected:
     ivec2_t m_inputFieldOffset = ivec2_t(0);    // cursor offset in input field
     line_t *m_inputLine;            // m_currentLine is pointing into the line buffer,
                                     // this is for keyboard input (e.g. filename)
+
+    std::vector<std::string> m_keys;    // internal representation, different from the listing
+    std::vector<std::string> m_values;  // searchable entries, same ordering as m_keys
+
+    // callback on <ENTER> and selection is valid
+    WindowCallback m_callback = nullptr;
     
 };
 

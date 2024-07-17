@@ -22,14 +22,15 @@ enum CommandID
     // file managment
     SAVE_BUFFER = 0,                // impl
     SAVE_TEMP_BUFFER,
-    SAVE_BUFFER_AS,                 // impl
+    SAVE_BUFFER_AS,
     SAVE_ALL,
-    OPEN_BUFFER,
+    OPEN_BUFFER,                    // impl
+    CLOSE_THIS_BUFFER,
     CLOSE_BUFFER,
     NEW_BUFFER,
 
     // workflow
-    SWITCH_TO_BUFFER,
+    SWITCH_TO_BUFFER,               // impl
 
     // buffer operations
     BUFFER_SEARCH,
@@ -37,7 +38,7 @@ enum CommandID
 
     // yes/no dialogs
     EXIT_SAVE_YN,
-    EXIT_NO_SAVE_YN,                // impl
+    EXIT_NO_SAVE_YN,
 
     // misc
     JUST_EXIT,  // debug -- remove later

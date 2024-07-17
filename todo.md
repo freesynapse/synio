@@ -1,21 +1,18 @@
 
-# LISTBOX_WINDOW #
---  Just nu är ListboxWindow och FileExplorerWindow i princip samma sak, fast med lite 
-    skillnad i moveCursor och hur navigationen fungerar. Autocomplete och input fungerar
-    exakt likadant (literally copy-paste frpn FileExplorerWindow). Så, basklass 
-    MLineInputWindow eller liknande, och polymorfism. <-- THIS!!!
-
 # POPUPS #
 --  Idé: Alla popups skulle kunna ha en callback till en funktion i konstruktorn, som 
     anropas när exemeplvis en fil väljs, man trycker Yes eller att man stänger 
     fönstret (eller trycker No), som ansvarar för att delete pekaren och fixa cleanup etc.
     Vet dock inte riktigt hur funktionspekare funkar, får kolla på det i misc/synio_dev.
-
-    --> PoC i /misc/synio_dev/dunction_callbacks/. Lite trixigt med std::placeholders::
-        men annars borde funka.
+    -- funkar i Listbox och FileExplorer.
 
 
 # MISC #
+--  Synio.h|.cpp : byt från en std::vector<file_buffer_entry_t> till std::list, för att 
+    kunna flytta nya/switchade filer till 'toppen'. <-- THIS!
+
+--  WindowManager-klass, nu ligger detta under Synio.
+
 --  Fixa så att __debug_str inte är __debug utan en permanent del av line_t, och som 
     auto-allokeras på samma sätt som CHTYPE.
 
@@ -44,12 +41,19 @@
 --  FileBufferWindow: om man har fått autocomplete på ex '[' (= '[]') och står på closing
     bracket och trycker ']' så ska det inte infogas någon ny, utan bara moveCursor(1, 0).
 
+--  Tabs-rad högst upp (som i vscode) så man kan se vilka buffers som är öppna?
+
 
 # COMMAND_WINDOW #
+--  CommandID stack, så att man kan stapla kommandon på varandra (ex save-temp-buffer
+    efter close-buffer) och att man återgår till föregående när det ena är klart. Vid
+    command_complete_() skulle man kunna kolla om stacken är tom, ex.
+    
 --  Prefix-tree.
     Ändra i command_window att m_utilMLBuffer alltid visas men uppdateras för varje 
     input vilka ändelser som är aktuella. Nu måste man trycka på <tab> för att få 
     frame autocompletions (funktionalitet finns i FileExplorerWindow::autocompleteInput
     och ::showCompletions).
+
 --  (samma som ovan). Fixa showCompletions och tabComplete i CommandWindow som i 
     FileExplorerWindow.

@@ -3,18 +3,16 @@
 
 
 //
-Window::Window(const frame_t &_frame, const std::string &_id, bool _border)
+Window::Window(const frame_t &_frame, const std::string &_id, int _wnd_params)
 {
-   m_frame = _frame;
-   m_ID = _id;
-
-   m_apiWindowPtr = api->newWindow(&m_frame);
-   if (_border)
-       m_apiBorderWindowPtr = api->newBorderWindow(&m_frame);
-
-   //LOG_INFO("Window '%s' [%p] created [(%d, %d), (%d, %d)].", 
-   //         m_ID.c_str(), this, m_frame.v0.x, m_frame.v0.y, m_frame.v1.x, m_frame.v1.y);
-
+    m_frame = _frame;
+    m_ID = _id;
+    m_wndParams = _wnd_params;
+    
+    m_apiWindowPtr = api->newWindow(&m_frame);
+    
+    if (m_wndParams & WPARAMS_BORDER)
+        m_apiBorderWindowPtr = api->newBorderWindow(&m_frame);
 
 }
 

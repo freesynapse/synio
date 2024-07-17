@@ -55,6 +55,9 @@ extern CHTYPE_PTR char_to_chtype_ptr(const char *_str);
 extern CHTYPE_PTR concat_chtype_ptrs(CHTYPE_PTR _s0, size_t _len0, CHTYPE_PTR _s1, size_t _len1,
                               char *_space=NULL, size_t _space_len=0);
 
+// convert string to vector of strings with fixed length (splits on spaces)
+extern void string_to_ml_string(const std::string &_str, std::vector<std::string> *_out_v, size_t _line_len);
+
 // fixed precision for to_string
 template <typename T>
 std::string to_string_n(const T _val, const int _n=2)

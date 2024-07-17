@@ -65,9 +65,9 @@ void Ncurses_Impl::getRenderSize(ivec2_t *_v)
 //---------------------------------------------------------------------------------------
 API_WINDOW_PTR Ncurses_Impl::newWindow(frame_t *_frame)
 {
-    WINDOW *win = newwin(_frame->nrows, _frame->ncols, _frame->v0.y, _frame->v0.x);
-    wrefresh(win);
-    return (API_WINDOW_PTR)win;
+    WINDOW *w = newwin(_frame->nrows, _frame->ncols, _frame->v0.y, _frame->v0.x);
+    wrefresh(w);
+    return (API_WINDOW_PTR)w;
 
 }
 
@@ -88,24 +88,25 @@ API_WINDOW_PTR Ncurses_Impl::newBorderWindow(frame_t *_frame)
     if (new_frame.v1.x >= screen_dim.x) new_frame.v1.x = screen_dim.x - 1;
     if (new_frame.v1.y >= screen_dim.y) new_frame.v1.y = screen_dim.y - 1;
 
-    WINDOW *win = newwin(new_frame.nrows, new_frame.ncols, 
-                         new_frame.v0.y, new_frame.v0.x);
+    WINDOW *w = newwin(new_frame.nrows, new_frame.ncols, 
+                       new_frame.v0.y, new_frame.v0.x);
 
-    wborder(win, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
-                 ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
+    wborder(w, ACS_VLINE, ACS_VLINE, ACS_HLINE, ACS_HLINE,
+               ACS_ULCORNER, ACS_URCORNER, ACS_LLCORNER, ACS_LRCORNER);
 
-    wrefresh(win);
+    wrefresh(w);
 
-    return win;
+    return w;
 
 }
 
 //---------------------------------------------------------------------------------------
 void Ncurses_Impl::deleteWindow(API_WINDOW_PTR _w)
 {
-    wborder((WINDOW *)_w, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
-    wrefresh((WINDOW *)_w);
-    delwin((WINDOW *)_w);
+    WINDOW *w = (WINDOW *)_w;
+    wborder(w, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+    wrefresh(w);
+    delwin(w);
 
 }
 
@@ -253,12 +254,26 @@ int Ncurses_Impl::printString(API_WINDOW_PTR _w, int _cx, int _cy, CHTYPE_PTR _s
 }
 
 //---------------------------------------------------------------------------------------
-int Ncurses_Impl::wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...)
+int Ncurses_Impl::wprint(API_WINDOW_PTR _w, ivec2_t _pos, const char *_fmt, ...)
 {
-    char buffer[128] = { 0 };
+    char buffer[256] = { 0 };
     va_list arg_list;
     va_start(arg_list, _fmt);
-    vsnprintf(buffer, 128, _fmt, arg_list);
+    vsnprintf(buffer, 256, _fmt, arg_list);
+    va_end(arg_list);
+
+    int len = mvwprintw((WINDOW *)_w, _pos.y, _pos.x, "%s", buffer);
+    return len;
+
+}
+
+//---------------------------------------------------------------------------------------
+int Ncurses_Impl::wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...)
+{
+    char buffer[256] = { 0 };
+    va_list arg_list;
+    va_start(arg_list, _fmt);
+    vsnprintf(buffer, 256, _fmt, arg_list);
     va_end(arg_list);
 
     int len = mvwprintw((WINDOW *)_w, _cy, _cx, "%s", buffer);
@@ -267,17 +282,41 @@ int Ncurses_Impl::wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, 
 }
 
 //---------------------------------------------------------------------------------------
+int Ncurses_Impl::wprintc(API_WINDOW_PTR _w, ivec2_t _pos, char _c)
+{
+    mvwaddch((WINDOW *)_w, _pos.y, _pos.x, _c);
+    return RETURN_SUCCESS;
+
+}
+//---------------------------------------------------------------------------------------
+int Ncurses_Impl::wprintc(API_WINDOW_PTR _w, int _cx, int _cy, char _c)
+{
+    mvwaddch((WINDOW *)_w, _cy, _cx, _c);
+    return RETURN_SUCCESS;
+
+}
+
+//---------------------------------------------------------------------------------------
+int Ncurses_Impl::wprintml(API_WINDOW_PTR _w, ivec2_t _pos, 
+                           const std::vector<std::string> &_ml_buffer)
+{
+    return wprintml(_w, _pos.x, _pos.y, _ml_buffer);
+
+}
+
+//---------------------------------------------------------------------------------------
 int Ncurses_Impl::wprintml(API_WINDOW_PTR _w, int _cx0, int _cy0, 
                            const std::vector<std::string> &_ml_buffer)
 {
+    WINDOW *w = (WINDOW *)_w;
     int len = 0;
     int y = _cy0;
     for (size_t i = 0; i < _ml_buffer.size(); i++)
     {
         if (i == 0)
-            mvwprintw((WINDOW *)_w, y, _cx0, "%s", _ml_buffer[i].c_str());
+            mvwprintw(w, y, _cx0, "%s", _ml_buffer[i].c_str());
         else
-            mvwprintw((WINDOW *)_w, y, 0, "%s", _ml_buffer[i].c_str());
+            mvwprintw(w, y, 0, "%s", _ml_buffer[i].c_str());
         y++;
     }
 

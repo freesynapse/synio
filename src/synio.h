@@ -2,6 +2,7 @@
 #define __SYNIO_H
 
 #include <filesystem>
+#include <list>
 
 #include "utils/utils.h"
 #include "window/file_buffer_window.h"
@@ -18,12 +19,12 @@ public:
 
     // some functions
     void initialize();
-    CommandWindow *newCommandWindow();
-    void deleteCommandWindow(Event *_e);
+    CommandWindow *openCommandWindow();
     
-    FileBufferWindow *newFileBufferWindow(const std::filesystem::path &_filepath);
-    void deleteFileBufferWindow(Event *_e);
-
+    FileBufferWindow *openFileBufferWindow(const std::filesystem::path &_filepath);
+    void switchToBuffer(const std::filesystem::path &_filepath);
+    // returns the number of open buffers
+    size_t closeFileBufferWindow(const std::filesystem::path &_filepath);
     void adjustBufferWindowFrameY(int _dy);
 
     void refreshBufferWindow() { clear_redraw_refresh_window_ptr_(m_currentBufferWindow); }
@@ -31,12 +32,15 @@ public:
     // event callbacks
     void onExitEvent(Event *_e);
     void onAdjustBufferWindowEvent(Event *_e);
+    void onCloseCommandWindow(Event *_e);
+    void onCloseFileBufferWindow(Event *_e);
 
     // accessor
     FileBufferWindow *currentBufferWindow() { return m_currentBufferWindow; }
+    std::string currentFilename() { return std::string(m_currentFilename); }
     void setCurrentBufferWindow(FileBufferWindow *_w) { m_currentBufferWindow = _w; }
-    // const std::unordered_map<std::string, FileBufferWindow *> &openBufferWindows() { return m_bufferWindows; }
-    const std::vector<FileBufferEntry> &openBufferWindows() { return m_bufferWindows; }
+    // const std::vector<file_buffer_entry_t> &openBufferWindows() { return m_bufferWindows; }
+    const std::list<file_buffer_entry_t> &openBufferWindows() { return m_bufferWindowsList; }
     const frame_t &bufferWndFrame() { return m_bufferWndFrame; }
 
     //
@@ -56,7 +60,6 @@ private:
         _w->refresh();
         api->redrawScreen();
     }
-
     //
     void adjustBufferWindowFrame(BufferWindowBase *_w, frame_t *_w_frame, int _dx0, 
                                  int _dy0, int _dx1, int _dy1)
@@ -70,6 +73,15 @@ private:
         _w->resize(*_w_frame);
         clear_redraw_refresh_window_ptr_(_w);
     }
+    //
+    __always_inline auto find_file_buffer_entry_(const std::filesystem::path &_filepath)
+    {
+        return std::find_if(m_bufferWindowsList.begin(), 
+                            m_bufferWindowsList.end(), 
+                            [_filepath](const file_buffer_entry_t &_entry) {
+                                return _entry.path == _filepath;
+                            });
+    }
 
 private:
     // flags
@@ -79,10 +91,9 @@ private:
     // windows
     //
 
-    // TODO : move this to the file handler instead?
-    std::vector<FileBufferEntry> m_bufferWindows;
-    // std::unordered_map<std::string, FileBufferWindow *> m_bufferWindows;    // map of all open buffers
-    std::vector<std::string> m_bufferQueue; // switching between buffers
+    // TODO : move these to WindowManager class
+    // std::vector<file_buffer_entry_t> m_bufferWindows;
+    std::list<file_buffer_entry_t> m_bufferWindowsList;
 
     FileBufferWindow *m_currentBufferWindow = NULL; // current displayed file window
     std::filesystem::path m_currentFilename = "";

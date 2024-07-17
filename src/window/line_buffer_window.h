@@ -13,7 +13,7 @@ class LineBufferWindow : public BufferWindowBase
 public:
     LineBufferWindow(const frame_t &_frame,
                      const std::string &_id,
-                     bool _border=false);
+                     int _wnd_params=false);
     ~LineBufferWindow();
 
     // 

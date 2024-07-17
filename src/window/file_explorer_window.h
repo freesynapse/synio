@@ -6,6 +6,7 @@
 #include "mline_input_window.h"
 #include "../types.h"
 #include "../utils/prefix_tree.h"
+#include "../callbacks.h"
 
 
 //
@@ -14,7 +15,8 @@ class FileExplorerWindow : public MLineInputWindow
 public:
     FileExplorerWindow(const frame_t &_frame, 
                        const std::string &_id, 
-                       bool _border=true,
+                       int _wnd_params=WPARAMS_BORDER,
+                       WindowCallback _callback=nullptr,
                        const std::string &_input_prompt="Filename: ");
     ~FileExplorerWindow() = default;
 

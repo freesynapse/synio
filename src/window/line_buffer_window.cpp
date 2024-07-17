@@ -10,8 +10,8 @@
 //
 LineBufferWindow::LineBufferWindow(const frame_t &_frame,
                                    const std::string &_id,
-                                   bool _border) :
-    BufferWindowBase(_frame, _id, _border)
+                                   int _wnd_params) :
+    BufferWindowBase(_frame, _id, _wnd_params)
 {
     m_currentLine = create_line("");
 

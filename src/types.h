@@ -6,23 +6,24 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <filesystem>
 #include <sys/stat.h>
 
 #include "utils/log.h"
 
 // scroll-related
-#define X_AXIS    1
-#define Y_AXIS    2
+#define X_AXIS      1
+#define Y_AXIS      2
 
-#define FORWARD   1
-#define BACKWARD -1
+#define FORWARD     1
+#define BACKWARD   -1
 
-#define NEXT      1
-#define PREV     -1
+#define NEXT        1
+#define PREV       -1
 
 // selections
-#define SELECT    1
-#define DESELECT  0
+#define SELECT      1
+#define DESELECT    0
 
 //
 typedef void* API_WINDOW_PTR;
@@ -376,6 +377,7 @@ struct FileEntry
 
 };
 
+// Entry in a ListboxWindow, key-value pairs
 struct listbox_entry_t
 {
     std::string key = "";
@@ -389,6 +391,23 @@ struct listbox_entry_t
         key(_k)
     {}
     
+};
+
+// FileBufferWindow entry in synio.h, used to track multiple open buffers
+class FileBufferWindow; // forward decl
+struct file_buffer_entry_t
+{
+    std::string file = "";
+    std::filesystem::path path = "";
+    FileBufferWindow *bufferWindowPtr = NULL;
+
+    file_buffer_entry_t() {}
+    file_buffer_entry_t(const std::filesystem::path &_filepath, FileBufferWindow *_buffer_wnd_ptr) :
+        path(_filepath), bufferWindowPtr(_buffer_wnd_ptr)
+    {
+        file = path.filename();        
+    }
+
 };
 
 #endif // __TYPES_H

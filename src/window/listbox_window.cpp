@@ -8,13 +8,15 @@
 //
 ListboxWindow::ListboxWindow(const frame_t &_frame, 
                              const std::string &_id, 
-                             bool _border,
+                             int _wnd_params,
+                             WindowCallback _callback,
                              const std::string &_header, 
                              const std::vector<listbox_entry_t> &_entries) :
-    MLineInputWindow(_frame, _id, _border)
+    MLineInputWindow(_frame, _id, _wnd_params)
 {
     //
     m_header = _header;
+    m_callback = _callback;
 
     // set cursor offset (under current dir header)
     m_cursor.set_offset(ivec2_t(1, 1));
@@ -94,26 +96,43 @@ void ListboxWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             break;
 
         case 10:    // <ENTER>
+            // selected from input query
             if (m_inputLine->len > 0)
             {
-                int idx = -1;
-                for (size_t i = 0; i < m_values.size(); i++)
+                // int idx = -1;
+                // for (size_t i = 0; i < m_values.size(); i++)
+                // {
+                //     if (strcmp(m_values[i].c_str(), m_inputLine->__debug_str) == 0)
+                //     {
+                //         idx = i;
+                //         break;
+                //     }
+                // }
+                // // valid entry?
+                // if (idx >= 0 && idx < m_keys.size())
+                // {
+                //     // return to parent
+                //     m_selectedEntry = m_keys[idx];
+
+                // }
+                auto it = std::find(m_values.begin(), m_values.end(), std::string(m_inputLine->__debug_str));
+                if (it != m_values.end())
                 {
-                    if (strcmp(m_values[i].c_str(), m_inputLine->__debug_str) == 0)
-                    {
-                        idx = i;
-                        break;
-                    }
-                }
-                if (idx >= 0 && idx < m_keys.size())
+                    size_t idx = it - m_values.begin();
                     m_selectedEntry = m_keys[idx];
+                    m_callback(m_selectedEntry);
+                }
                 else
                     m_selectedEntry = "";
             }
+            // selected from list
             else
             {
                 if (m_highlightedEntry >= 0 && m_highlightedEntry < m_keys.size())
+                {
                     m_selectedEntry = m_keys[m_highlightedEntry];
+                    m_callback(m_selectedEntry);
+                }
                 else
                     m_selectedEntry = "";
             }
@@ -252,6 +271,7 @@ void ListboxWindow::findCompletions()
             size_t idx = it - m_values.begin();
             int dy = idx - m_bufferCursorPos.y;
             moveCursor(0, dy);
+            m_highlightedEntry = m_bufferCursorPos.y + dy;
         }
         refresh_next_frame_();
         return;
@@ -284,3 +304,4 @@ void ListboxWindow::findCompletions()
     refresh_next_frame_();
 
 }
+

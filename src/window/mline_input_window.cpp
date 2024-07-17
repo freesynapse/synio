@@ -1,11 +1,12 @@
 
 #include "mline_input_window.h"
 
+
 //
 MLineInputWindow::MLineInputWindow(const frame_t &_frame, 
                                    const std::string &_id, 
-                                   bool _border) :
-    FileBufferWindow(_frame, _id, _border, false, false)
+                                   int _wnd_params) :
+    FileBufferWindow(_frame, _id, _wnd_params, false, false)
 {
     m_ptree = new prefix_node_t;
 
@@ -83,4 +84,3 @@ void MLineInputWindow::autocompleteInput()
 
 }
 
- 

@@ -13,11 +13,13 @@
 //
 FileExplorerWindow::FileExplorerWindow(const frame_t &_frame, 
                                        const std::string &_id, 
-                                       bool _border,
+                                       int _wnd_params,
+                                       WindowCallback _callback,
                                        const std::string &_input_prompt) :
-    MLineInputWindow(_frame, _id, _border)
+    MLineInputWindow(_frame, _id, _wnd_params)
 {
     //
+    m_callback = _callback;
     m_currentPath = std::filesystem::current_path();
     m_inputPrompt = _input_prompt;
     m_inputFieldOffset = ivec2_t(m_inputPrompt.length(), m_frame.nrows - 1);
@@ -62,6 +64,7 @@ void FileExplorerWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             case KEY_HOME:  clear_input_(); moveCursorToLineBegin();    break;
             case KEY_END:   clear_input_(); moveCursorToLineEnd();      break;
             case 8:         clear_input_(); moveCursor(0, 0);           break;
+            
             case KEY_BACKSPACE:
                 popCharFromInput();
                 moveCursor(0, 0);
@@ -118,7 +121,10 @@ void FileExplorerWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
                 }
                 // else m_selectedFilename is set, signaling to caller
                 else
+                {
                     m_selectedFilename = std::string((m_currentPath / m_selectedFilename).c_str());
+                    m_callback(m_selectedFilename);
+                }
                     
                 break;
 
@@ -193,35 +199,6 @@ void FileExplorerWindow::redraw()
 }
 
 //---------------------------------------------------------------------------------------
-// void FileExplorerWindow::pushCharToInput(char _c)
-// {
-//     // only allowed characters (for now)
-//     if (Config::ALLOWED_CHAR_SET.find(_c) == Config::ALLOWED_CHAR_SET.end())
-//         return;
-
-//     m_inputLine->insert_char(_c, m_inputLine->len);
-
-//     findCompletions();
-
-//     refresh_next_frame_();
-
-// }
-
-//---------------------------------------------------------------------------------------
-// void FileExplorerWindow::popCharFromInput()
-// {
-//     if (m_inputLine->len == 0)
-//         return;
-
-//     m_inputLine->delete_at(m_inputLine->len);
-
-//     findCompletions();
-
-//     refresh_next_frame_();
-
-// }
-
-//---------------------------------------------------------------------------------------
 void FileExplorerWindow::moveCursorColumn(int _dcol)
 {
     int next_col = m_currentCol + _dcol;
@@ -280,31 +257,6 @@ void FileExplorerWindow::moveToColRow(int _col, int _row)
     m_currentCol = _col;
 
 }
-
-//---------------------------------------------------------------------------------------
-// void FileExplorerWindow::autocompleteInput()
-// {
-//     if (m_inputLine->len == 0)
-//         return;
-    
-//     std::string input = std::string(m_inputLine->__debug_str);
-//     prefix_node_t *stree = PrefixTree::find_subtree(m_dirPTree, input);
-//     std::string longest_prefix;
-//     PrefixTree::find_longest_prefix(stree, input, &longest_prefix);
-
-//     if (longest_prefix.length() == 0)
-//     {
-//         return;
-//     }
-//     else if (longest_prefix.length() != input.length())
-//     {
-//         delete m_inputLine;
-//         m_inputLine = create_line(longest_prefix.c_str());
-//         findCompletions();
-//         refresh_next_frame_();
-//     }
-
-// }
 
 //---------------------------------------------------------------------------------------
 void FileExplorerWindow::findCompletions()

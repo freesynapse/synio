@@ -12,22 +12,6 @@
 // TODO : move undo types to types.h
 #include "../buffer/undo_buffer.h"
 
-// FileBufferWindow entry in synio.h, used to track multiple open buffers
-struct FileBufferEntry
-{
-    std::string file = "";
-    std::filesystem::path path = "";
-    FileBufferWindow *bufferWindowPtr = NULL;
-
-    FileBufferEntry() {}
-    FileBufferEntry(const std::filesystem::path &_filepath, FileBufferWindow *_buffer_wnd_ptr) :
-        path(_filepath), bufferWindowPtr(_buffer_wnd_ptr)
-    {
-        file = path.filename();
-        
-    }
-
-};
 
 //
 class FileBufferWindow : public BufferWindowBase
@@ -42,7 +26,7 @@ public:
     // N.B.: for FileBufferWindows, the _id is the filename
     FileBufferWindow(const frame_t &_frame, 
                      const std::string &_id_filename,
-                     bool _border=false,
+                     int _wnd_params=false,
                      bool _use_line_numbers=true,
                      bool _auto_open_file=true);
     ~FileBufferWindow();

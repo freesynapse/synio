@@ -15,6 +15,10 @@
 #include "../events.h"
 #include "../config.h"
 
+// window parameters
+#define WPARAMS_NONE        0x00000000
+#define WPARAMS_BORDER      0x00000001
+
 //
 class Window
 {
@@ -23,9 +27,7 @@ public:
     friend class Synio;
 
 public:
-    //Window() {}
-    Window(const frame_t &_frame, const std::string &_id, bool _border=true);
-    // Window(const ivec2_t &_v0, const ivec2_t &_v1, const std::string &_id, bool _border);
+    Window(const frame_t &_frame, const std::string &_id, int _wnd_params);
     virtual ~Window();
     
     // creates a border around the drawable area
@@ -58,8 +60,9 @@ public:
 
         m_refreshNextFrame = false;
 
-        if (m_apiBorderWindowPtr)
-            api->refreshBorder(m_apiBorderWindowPtr);
+        // This causes screen flickering on repeated input!
+        //if (m_apiBorderWindowPtr)
+        //    api->refreshBorder(m_apiBorderWindowPtr);
         
         api->refreshWindow(m_apiWindowPtr);
     }
@@ -69,8 +72,6 @@ public:
     const std::string &ID() const { return m_ID; }
     void setVisibility(bool _b) { m_isWindowVisible = _b; }
     void setID(const std::string &_id) { m_ID = _id; }
-    // void refreshNextFrame() { refresh_next_frame_(); }
-    // void clearNextFrame() { clear_next_frame_(); }
 
     //
     #ifdef DEBUG
@@ -82,8 +83,9 @@ protected:
     __always_inline void refresh_next_frame_() { m_refreshNextFrame = true; }
 
 protected:
-    std::string m_ID = "";
     frame_t m_frame = frame_t(0);
+    std::string m_ID = "";
+    int m_wndParams = WPARAMS_NONE;
 
     API_WINDOW_PTR m_apiWindowPtr = NULL;
     API_WINDOW_PTR m_apiBorderWindowPtr = NULL;

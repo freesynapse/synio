@@ -156,3 +156,44 @@ CHTYPE_PTR concat_chtype_ptrs(CHTYPE_PTR _s0, size_t _len0, CHTYPE_PTR _s1, size
     return s;
 
 }
+
+//---------------------------------------------------------------------------------------
+void string_to_ml_string(const std::string &_str, std::vector<std::string> *_out_v, 
+                         size_t _line_len)
+{
+    // first split on ' ' into words
+    std::string w;
+    std::vector<std::string> words;
+    std::stringstream ss(_str);
+    while(std::getline(ss, w, ' '))
+        words.push_back(w);
+
+    // next add words per line so it will fit the window frame
+    int chars_left = (int)_str.size();
+    int curr_col = 0;
+    std::string line = "";
+    int curr_word = 0;
+    while (chars_left > 0)
+    {
+        int n = words[curr_word].length() + 1;
+        if (curr_col + n <= _line_len)
+        {
+            line += words[curr_word] + " ";
+            chars_left -= n;
+            curr_col += n;
+        }
+        else
+        {
+            _out_v->push_back(line);
+            line = words[curr_word] + " ";
+            chars_left -= n;
+            curr_col = n;
+        }
+
+        curr_word++;
+    }
+
+    if (line != "")
+        _out_v->push_back(line);
+        
+}
