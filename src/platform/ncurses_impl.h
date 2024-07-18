@@ -52,6 +52,8 @@ public:
     virtual int wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...) override;
     virtual int wprintc(API_WINDOW_PTR _w, ivec2_t _pos, char _c) override;
     virtual int wprintc(API_WINDOW_PTR _w, int _cx, int _cy, char _c) override;
+    virtual int wprintcstr(API_WINDOW_PTR _w, ivec2_t _pos, const char *_str) override;
+    virtual int wprintcstr(API_WINDOW_PTR _w, int _cx, int _cy, const char *_str) override;
     virtual int wprintml(API_WINDOW_PTR _w, ivec2_t _pos, const std::vector<std::string> &_ml_buffer) override;
     virtual int wprintml(API_WINDOW_PTR _w, int _cx0, int _cy0, const std::vector<std::string> &_ml_buffer) override;
     virtual int printCursorBlock(API_WINDOW_PTR _w, int _cx, int _cy) override;

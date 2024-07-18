@@ -44,6 +44,16 @@
 --  Tabs-rad högst upp (som i vscode) så man kan se vilka buffers som är öppna?
 
 
+# UNDO BUFFER #
+--  För multicursor support, lägg till en flag eller liknande som markerar att det är 
+    en multi-cursor edit. Man kan peek:a på nästa i stacken och se om det är detta och 
+    exekvera tills det inte är multicursor längre, typ.
+
+--  När man ångrar enstaka chars, så skulle man kunna ha att efter de två första undos att
+    alla kommande enstaka chars (genom peek i stacken) ångras (alltså hela ord),
+    eventuellt till nästa space/enter etc.
+
+
 # COMMAND_WINDOW #
 --  CommandID stack, så att man kan stapla kommandon på varandra (ex save-temp-buffer
     efter close-buffer) och att man återgår till föregående när det ena är klart. Vid

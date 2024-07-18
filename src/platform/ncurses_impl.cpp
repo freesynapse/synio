@@ -297,6 +297,20 @@ int Ncurses_Impl::wprintc(API_WINDOW_PTR _w, int _cx, int _cy, char _c)
 }
 
 //---------------------------------------------------------------------------------------
+int Ncurses_Impl::wprintcstr(API_WINDOW_PTR _w, ivec2_t _pos, const char *_str)
+{
+    return mvwaddstr((WINDOW *)_w, _pos.y, _pos.x, _str);
+
+}
+
+//---------------------------------------------------------------------------------------
+int Ncurses_Impl::wprintcstr(API_WINDOW_PTR _w, int _cx, int _cy, const char *_str)
+{
+    return mvwaddstr((WINDOW *)_w, _cy, _cx, _str);
+
+}
+
+//---------------------------------------------------------------------------------------
 int Ncurses_Impl::wprintml(API_WINDOW_PTR _w, ivec2_t _pos, 
                            const std::vector<std::string> &_ml_buffer)
 {

@@ -99,22 +99,6 @@ void ListboxWindow::handleInput(int _c, CtrlKeyAction _ctrl_action)
             // selected from input query
             if (m_inputLine->len > 0)
             {
-                // int idx = -1;
-                // for (size_t i = 0; i < m_values.size(); i++)
-                // {
-                //     if (strcmp(m_values[i].c_str(), m_inputLine->__debug_str) == 0)
-                //     {
-                //         idx = i;
-                //         break;
-                //     }
-                // }
-                // // valid entry?
-                // if (idx >= 0 && idx < m_keys.size())
-                // {
-                //     // return to parent
-                //     m_selectedEntry = m_keys[idx];
-
-                // }
                 auto it = std::find(m_values.begin(), m_values.end(), std::string(m_inputLine->__debug_str));
                 if (it != m_values.end())
                 {
@@ -240,7 +224,6 @@ void ListboxWindow::changeSelectedRow(int _dy)
         return;
     
     m_highlightedEntry = (_dy < 0 ? prev_entry_() : next_entry_());
-    // m_currentLine = m_lineBuffer.ptrFromIdx(m_highlightedEntry);
     moveCursor(0, _dy);
     
     refresh_next_frame_();

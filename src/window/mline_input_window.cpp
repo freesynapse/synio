@@ -71,9 +71,7 @@ void MLineInputWindow::autocompleteInput()
     PrefixTree::find_longest_prefix(stree, input, &longest_prefix);
 
     if (longest_prefix.length() == 0)
-    {
         return;
-    }
     else if (longest_prefix.length() != input.length())
     {
         delete m_inputLine;

@@ -122,7 +122,7 @@ void PrefixTree::print_tree(prefix_node_t *_node, std::string _word)
         return;
 
     if (_node->is_leaf)
-        LOG_INFO("%s", _word.c_str());
+        LOG_RAW("%s", _word.c_str());
 
     for (size_t i = 0; i < Config::ALLOWED_CHARS_SZ; i++)
         print_tree(_node->children[i], _word + s_idx2charMap[i]);

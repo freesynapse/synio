@@ -183,7 +183,7 @@ CommandWindow *Synio::openCommandWindow()
 //---------------------------------------------------------------------------------------
 void Synio::adjustBufferWindowFrameY(int _dy)
 {
-    adjustBufferWindowFrame(m_currentBufferWindow, &m_bufferWndFrame, 0, 0, 0, _dy);
+    // adjustBufferWindowFrame(m_currentBufferWindow, &m_bufferWndFrame, 0, 0, 0, _dy);
     adjustBufferWindowFrame(m_statusWindow, &m_statusWndFrame, 0, _dy, 0, _dy);
 
 }

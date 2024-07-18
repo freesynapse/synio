@@ -31,7 +31,9 @@ public:
     virtual void setQueryPrefix(const char *_prefix="");
 
     // show available options
-    virtual void tabComplete();
+    virtual void findCompletions();
+    virtual void autocompleteInput();
+    virtual void adjustFrame(int _d);
 
     // child window handling
     void openFileExplorerWindow(const std::string &_input_prompt);
@@ -51,7 +53,9 @@ public:
     virtual void processInput();
     virtual void dispatchCommand();
 
-    ///// DEBUG
+    virtual void __process_commands();
+
+    ///// DEBUG /////
     void debugCommand();
 
 
@@ -61,12 +65,6 @@ protected:
         moveCursor(-m_currentLine->len, 0);
         delete m_currentLine;
         m_currentLine = create_line("");
-    }
-    __always_inline virtual void show_util_buffer_next_frame_() { m_showUtilBuffer = true; }
-    __always_inline virtual void enable_default_state_()
-    {
-        // reset all flags, goto default 'input' mode
-        m_showUtilBuffer = false;
     }
     __always_inline virtual void await_next_input_() { m_awaitNextInput = true; }
     __always_inline virtual void command_complete_() { m_commandCompleted = true; }
@@ -84,32 +82,35 @@ protected:
    
 
 protected:
-    //
-    Synio *m_app = NULL;
+    // command structure
+    std::stack<command_t> m_commands;
+    command_t m_currentCommand;
+
+    // child windows
     FileExplorerWindow *m_fileExplorerWndPtr = NULL;
     ListboxWindow *m_listboxWndPtr = NULL;
     OptionsWindow *m_optionsWndPtr = NULL;
     
-    std::filesystem::path m_selectedFile = "";  // result signal of FileExploreWindow
-    std::string m_selectedListBoxEntry = "";    // result signal of ListboxWindow
-    std::string m_optionsResult = "";
+    std::filesystem::path m_selectedFile = "";  // result of FileExploreWindow
+    std::string m_selectedListBoxEntry = "";    // result of ListboxWindow
+    std::string m_optionsResult = "";           // result of OptionsWindow
     
-    //
-    std::vector<std::string> m_autocompletions;
-    size_t m_selectedCompletion = 0;
-    
-    CHTYPE_STR_PTR m_cmdPrefix = NULL;  // actually what's printed before the input
-    ivec2_t m_cmdPrefixPos = ivec2_t(1, 0);
-    command_t m_currentCommand;
-
-    std::vector<std::string> m_utilMLBuffer;
-
     // state flags
-    bool m_showUtilBuffer = false;
     bool m_awaitNextInput = false;      // e.g. yes/no, filename etc
     bool m_commandCompleted = false;
     bool m_awaitNextCommand = false;    // if a command is intercepted by another command
 
+    // autocomplete-related
+    prefix_node_t *m_ptree = NULL;
+    std::vector<std::string> m_autocompletions;
+    size_t m_selectedCompletion = 0;
+    std::vector<std::string> m_utilMLBuffer;
+    
+    // misc
+    Synio *m_app = NULL;
+    CHTYPE_STR_PTR m_cmdPrefix = NULL;  // actually what's printed before the input
+    ivec2_t m_cmdPrefixPos = ivec2_t(1, 0);
+    
 };
 
 

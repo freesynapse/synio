@@ -126,22 +126,21 @@ void OptionsWindow::redraw()
 
     // header
     api->enableAttr(m_apiWindowPtr, A_BOLD);
-    // api->wprint(m_apiWindowPtr, header_pos, "%s", m_mlHeader.c_str());
     static int line_len = m_frame.ncols - 2 * Config::OPTIONS_DIALOG_TEXT_HPAD;
     for (size_t i = 0; i < m_mlHeader.size(); i++)
     {
         // center on each row
         int x = (line_len / 2) - (m_mlHeader[i].length() / 2);
-        api->wprint(m_apiWindowPtr, x + Config::OPTIONS_DIALOG_TEXT_HPAD, 1 + i, "%s",
-                    m_mlHeader[i].c_str());
+        api->wprintcstr(m_apiWindowPtr, x + Config::OPTIONS_DIALOG_TEXT_HPAD, 1 + i, 
+                        m_mlHeader[i].c_str());
     }
     api->disableAttr(m_apiWindowPtr, A_BOLD);
 
     // text
     for (size_t i = 0; i < m_mlText.size(); i++)
     {
-        api->wprint(m_apiWindowPtr, Config::OPTIONS_DIALOG_TEXT_HPAD, 2 + m_mlHeader.size() + i, "%s", 
-                    m_mlText[i].c_str());
+        api->wprintcstr(m_apiWindowPtr, Config::OPTIONS_DIALOG_TEXT_HPAD, 
+                        2 + m_mlHeader.size() + i, m_mlText[i].c_str());
     }
 
     // options

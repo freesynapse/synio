@@ -52,6 +52,8 @@ public:
     virtual int wprint(API_WINDOW_PTR _w, int _cx, int _cy, const char *_fmt, ...) = 0;
     virtual int wprintc(API_WINDOW_PTR _w, ivec2_t _pos, char _c) = 0;
     virtual int wprintc(API_WINDOW_PTR _w, int _cx, int _cy, char _c) = 0;
+    virtual int wprintcstr(API_WINDOW_PTR _w, ivec2_t _pos, const char *_str) = 0;
+    virtual int wprintcstr(API_WINDOW_PTR _w, int _cx, int _cy, const char *_str) = 0;
     virtual int wprintml(API_WINDOW_PTR _w, ivec2_t _pos, const std::vector<std::string> &_ml_buffer) = 0;
     virtual int wprintml(API_WINDOW_PTR _w, int _cx0, int _cy0, const std::vector<std::string> &_ml_buffer) = 0;
     virtual int printCursorBlock(API_WINDOW_PTR _w, int _cx, int _cy) = 0;
